@@ -13,7 +13,6 @@
             <column name="sc_bytes"                    type="INTEGER"/>
             <column name="client_ip"                   type="TEXT"/>
             <column name="method"                      type="TEXT"/>
-            <column name="host"                        type="TEXT"/>
             <column name="uri_stem"                    type="TEXT"/>
             <column name="status"                      type="INTEGER"/>
             <column name="referer"                     type="TEXT"/>
@@ -21,8 +20,6 @@
             <column name="uri_query"                   type="TEXT"/>
             <column name="cookie"                      type="TEXT"/>
             <column name="edge_result_type"            type="TEXT"/>
-            <column name="request_id"                  type="TEXT"/>
-            <column name="x_host_header"               type="TEXT"/>
             <column name="protocol"                    type="TEXT"/>
             <column name="cs_bytes"                    type="INTEGER"/>
             <column name="time_taken"                  type="REAL"/>
@@ -46,19 +43,6 @@
         <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_timestamp">
             <column name="timestamp"/>
         </createIndex>
-
-        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_host">
-            <column name="x_host_header"/>
-        </createIndex>
-    </changeSet>
-
-    <changeSet id="001-drop-request-id" author="analyze-logs">
-        <dropColumn tableName="cloudfront_logs" columnName="request_id"/>
-    </changeSet>
-
-    <changeSet id="001-drop-host-and-x-host-header" author="analyze-logs">
-        <dropColumn tableName="cloudfront_logs" columnName="host"/>
-        <dropColumn tableName="cloudfront_logs" columnName="x_host_header"/>
     </changeSet>
 
     <changeSet id="001-fetched-files" author="analyze-logs">
