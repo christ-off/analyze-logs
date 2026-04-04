@@ -54,13 +54,13 @@ public class LogRepository implements AutoCloseable {
             INSERT INTO cloudfront_logs (
                 timestamp, edge_location, sc_bytes, client_ip, method, host,
                 uri_stem, status, referer, user_agent, uri_query, cookie,
-                edge_result_type, request_id, x_host_header, protocol, cs_bytes,
+                edge_result_type, x_host_header, protocol, cs_bytes,
                 time_taken, x_forwarded_for, ssl_protocol, ssl_cipher,
                 edge_response_result_type, protocol_version, fle_status,
                 fle_encrypted_fields, client_port, time_to_first_byte,
                 edge_detailed_result_type, content_type, content_length,
                 range_start, range_end, country
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
@@ -78,26 +78,25 @@ public class LogRepository implements AutoCloseable {
                 stmt.setString(11, e.uriQuery());
                 stmt.setString(12, e.cookie());
                 stmt.setString(13, e.edgeResultType());
-                stmt.setString(14, e.requestId());
-                stmt.setString(15, e.xHostHeader());
-                stmt.setString(16, e.protocol());
-                stmt.setLong(17, e.csBytes());
-                stmt.setDouble(18, e.timeTaken());
-                stmt.setString(19, e.xForwardedFor());
-                stmt.setString(20, e.sslProtocol());
-                stmt.setString(21, e.sslCipher());
-                stmt.setString(22, e.edgeResponseResultType());
-                stmt.setString(23, e.protocolVersion());
-                stmt.setString(24, e.fleStatus());
-                setIntOrNull(stmt, 25, e.fleEncryptedFields());
-                stmt.setInt(26, e.clientPort());
-                stmt.setDouble(27, e.timeToFirstByte());
-                stmt.setString(28, e.edgeDetailedResultType());
-                stmt.setString(29, e.contentType());
-                setLongOrNull(stmt, 30, e.contentLength());
-                setLongOrNull(stmt, 31, e.rangeStart());
-                setLongOrNull(stmt, 32, e.rangeEnd());
-                stmt.setString(33, e.country());
+                stmt.setString(14, e.xHostHeader());
+                stmt.setString(15, e.protocol());
+                stmt.setLong(16, e.csBytes());
+                stmt.setDouble(17, e.timeTaken());
+                stmt.setString(18, e.xForwardedFor());
+                stmt.setString(19, e.sslProtocol());
+                stmt.setString(20, e.sslCipher());
+                stmt.setString(21, e.edgeResponseResultType());
+                stmt.setString(22, e.protocolVersion());
+                stmt.setString(23, e.fleStatus());
+                setIntOrNull(stmt, 24, e.fleEncryptedFields());
+                stmt.setInt(25, e.clientPort());
+                stmt.setDouble(26, e.timeToFirstByte());
+                stmt.setString(27, e.edgeDetailedResultType());
+                stmt.setString(28, e.contentType());
+                setLongOrNull(stmt, 29, e.contentLength());
+                setLongOrNull(stmt, 30, e.rangeStart());
+                setLongOrNull(stmt, 31, e.rangeEnd());
+                stmt.setString(32, e.country());
                 stmt.addBatch();
             }
             stmt.executeBatch();

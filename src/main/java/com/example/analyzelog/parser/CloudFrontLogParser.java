@@ -48,7 +48,6 @@ public class CloudFrontLogParser {
                 nullIfDash(n, "cs-uri-query"),
                 nullIfDash(n, "cs(Cookie)"),
                 text(n, "x-edge-result-type"),
-                text(n, "x-edge-request-id"),
                 text(n, "x-host-header"),
                 text(n, "cs-protocol"),
                 longVal(n, "cs-bytes"),

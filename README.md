@@ -148,7 +148,6 @@ cloudfront_logs (
     uri_query                   TEXT,               -- NULL when absent
     cookie                      TEXT,               -- NULL when absent or logging disabled
     edge_result_type            TEXT,               -- Hit / Miss / Error / Redirect / …
-    request_id                  TEXT,               -- x-amz-cf-id value
     x_host_header               TEXT,               -- alternate domain name (CNAME) if used
     protocol                    TEXT,               -- http / https / ws / wss / grpcs
     cs_bytes                    INTEGER,            -- bytes sent viewer → server

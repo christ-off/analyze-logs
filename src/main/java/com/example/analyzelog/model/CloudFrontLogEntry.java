@@ -16,7 +16,6 @@ public record CloudFrontLogEntry(
     String uriQuery,              // cs-uri-query
     String cookie,                // cs(Cookie)
     String edgeResultType,        // x-edge-result-type
-    String requestId,             // x-edge-request-id
     String xHostHeader,           // x-host-header
     String protocol,              // cs-protocol
     long csBytes,                 // cs-bytes

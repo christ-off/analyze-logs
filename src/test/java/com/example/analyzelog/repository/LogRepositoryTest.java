@@ -86,7 +86,7 @@ class LogRepositoryTest {
             Instant.now(), "IAD89", 512L, "1.2.3.4", "GET",
             "abc.cloudfront.net", "/index.html", 200,
             null, null, null, null,
-            "Hit", "REQ001", "example.com", "https", 128L, 0.01,
+            "Hit", "example.com", "https", 128L, 0.01,
             null, "TLSv1.3", "TLS_AES_128_GCM_SHA256", "Hit",
             "HTTP/1.1", null, null, 443, 0.01, "Hit",
             null, null, null, null, "US"
@@ -101,7 +101,7 @@ class LogRepositoryTest {
             Instant.now(), "SFO53-P7", 1068L, "8.29.198.27", "GET",
             "d3bkd4xdlxgkfz.cloudfront.net", "/index.html", status,
             null, "TestAgent/1.0", null, null,
-            "Hit", "REQ-" + status, xHostHeader, "https", 336L, 0.001,
+            "Hit", xHostHeader, "https", 336L, 0.001,
             null, "TLSv1.3", "TLS_AES_128_GCM_SHA256", "Hit",
             "HTTP/1.1", null, null, 19103, 0.001, "Hit",
             null, null, null, null, "US"
