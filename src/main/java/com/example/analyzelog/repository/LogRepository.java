@@ -1,6 +1,14 @@
 package com.example.analyzelog.repository;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import liquibase.Liquibase;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
 import java.sql.*;
 import java.time.ZonedDateTime;
@@ -11,70 +19,23 @@ public class LogRepository implements AutoCloseable {
     private final Connection connection;
 
     public LogRepository(String dbPath) throws SQLException {
+        runMigrations(dbPath);
         this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
         connection.setAutoCommit(false);
-        initialize();
     }
 
-    private void initialize() throws SQLException {
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS cloudfront_logs (
-                    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp                   TEXT NOT NULL,
-                    edge_location               TEXT,
-                    sc_bytes                    INTEGER,
-                    client_ip                   TEXT,
-                    method                      TEXT,
-                    host                        TEXT,
-                    uri_stem                    TEXT,
-                    status                      INTEGER,
-                    referer                     TEXT,
-                    user_agent                  TEXT,
-                    uri_query                   TEXT,
-                    cookie                      TEXT,
-                    edge_result_type            TEXT,
-                    request_id                  TEXT,
-                    x_host_header               TEXT,
-                    protocol                    TEXT,
-                    cs_bytes                    INTEGER,
-                    time_taken                  REAL,
-                    x_forwarded_for             TEXT,
-                    ssl_protocol                TEXT,
-                    ssl_cipher                  TEXT,
-                    edge_response_result_type   TEXT,
-                    protocol_version            TEXT,
-                    fle_status                  TEXT,
-                    fle_encrypted_fields        INTEGER,
-                    client_port                 INTEGER,
-                    time_to_first_byte          REAL,
-                    edge_detailed_result_type   TEXT,
-                    content_type                TEXT,
-                    content_length              INTEGER,
-                    range_start                 INTEGER,
-                    range_end                   INTEGER,
-                    country                     TEXT
-                )
-                """);
-
-            stmt.executeUpdate("""
-                CREATE INDEX IF NOT EXISTS idx_cloudfront_logs_timestamp
-                    ON cloudfront_logs (timestamp)
-                """);
-
-            stmt.executeUpdate("""
-                CREATE INDEX IF NOT EXISTS idx_cloudfront_logs_host
-                    ON cloudfront_logs (x_host_header)
-                """);
-
-            stmt.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS fetched_files (
-                    s3_key      TEXT PRIMARY KEY,
-                    fetched_at  TEXT NOT NULL
-                )
-                """);
-
-            connection.commit();
+    private static void runMigrations(String dbPath) throws SQLException {
+        try (Connection migrationConn = DriverManager.getConnection("jdbc:sqlite:" + dbPath)) {
+            Database database = DatabaseFactory.getInstance()
+                    .findCorrectDatabaseImplementation(new JdbcConnection(migrationConn));
+            try (Liquibase liquibase = new Liquibase(
+                    "db/changelog/db.changelog-master.xml",
+                    new ClassLoaderResourceAccessor(),
+                    database)) {
+                liquibase.update(new Contexts(), new LabelExpression());
+            }
+        } catch (LiquibaseException e) {
+            throw new SQLException("Database migration failed", e);
         }
     }
 

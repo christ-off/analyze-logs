@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-cloudfront-logs" author="analyze-logs">
+        <createTable tableName="cloudfront_logs">
+            <column name="id"                          type="INTEGER" autoIncrement="true"><constraints primaryKey="true"/></column>
+            <column name="timestamp"                   type="TEXT"><constraints nullable="false"/></column>
+            <column name="edge_location"               type="TEXT"/>
+            <column name="sc_bytes"                    type="INTEGER"/>
+            <column name="client_ip"                   type="TEXT"/>
+            <column name="method"                      type="TEXT"/>
+            <column name="host"                        type="TEXT"/>
+            <column name="uri_stem"                    type="TEXT"/>
+            <column name="status"                      type="INTEGER"/>
+            <column name="referer"                     type="TEXT"/>
+            <column name="user_agent"                  type="TEXT"/>
+            <column name="uri_query"                   type="TEXT"/>
+            <column name="cookie"                      type="TEXT"/>
+            <column name="edge_result_type"            type="TEXT"/>
+            <column name="request_id"                  type="TEXT"/>
+            <column name="x_host_header"               type="TEXT"/>
+            <column name="protocol"                    type="TEXT"/>
+            <column name="cs_bytes"                    type="INTEGER"/>
+            <column name="time_taken"                  type="REAL"/>
+            <column name="x_forwarded_for"             type="TEXT"/>
+            <column name="ssl_protocol"                type="TEXT"/>
+            <column name="ssl_cipher"                  type="TEXT"/>
+            <column name="edge_response_result_type"   type="TEXT"/>
+            <column name="protocol_version"            type="TEXT"/>
+            <column name="fle_status"                  type="TEXT"/>
+            <column name="fle_encrypted_fields"        type="INTEGER"/>
+            <column name="client_port"                 type="INTEGER"/>
+            <column name="time_to_first_byte"          type="REAL"/>
+            <column name="edge_detailed_result_type"   type="TEXT"/>
+            <column name="content_type"                type="TEXT"/>
+            <column name="content_length"              type="INTEGER"/>
+            <column name="range_start"                 type="INTEGER"/>
+            <column name="range_end"                   type="INTEGER"/>
+            <column name="country"                     type="TEXT"/>
+        </createTable>
+
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_timestamp">
+            <column name="timestamp"/>
+        </createIndex>
+
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_host">
+            <column name="x_host_header"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="001-fetched-files" author="analyze-logs">
+        <createTable tableName="fetched_files">
+            <column name="s3_key"     type="TEXT"><constraints primaryKey="true"/></column>
+            <column name="fetched_at" type="TEXT"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
