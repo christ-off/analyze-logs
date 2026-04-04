@@ -53,6 +53,13 @@
             <artifactId>sts</artifactId>
         </dependency>
 
+        <!-- JSON parsing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.3</version>
+        </dependency>
+
         <!-- Local database -->
         <dependency>
             <groupId>org.xerial</groupId>

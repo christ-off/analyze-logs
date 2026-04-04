@@ -1,16 +1,12 @@
 package com.example.analyzelog.repository;
 
-import com.example.analyzelog.model.AccessLogEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.analyzelog.model.CloudFrontLogEntry;
 
 import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.List;
 
 public class LogRepository implements AutoCloseable {
-
-    private static final Logger log = LoggerFactory.getLogger(LogRepository.class);
 
     private final Connection connection;
 
@@ -23,37 +19,52 @@ public class LogRepository implements AutoCloseable {
     private void initialize() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS access_logs (
-                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                    bucket_owner    TEXT,
-                    bucket          TEXT NOT NULL,
-                    time            TEXT NOT NULL,
-                    remote_ip       TEXT,
-                    requester       TEXT,
-                    request_id      TEXT,
-                    operation       TEXT,
-                    key             TEXT,
-                    request_uri     TEXT,
-                    http_status     INTEGER,
-                    error_code      TEXT,
-                    bytes_sent      INTEGER,
-                    object_size     INTEGER,
-                    total_time_ms   INTEGER,
-                    turnaround_ms   INTEGER,
-                    referrer        TEXT,
-                    user_agent      TEXT,
-                    version_id      TEXT
+                CREATE TABLE IF NOT EXISTS cloudfront_logs (
+                    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp                   TEXT NOT NULL,
+                    edge_location               TEXT,
+                    sc_bytes                    INTEGER,
+                    client_ip                   TEXT,
+                    method                      TEXT,
+                    host                        TEXT,
+                    uri_stem                    TEXT,
+                    status                      INTEGER,
+                    referer                     TEXT,
+                    user_agent                  TEXT,
+                    uri_query                   TEXT,
+                    cookie                      TEXT,
+                    edge_result_type            TEXT,
+                    request_id                  TEXT,
+                    x_host_header               TEXT,
+                    protocol                    TEXT,
+                    cs_bytes                    INTEGER,
+                    time_taken                  REAL,
+                    x_forwarded_for             TEXT,
+                    ssl_protocol                TEXT,
+                    ssl_cipher                  TEXT,
+                    edge_response_result_type   TEXT,
+                    protocol_version            TEXT,
+                    fle_status                  TEXT,
+                    fle_encrypted_fields        INTEGER,
+                    client_port                 INTEGER,
+                    time_to_first_byte          REAL,
+                    edge_detailed_result_type   TEXT,
+                    content_type                TEXT,
+                    content_length              INTEGER,
+                    range_start                 INTEGER,
+                    range_end                   INTEGER,
+                    country                     TEXT
                 )
                 """);
 
             stmt.executeUpdate("""
-                CREATE INDEX IF NOT EXISTS idx_access_logs_time
-                    ON access_logs (time)
+                CREATE INDEX IF NOT EXISTS idx_cloudfront_logs_timestamp
+                    ON cloudfront_logs (timestamp)
                 """);
 
             stmt.executeUpdate("""
-                CREATE INDEX IF NOT EXISTS idx_access_logs_bucket
-                    ON access_logs (bucket)
+                CREATE INDEX IF NOT EXISTS idx_cloudfront_logs_host
+                    ON cloudfront_logs (x_host_header)
                 """);
 
             stmt.executeUpdate("""
@@ -77,36 +88,55 @@ public class LogRepository implements AutoCloseable {
         }
     }
 
-    public void saveEntries(String s3Key, List<AccessLogEntry> entries) throws SQLException {
+    public void saveEntries(String s3Key, List<CloudFrontLogEntry> entries) throws SQLException {
         String insertLog = """
-            INSERT INTO access_logs (
-                bucket_owner, bucket, time, remote_ip, requester, request_id,
-                operation, key, request_uri, http_status, error_code,
-                bytes_sent, object_size, total_time_ms, turnaround_ms,
-                referrer, user_agent, version_id
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO cloudfront_logs (
+                timestamp, edge_location, sc_bytes, client_ip, method, host,
+                uri_stem, status, referer, user_agent, uri_query, cookie,
+                edge_result_type, request_id, x_host_header, protocol, cs_bytes,
+                time_taken, x_forwarded_for, ssl_protocol, ssl_cipher,
+                edge_response_result_type, protocol_version, fle_status,
+                fle_encrypted_fields, client_port, time_to_first_byte,
+                edge_detailed_result_type, content_type, content_length,
+                range_start, range_end, country
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
-            for (AccessLogEntry e : entries) {
-                stmt.setString(1, e.bucketOwner());
-                stmt.setString(2, e.bucket());
-                stmt.setString(3, e.time().toString());
-                stmt.setString(4, e.remoteIp());
-                stmt.setString(5, e.requester());
-                stmt.setString(6, e.requestId());
-                stmt.setString(7, e.operation());
-                stmt.setString(8, e.key());
-                stmt.setString(9, e.requestUri());
-                stmt.setInt(10, e.httpStatus());
-                stmt.setString(11, e.errorCode());
-                setLongOrNull(stmt, 12, e.bytesSent());
-                setLongOrNull(stmt, 13, e.objectSize());
-                setLongOrNull(stmt, 14, e.totalTime());
-                setLongOrNull(stmt, 15, e.turnAroundTime());
-                stmt.setString(16, e.referrer());
-                stmt.setString(17, e.userAgent());
-                stmt.setString(18, e.versionId());
+            for (CloudFrontLogEntry e : entries) {
+                stmt.setString(1, e.timestamp().toString());
+                stmt.setString(2, e.edgeLocation());
+                stmt.setLong(3, e.scBytes());
+                stmt.setString(4, e.clientIp());
+                stmt.setString(5, e.method());
+                stmt.setString(6, e.host());
+                stmt.setString(7, e.uriStem());
+                stmt.setInt(8, e.status());
+                stmt.setString(9, e.referer());
+                stmt.setString(10, e.userAgent());
+                stmt.setString(11, e.uriQuery());
+                stmt.setString(12, e.cookie());
+                stmt.setString(13, e.edgeResultType());
+                stmt.setString(14, e.requestId());
+                stmt.setString(15, e.xHostHeader());
+                stmt.setString(16, e.protocol());
+                stmt.setLong(17, e.csBytes());
+                stmt.setDouble(18, e.timeTaken());
+                stmt.setString(19, e.xForwardedFor());
+                stmt.setString(20, e.sslProtocol());
+                stmt.setString(21, e.sslCipher());
+                stmt.setString(22, e.edgeResponseResultType());
+                stmt.setString(23, e.protocolVersion());
+                stmt.setString(24, e.fleStatus());
+                setIntOrNull(stmt, 25, e.fleEncryptedFields());
+                stmt.setInt(26, e.clientPort());
+                stmt.setDouble(27, e.timeToFirstByte());
+                stmt.setString(28, e.edgeDetailedResultType());
+                stmt.setString(29, e.contentType());
+                setLongOrNull(stmt, 30, e.contentLength());
+                setLongOrNull(stmt, 31, e.rangeStart());
+                setLongOrNull(stmt, 32, e.rangeEnd());
+                stmt.setString(33, e.country());
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -126,29 +156,31 @@ public class LogRepository implements AutoCloseable {
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery("""
                 SELECT COUNT(*) as total,
-                       MIN(time) as earliest,
-                       MAX(time) as latest,
-                       COUNT(DISTINCT bucket) as buckets
-                FROM access_logs
+                       MIN(timestamp) as earliest,
+                       MAX(timestamp) as latest,
+                       COUNT(DISTINCT x_host_header) as distributions
+                FROM cloudfront_logs
                 """)) {
             if (rs.next()) {
                 return new Stats(
                     rs.getLong("total"),
                     rs.getString("earliest"),
                     rs.getString("latest"),
-                    rs.getInt("buckets")
+                    rs.getInt("distributions")
                 );
             }
         }
         return new Stats(0, null, null, 0);
     }
 
-    private static void setLongOrNull(PreparedStatement stmt, int index, long value) throws SQLException {
-        if (value < 0) {
-            stmt.setNull(index, Types.INTEGER);
-        } else {
-            stmt.setLong(index, value);
-        }
+    private static void setIntOrNull(PreparedStatement stmt, int index, Integer value) throws SQLException {
+        if (value == null) stmt.setNull(index, Types.INTEGER);
+        else stmt.setInt(index, value);
+    }
+
+    private static void setLongOrNull(PreparedStatement stmt, int index, Long value) throws SQLException {
+        if (value == null) stmt.setNull(index, Types.INTEGER);
+        else stmt.setLong(index, value);
     }
 
     @Override
@@ -158,5 +190,5 @@ public class LogRepository implements AutoCloseable {
         }
     }
 
-    public record Stats(long totalEntries, String earliest, String latest, int buckets) {}
+    public record Stats(long totalEntries, String earliest, String latest, int distributions) {}
 }

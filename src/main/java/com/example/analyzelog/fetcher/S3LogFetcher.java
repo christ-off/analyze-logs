@@ -10,11 +10,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.zip.GZIPInputStream;
 
 public class S3LogFetcher implements AutoCloseable {
 
@@ -65,7 +69,15 @@ public class S3LogFetcher implements AutoCloseable {
         ResponseBytes<GetObjectResponse> response = s3.getObjectAsBytes(
             GetObjectRequest.builder().bucket(bucket).key(key).build()
         );
-        return response.asString(StandardCharsets.UTF_8);
+        byte[] bytes = response.asByteArray();
+        if (key.endsWith(".gz")) {
+            try (var gzip = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+                return new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to decompress " + key, e);
+            }
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.example.analyzelog.cli;
 
 import com.example.analyzelog.repository.LogRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -13,6 +15,8 @@ import java.util.concurrent.Callable;
 )
 public class StatusCommand implements Callable<Integer> {
 
+    private static final Logger log = LoggerFactory.getLogger(StatusCommand.class);
+
     @Option(names = {"-d", "--db"}, defaultValue = "logs.db", description = "SQLite database file path (default: logs.db)")
     private String dbPath;
 
@@ -20,14 +24,14 @@ public class StatusCommand implements Callable<Integer> {
     public Integer call() {
         try (var repo = new LogRepository(dbPath)) {
             var stats = repo.getStats();
-            System.out.printf("Database : %s%n", dbPath);
-            System.out.printf("Entries  : %d%n", stats.totalEntries());
-            System.out.printf("Earliest : %s%n", stats.earliest() != null ? stats.earliest() : "—");
-            System.out.printf("Latest   : %s%n", stats.latest() != null ? stats.latest() : "—");
-            System.out.printf("Buckets  : %d%n", stats.buckets());
+            log.info("Database : {}", dbPath);
+            log.info("Entries  : {}", stats.totalEntries());
+            log.info("Earliest : {}", stats.earliest() != null ? stats.earliest() : "—");
+            log.info("Latest   : {}", stats.latest() != null ? stats.latest() : "—");
+            log.info("Distributions: {}", stats.distributions());
             return 0;
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            log.error("Status failed", e);
             return 1;
         }
     }

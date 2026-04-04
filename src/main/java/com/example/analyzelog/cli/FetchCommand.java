@@ -1,7 +1,7 @@
 package com.example.analyzelog.cli;
 
 import com.example.analyzelog.fetcher.S3LogFetcher;
-import com.example.analyzelog.parser.S3AccessLogParser;
+import com.example.analyzelog.parser.CloudFrontLogParser;
 import com.example.analyzelog.repository.LogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ public class FetchCommand implements Callable<Integer> {
     public Integer call() {
         Instant sinceInstant = since != null ? since.atStartOfDay(ZoneOffset.UTC).toInstant() : null;
 
-        var parser = new S3AccessLogParser();
+        var parser = new CloudFrontLogParser();
         var fetched = new AtomicInteger(0);
         var skipped = new AtomicInteger(0);
         var failed = new AtomicInteger(0);
@@ -56,7 +56,7 @@ public class FetchCommand implements Callable<Integer> {
         try (var fetcher = new S3LogFetcher(region, profile);
              var repo = new LogRepository(dbPath)) {
 
-            System.out.printf("Scanning s3://%s/%s%n", bucket, prefix);
+            log.info("Scanning s3://{}/{}", bucket, prefix);
 
             fetcher.streamLogKeys(bucket, prefix, sinceInstant, key -> {
                 try {
@@ -70,10 +70,10 @@ public class FetchCommand implements Callable<Integer> {
 
                     if (!entries.isEmpty()) {
                         repo.saveEntries(key, entries);
-                        System.out.printf("  [+] %s — %d entries%n", key, entries.size());
+                        log.info("[+] {} — {} entries", key, entries.size());
                     } else {
                         repo.saveEntries(key, entries); // still mark as fetched
-                        System.out.printf("  [-] %s — empty%n", key);
+                        log.warn("[-] {} — empty", key);
                     }
                     fetched.incrementAndGet();
 
@@ -83,17 +83,16 @@ public class FetchCommand implements Callable<Integer> {
                 }
             });
 
-            System.out.printf("%nDone. Fetched: %d, Skipped: %d, Failed: %d%n",
+            log.info("Done. Fetched: {}, Skipped: {}, Failed: {}",
                 fetched.get(), skipped.get(), failed.get());
 
             var stats = repo.getStats();
-            System.out.printf("Database: %d total entries, from %s to %s%n",
+            log.info("Database: {} total entries, from {} to {}",
                 stats.totalEntries(), stats.earliest(), stats.latest());
 
             return failed.get() > 0 ? 1 : 0;
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
             log.error("Fetch failed", e);
             return 2;
         }

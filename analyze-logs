@@ -1,0 +1,3 @@
+#!/bin/sh
+exec java --enable-native-access=ALL-UNNAMED \
+  -jar "$(dirname "$0")/target/analyze-logs-1.0-SNAPSHOT.jar" "$@"
