@@ -52,15 +52,15 @@ public class LogRepository implements AutoCloseable {
     public void saveEntries(String s3Key, List<CloudFrontLogEntry> entries) throws SQLException {
         String insertLog = """
             INSERT INTO cloudfront_logs (
-                timestamp, edge_location, sc_bytes, client_ip, method, host,
+                timestamp, edge_location, sc_bytes, client_ip, method,
                 uri_stem, status, referer, user_agent, uri_query, cookie,
-                edge_result_type, x_host_header, protocol, cs_bytes,
+                edge_result_type, protocol, cs_bytes,
                 time_taken, x_forwarded_for, ssl_protocol, ssl_cipher,
                 edge_response_result_type, protocol_version, fle_status,
                 fle_encrypted_fields, client_port, time_to_first_byte,
                 edge_detailed_result_type, content_type, content_length,
                 range_start, range_end, country
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
@@ -70,33 +70,31 @@ public class LogRepository implements AutoCloseable {
                 stmt.setLong(3, e.scBytes());
                 stmt.setString(4, e.clientIp());
                 stmt.setString(5, e.method());
-                stmt.setString(6, e.host());
-                stmt.setString(7, e.uriStem());
-                stmt.setInt(8, e.status());
-                stmt.setString(9, e.referer());
-                stmt.setString(10, e.userAgent());
-                stmt.setString(11, e.uriQuery());
-                stmt.setString(12, e.cookie());
-                stmt.setString(13, e.edgeResultType());
-                stmt.setString(14, e.xHostHeader());
-                stmt.setString(15, e.protocol());
-                stmt.setLong(16, e.csBytes());
-                stmt.setDouble(17, e.timeTaken());
-                stmt.setString(18, e.xForwardedFor());
-                stmt.setString(19, e.sslProtocol());
-                stmt.setString(20, e.sslCipher());
-                stmt.setString(21, e.edgeResponseResultType());
-                stmt.setString(22, e.protocolVersion());
-                stmt.setString(23, e.fleStatus());
-                setIntOrNull(stmt, 24, e.fleEncryptedFields());
-                stmt.setInt(25, e.clientPort());
-                stmt.setDouble(26, e.timeToFirstByte());
-                stmt.setString(27, e.edgeDetailedResultType());
-                stmt.setString(28, e.contentType());
-                setLongOrNull(stmt, 29, e.contentLength());
-                setLongOrNull(stmt, 30, e.rangeStart());
-                setLongOrNull(stmt, 31, e.rangeEnd());
-                stmt.setString(32, e.country());
+                stmt.setString(6, e.uriStem());
+                stmt.setInt(7, e.status());
+                stmt.setString(8, e.referer());
+                stmt.setString(9, e.userAgent());
+                stmt.setString(10, e.uriQuery());
+                stmt.setString(11, e.cookie());
+                stmt.setString(12, e.edgeResultType());
+                stmt.setString(13, e.protocol());
+                stmt.setLong(14, e.csBytes());
+                stmt.setDouble(15, e.timeTaken());
+                stmt.setString(16, e.xForwardedFor());
+                stmt.setString(17, e.sslProtocol());
+                stmt.setString(18, e.sslCipher());
+                stmt.setString(19, e.edgeResponseResultType());
+                stmt.setString(20, e.protocolVersion());
+                stmt.setString(21, e.fleStatus());
+                setIntOrNull(stmt, 22, e.fleEncryptedFields());
+                stmt.setInt(23, e.clientPort());
+                stmt.setDouble(24, e.timeToFirstByte());
+                stmt.setString(25, e.edgeDetailedResultType());
+                stmt.setString(26, e.contentType());
+                setLongOrNull(stmt, 27, e.contentLength());
+                setLongOrNull(stmt, 28, e.rangeStart());
+                setLongOrNull(stmt, 29, e.rangeEnd());
+                stmt.setString(30, e.country());
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -117,20 +115,18 @@ public class LogRepository implements AutoCloseable {
              ResultSet rs = stmt.executeQuery("""
                 SELECT COUNT(*) as total,
                        MIN(timestamp) as earliest,
-                       MAX(timestamp) as latest,
-                       COUNT(DISTINCT x_host_header) as distributions
+                       MAX(timestamp) as latest
                 FROM cloudfront_logs
                 """)) {
             if (rs.next()) {
                 return new Stats(
                     rs.getLong("total"),
                     rs.getString("earliest"),
-                    rs.getString("latest"),
-                    rs.getInt("distributions")
+                    rs.getString("latest")
                 );
             }
         }
-        return new Stats(0, null, null, 0);
+        return new Stats(0, null, null);
     }
 
     private static void setIntOrNull(PreparedStatement stmt, int index, Integer value) throws SQLException {
@@ -150,5 +146,5 @@ public class LogRepository implements AutoCloseable {
         }
     }
 
-    public record Stats(long totalEntries, String earliest, String latest, int distributions) {}
+    public record Stats(long totalEntries, String earliest, String latest) {}
 }

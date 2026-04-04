@@ -56,6 +56,11 @@
         <dropColumn tableName="cloudfront_logs" columnName="request_id"/>
     </changeSet>
 
+    <changeSet id="001-drop-host-and-x-host-header" author="analyze-logs">
+        <dropColumn tableName="cloudfront_logs" columnName="host"/>
+        <dropColumn tableName="cloudfront_logs" columnName="x_host_header"/>
+    </changeSet>
+
     <changeSet id="001-fetched-files" author="analyze-logs">
         <createTable tableName="fetched_files">
             <column name="s3_key"     type="TEXT"><constraints primaryKey="true"/></column>

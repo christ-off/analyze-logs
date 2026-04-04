@@ -140,7 +140,6 @@ cloudfront_logs (
     sc_bytes                    INTEGER,            -- bytes sent server → viewer
     client_ip                   TEXT,
     method                      TEXT,               -- GET, POST, HEAD, …
-    host                        TEXT,               -- CloudFront distribution domain
     uri_stem                    TEXT,               -- path only, no query string
     status                      INTEGER,            -- HTTP status code
     referer                     TEXT,               -- NULL when absent
@@ -148,7 +147,6 @@ cloudfront_logs (
     uri_query                   TEXT,               -- NULL when absent
     cookie                      TEXT,               -- NULL when absent or logging disabled
     edge_result_type            TEXT,               -- Hit / Miss / Error / Redirect / …
-    x_host_header               TEXT,               -- alternate domain name (CNAME) if used
     protocol                    TEXT,               -- http / https / ws / wss / grpcs
     cs_bytes                    INTEGER,            -- bytes sent viewer → server
     time_taken                  REAL,               -- seconds (server perspective)

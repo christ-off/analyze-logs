@@ -39,7 +39,6 @@ class CloudFrontLogParserTest {
         assertEquals(1068L, e.scBytes());
         assertEquals("8.29.198.27", e.clientIp());
         assertEquals("GET", e.method());
-        assertEquals("d3bkd4xdlxgkfz.cloudfront.net", e.host());
         assertEquals("/feed.xml", e.uriStem());
         assertEquals(304, e.status());
         assertNull(e.referer());
@@ -47,7 +46,6 @@ class CloudFrontLogParserTest {
         assertNull(e.uriQuery());
         assertNull(e.cookie());
         assertEquals("Hit", e.edgeResultType());
-        assertEquals("post-tenebras-lire.net", e.xHostHeader());
         assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);

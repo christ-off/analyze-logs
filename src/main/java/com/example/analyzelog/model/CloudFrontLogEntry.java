@@ -8,7 +8,6 @@ public record CloudFrontLogEntry(
     long scBytes,                 // sc-bytes
     String clientIp,              // c-ip
     String method,                // cs-method
-    String host,                  // cs(Host)
     String uriStem,               // cs-uri-stem
     int status,                   // sc-status
     String referer,               // cs(Referer)
@@ -16,7 +15,6 @@ public record CloudFrontLogEntry(
     String uriQuery,              // cs-uri-query
     String cookie,                // cs(Cookie)
     String edgeResultType,        // x-edge-result-type
-    String xHostHeader,           // x-host-header
     String protocol,              // cs-protocol
     long csBytes,                 // cs-bytes
     double timeTaken,             // time-taken

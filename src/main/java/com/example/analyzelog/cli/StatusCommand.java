@@ -28,7 +28,6 @@ public class StatusCommand implements Callable<Integer> {
             log.info("Entries  : {}", stats.totalEntries());
             log.info("Earliest : {}", stats.earliest() != null ? stats.earliest() : "—");
             log.info("Latest   : {}", stats.latest() != null ? stats.latest() : "—");
-            log.info("Distributions: {}", stats.distributions());
             return 0;
         } catch (Exception e) {
             log.error("Status failed", e);
