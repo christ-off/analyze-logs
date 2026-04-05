@@ -44,25 +44,16 @@ class CloudFrontLogParserTest {
         assertNull(e.referer());
         assertEquals("Feedly/1.0", e.userAgent());
         assertNull(e.uriQuery());
-        assertNull(e.cookie());
         assertEquals("Hit", e.edgeResultType());
         assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
-        assertNull(e.xForwardedFor());
-        assertEquals("TLSv1.3", e.sslProtocol());
-        assertEquals("TLS_AES_128_GCM_SHA256", e.sslCipher());
         assertEquals("Hit", e.edgeResponseResultType());
         assertEquals("HTTP/1.1", e.protocolVersion());
-        assertNull(e.fleStatus());
-        assertNull(e.fleEncryptedFields());
-        assertEquals(19103, e.clientPort());
         assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
         assertNull(e.contentLength());
-        assertNull(e.rangeStart());
-        assertNull(e.rangeEnd());
         assertEquals("US", e.country());
     }
 
@@ -74,17 +65,11 @@ class CloudFrontLogParserTest {
         CloudFrontLogEntry e = result.get();
 
         assertEquals(5_368_709_120L, e.scBytes()); // >2GB, verifies long
-        assertEquals("session=abc123", e.cookie());
         assertEquals("https://example.com", e.referer());
         assertEquals("q=test", e.uriQuery());
         assertEquals(206, e.status());
-        assertEquals("203.0.113.5", e.xForwardedFor());
-        assertEquals("Processed", e.fleStatus());
-        assertEquals(3, e.fleEncryptedFields());
         assertEquals("video/mp4", e.contentType());
         assertEquals(1_048_576L, e.contentLength());
-        assertEquals(0L, e.rangeStart());
-        assertEquals(1_048_575L, e.rangeEnd());
         assertEquals("HTTP/2.0", e.protocolVersion());
         assertEquals("FR", e.country());
     }

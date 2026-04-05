@@ -45,25 +45,16 @@ public class CloudFrontLogParser {
                 nullIfDash(n, "cs(Referer)"),
                 nullIfDash(n, "cs(User-Agent)"),
                 nullIfDash(n, "cs-uri-query"),
-                nullIfDash(n, "cs(Cookie)"),
                 text(n, "x-edge-result-type"),
                 text(n, "cs-protocol"),
                 longVal(n, "cs-bytes"),
                 doubleVal(n, "time-taken"),
-                nullIfDash(n, "x-forwarded-for"),
-                nullIfDash(n, "ssl-protocol"),
-                nullIfDash(n, "ssl-cipher"),
                 text(n, "x-edge-response-result-type"),
                 text(n, "cs-protocol-version"),
-                nullIfDash(n, "fle-status"),
-                nullableInt(n, "fle-encrypted-fields"),
-                intVal(n, "c-port"),
                 doubleVal(n, "time-to-first-byte"),
                 text(n, "x-edge-detailed-result-type"),
                 nullIfDash(n, "sc-content-type"),
                 nullableLong(n, "sc-content-len"),
-                nullableLong(n, "sc-range-start"),
-                nullableLong(n, "sc-range-end"),
                 text(n, "c-country")
             ));
         } catch (Exception e) {
@@ -94,13 +85,6 @@ public class CloudFrontLogParser {
         if (v == null || "-".equals(v.asText())) return 0L;
         try { return Long.parseLong(v.asText()); }
         catch (NumberFormatException _) { return 0L; }
-    }
-
-    private static Integer nullableInt(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asText())) return null;
-        try { return Integer.parseInt(v.asText()); }
-        catch (NumberFormatException _) { return null; }
     }
 
     private static Long nullableLong(JsonNode n, String field) {

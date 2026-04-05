@@ -53,14 +53,11 @@ public class LogRepository implements AutoCloseable {
         String insertLog = """
             INSERT INTO cloudfront_logs (
                 timestamp, edge_location, sc_bytes, client_ip, method,
-                uri_stem, status, referer, user_agent, uri_query, cookie,
-                edge_result_type, protocol, cs_bytes,
-                time_taken, x_forwarded_for, ssl_protocol, ssl_cipher,
-                edge_response_result_type, protocol_version, fle_status,
-                fle_encrypted_fields, client_port, time_to_first_byte,
-                edge_detailed_result_type, content_type, content_length,
-                range_start, range_end, country
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                uri_stem, status, referer, user_agent, uri_query,
+                edge_result_type, protocol, cs_bytes, time_taken,
+                edge_response_result_type, protocol_version, time_to_first_byte,
+                edge_detailed_result_type, content_type, content_length, country
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
@@ -75,26 +72,17 @@ public class LogRepository implements AutoCloseable {
                 stmt.setString(8, e.referer());
                 stmt.setString(9, e.userAgent());
                 stmt.setString(10, e.uriQuery());
-                stmt.setString(11, e.cookie());
-                stmt.setString(12, e.edgeResultType());
-                stmt.setString(13, e.protocol());
-                stmt.setLong(14, e.csBytes());
-                stmt.setDouble(15, e.timeTaken());
-                stmt.setString(16, e.xForwardedFor());
-                stmt.setString(17, e.sslProtocol());
-                stmt.setString(18, e.sslCipher());
-                stmt.setString(19, e.edgeResponseResultType());
-                stmt.setString(20, e.protocolVersion());
-                stmt.setString(21, e.fleStatus());
-                setIntOrNull(stmt, 22, e.fleEncryptedFields());
-                stmt.setInt(23, e.clientPort());
-                stmt.setDouble(24, e.timeToFirstByte());
-                stmt.setString(25, e.edgeDetailedResultType());
-                stmt.setString(26, e.contentType());
-                setLongOrNull(stmt, 27, e.contentLength());
-                setLongOrNull(stmt, 28, e.rangeStart());
-                setLongOrNull(stmt, 29, e.rangeEnd());
-                stmt.setString(30, e.country());
+                stmt.setString(11, e.edgeResultType());
+                stmt.setString(12, e.protocol());
+                stmt.setLong(13, e.csBytes());
+                stmt.setDouble(14, e.timeTaken());
+                stmt.setString(15, e.edgeResponseResultType());
+                stmt.setString(16, e.protocolVersion());
+                stmt.setDouble(17, e.timeToFirstByte());
+                stmt.setString(18, e.edgeDetailedResultType());
+                stmt.setString(19, e.contentType());
+                setLongOrNull(stmt, 20, e.contentLength());
+                stmt.setString(21, e.country());
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -127,11 +115,6 @@ public class LogRepository implements AutoCloseable {
             }
         }
         return new Stats(0, null, null);
-    }
-
-    private static void setIntOrNull(PreparedStatement stmt, int index, Integer value) throws SQLException {
-        if (value == null) stmt.setNull(index, Types.INTEGER);
-        else stmt.setInt(index, value);
     }
 
     private static void setLongOrNull(PreparedStatement stmt, int index, Long value) throws SQLException {

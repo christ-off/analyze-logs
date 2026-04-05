@@ -75,11 +75,10 @@ class LogRepositoryTest {
         var entry = new CloudFrontLogEntry(
             Instant.now(), "IAD89", 512L, "1.2.3.4", "GET",
             "/index.html", 200,
-            null, null, null, null,
+            null, null, null,
             "Hit", "https", 128L, 0.01,
-            null, "TLSv1.3", "TLS_AES_128_GCM_SHA256", "Hit",
-            "HTTP/1.1", null, null, 443, 0.01, "Hit",
-            null, null, null, null, "US"
+            "Hit", "HTTP/1.1", 0.01, "Hit",
+            null, null, "US"
         );
 
         assertDoesNotThrow(() -> repo.saveEntries("logs/test.gz", List.of(entry)));
@@ -90,11 +89,10 @@ class LogRepositoryTest {
         return new CloudFrontLogEntry(
             Instant.now(), "SFO53-P7", 1068L, "8.29.198.27", "GET",
             "/index.html", status,
-            null, "TestAgent/1.0", null, null,
+            null, "TestAgent/1.0", null,
             "Hit", "https", 336L, 0.001,
-            null, "TLSv1.3", "TLS_AES_128_GCM_SHA256", "Hit",
-            "HTTP/1.1", null, null, 19103, 0.001, "Hit",
-            null, null, null, null, "US"
+            "Hit", "HTTP/1.1", 0.001, "Hit",
+            null, null, "US"
         );
     }
 }

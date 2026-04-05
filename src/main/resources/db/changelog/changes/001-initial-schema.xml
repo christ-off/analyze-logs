@@ -45,6 +45,18 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="002-drop-unused-columns" author="analyze-logs">
+        <dropColumn tableName="cloudfront_logs" columnName="cookie"/>
+        <dropColumn tableName="cloudfront_logs" columnName="x_forwarded_for"/>
+        <dropColumn tableName="cloudfront_logs" columnName="ssl_protocol"/>
+        <dropColumn tableName="cloudfront_logs" columnName="ssl_cipher"/>
+        <dropColumn tableName="cloudfront_logs" columnName="fle_status"/>
+        <dropColumn tableName="cloudfront_logs" columnName="fle_encrypted_fields"/>
+        <dropColumn tableName="cloudfront_logs" columnName="client_port"/>
+        <dropColumn tableName="cloudfront_logs" columnName="range_start"/>
+        <dropColumn tableName="cloudfront_logs" columnName="range_end"/>
+    </changeSet>
+
     <changeSet id="001-fetched-files" author="analyze-logs">
         <createTable tableName="fetched_files">
             <column name="s3_key"     type="TEXT"><constraints primaryKey="true"/></column>

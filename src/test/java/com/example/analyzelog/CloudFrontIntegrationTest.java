@@ -53,24 +53,15 @@ class CloudFrontIntegrationTest {
         assertEquals(304, e.status());
         assertNull(e.referer());
         assertNull(e.uriQuery());
-        assertNull(e.cookie());
         assertEquals("Hit", e.edgeResultType());
         assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
-        assertNull(e.xForwardedFor());
-        assertEquals("TLSv1.3", e.sslProtocol());
-        assertEquals("TLS_AES_128_GCM_SHA256", e.sslCipher());
         assertEquals("HTTP/1.1", e.protocolVersion());
-        assertNull(e.fleStatus());
-        assertNull(e.fleEncryptedFields());
-        assertEquals(19103, e.clientPort());
         assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
         assertNull(e.contentLength());
-        assertNull(e.rangeStart());
-        assertNull(e.rangeEnd());
         assertEquals("US", e.country());
     }
 
