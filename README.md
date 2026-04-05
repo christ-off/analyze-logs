@@ -1,205 +1,143 @@
 # analyze-logs
 
-CLI tool to fetch [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format) and store them in a local SQLite database for later analysis.
+Spring Boot web dashboard for [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format).
+Fetches log files from S3, stores them in a local SQLite database, and displays four interactive charts.
 
-## Build
+## Build & run
 
 Requires Java 25 and Maven.
 
 ```bash
 mvn package
+java -jar target/analyze-logs-1.0-SNAPSHOT.jar --spring.profiles.active=local
 ```
 
-Produces `target/analyze-logs-1.0-SNAPSHOT.jar` (fat jar, all dependencies included).
-
-For convenience, create a wrapper script:
+Or without packaging:
 
 ```bash
-cat > analyze-logs << 'EOF'
-#!/bin/sh
-exec java --enable-native-access=ALL-UNNAMED \
-  -jar "$(dirname "$0")/target/analyze-logs-1.0-SNAPSHOT.jar" "$@"
-EOF
-chmod +x analyze-logs
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-## Commands
+Open `http://localhost:8080`.
 
-### `fetch` — download logs from S3 into the local database
+## Configuration
 
-```
-./analyze-logs fetch --bucket <bucket> [options]
+### `application.yml` (committed — safe defaults)
 
-Options:
-  -b, --bucket       S3 bucket containing the CloudFront logs     (required)
-  -p, --prefix       S3 key prefix for log files                  (default: root)
-  -r, --region       AWS region                                   (default: us-east-1)
-      --profile      AWS credentials profile name
-  -d, --db           SQLite database file path                    (default: logs.db)
-      --since        Only fetch files modified on or after date   (yyyy-MM-dd)
-      --skip-existing  Skip files already imported                (default: true)
-```
+Key properties:
 
-**Example — first run:**
-```bash
-./analyze-logs fetch \
-  --bucket my-cloudfront-logs \
-  --prefix AWSLogs/123456789/CloudFront/ \
-  --region eu-west-3
-```
+| Key | Default | Description |
+|-----|---------|-------------|
+| `app.aws.region` | `us-east-1` | AWS region of the S3 bucket |
+| `app.aws.bucket` | `` | S3 bucket containing CloudFront logs |
+| `app.aws.prefix` | `` | S3 key prefix (e.g. `AWSLogs/123456789/CloudFront/`) |
+| `app.aws.profile` | `` | AWS credentials profile (`~/.aws/credentials`); empty = default chain |
+| `app.db-path` | `logs.db` | SQLite file path (relative to working directory) |
+| `server.port` | `8080` | HTTP port |
 
-**Example — incremental update (only new files since Jan 1):**
-```bash
-./analyze-logs fetch \
-  --bucket my-cloudfront-logs \
-  --prefix AWSLogs/123456789/CloudFront/ \
-  --since 2025-01-01
+### `application-local.yml` (gitignored — your secrets)
+
+Create `src/main/resources/application-local.yml` to override values without touching the committed file:
+
+```yaml
+app:
+  aws:
+    bucket: "my-cloudfront-logs"
+    prefix: "AWSLogs/123456789/CloudFront/"
+    profile: "my-aws-profile"
+  db-path: /absolute/path/to/logs.db
 ```
 
-**Example — use a named AWS profile:**
-```bash
-./analyze-logs fetch \
-  --bucket my-cloudfront-logs \
-  --profile my-aws-profile
+This file is listed in `.gitignore` and will never be committed. Activate it with `--spring.profiles.active=local`.
+
+### User-agent classification rules
+
+The `ua-classifier.rules` list in `application.yml` maps UA substrings to human-readable labels.
+Rules are evaluated top-to-bottom; first match wins. Add entries to classify custom bots or internal tools:
+
+```yaml
+ua-classifier:
+  rules:
+    - pattern: "MyInternalBot"
+      label: "Internal crawler"
 ```
 
-Log files are decompressed automatically (`.gz` files are supported).
+## Dashboard
 
-### `status` — show database statistics
+Four charts, all scoped to the selected date range:
 
-```
-./analyze-logs status [-d <db>]
-```
+| Chart | Description |
+|-------|-------------|
+| Top User Agents | Horizontal bar — classified UA names by request count |
+| Top Blocked Countries | Horizontal bar — countries returning 403 |
+| Top Allowed URLs | Horizontal bar — most-requested paths (status < 400) |
+| Requests per Day | Stacked bar — success (2xx/3xx) / client error (4xx) / server error (5xx) |
 
-```
-Database      : logs.db
-Entries       : 42381
-Earliest      : 2024-06-01T00:03:12Z
-Latest        : 2025-03-28T23:58:01Z
-Distributions : 1
-```
+Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
+
+**Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 
 ## AWS credentials
 
-**No credentials are stored by this tool.** Authentication is delegated entirely to the [AWS SDK default credentials chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html), which resolves credentials in this order:
+No credentials are stored by this application. Authentication is delegated to the
+[AWS SDK default credentials chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html):
 
-1. **Environment variables** — `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-2. **System properties** — `aws.accessKeyId` and `aws.secretKey`
-3. **`~/.aws/credentials`** file — populated by `aws configure`
-4. **`~/.aws/config`** file — for SSO, role assumption, etc.
-5. **Container/instance credentials** — ECS task role or EC2 instance profile
-
-### Recommended setup
-
-The simplest approach for a personal machine is to use the AWS CLI:
-
-```bash
-aws configure
-# or, for a named profile:
-aws configure --profile my-aws-profile
-```
+1. Environment variables — `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+2. `~/.aws/credentials` — populated by `aws configure`
+3. EC2/ECS instance profile
 
 ### Minimum required IAM permissions
 
-The IAM user or role needs only read access to the log bucket:
-
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::my-cloudfront-logs",
-        "arn:aws:s3:::my-cloudfront-logs/*"
-      ]
-    }
+  "Effect": "Allow",
+  "Action": ["s3:ListBucket", "s3:GetObject"],
+  "Resource": [
+    "arn:aws:s3:::my-cloudfront-logs",
+    "arn:aws:s3:::my-cloudfront-logs/*"
   ]
 }
 ```
 
 ## Database
 
-Logs are stored in a SQLite file (`logs.db` by default). You can query it directly with any SQLite-compatible tool (DBeaver, DB Browser for SQLite, `sqlite3` CLI, datasette, etc.):
+Logs are stored in a SQLite file (`logs.db` by default, relative to the working directory).
+Query it directly with any SQLite-compatible tool:
 
 ```bash
-sqlite3 logs.db "SELECT method, status, COUNT(*) FROM cloudfront_logs GROUP BY method, status"
+sqlite3 logs.db "SELECT ua_name, COUNT(*) FROM cloudfront_logs GROUP BY ua_name ORDER BY 2 DESC"
 ```
 
 ### Schema
 
 ```sql
 cloudfront_logs (
-    id                          INTEGER PRIMARY KEY,
-    timestamp                   TEXT NOT NULL,      -- ISO-8601 UTC (date + time fields combined)
-    edge_location               TEXT,               -- e.g. SFO53-P7
-    sc_bytes                    INTEGER,            -- bytes sent server → viewer
-    client_ip                   TEXT,
-    method                      TEXT,               -- GET, POST, HEAD, …
-    uri_stem                    TEXT,               -- path only, no query string
-    status                      INTEGER,            -- HTTP status code
-    referer                     TEXT,               -- NULL when absent
-    user_agent                  TEXT,               -- NULL when absent
-    uri_query                   TEXT,               -- NULL when absent
-    cookie                      TEXT,               -- NULL when absent or logging disabled
-    edge_result_type            TEXT,               -- Hit / Miss / Error / Redirect / …
-    protocol                    TEXT,               -- http / https / ws / wss / grpcs
-    cs_bytes                    INTEGER,            -- bytes sent viewer → server
-    time_taken                  REAL,               -- seconds (server perspective)
-    x_forwarded_for             TEXT,               -- NULL if viewer connected directly
-    ssl_protocol                TEXT,               -- NULL for plain HTTP
-    ssl_cipher                  TEXT,               -- NULL for plain HTTP
-    edge_response_result_type   TEXT,               -- Hit / Miss / Error / …
-    protocol_version            TEXT,               -- HTTP/1.1 / HTTP/2.0 / HTTP/3.0
-    fle_status                  TEXT,               -- NULL when field-level encryption not configured
-    fle_encrypted_fields        INTEGER,            -- NULL when field-level encryption not configured
-    client_port                 INTEGER,
-    time_to_first_byte          REAL,               -- seconds
-    edge_detailed_result_type   TEXT,               -- extended result type (OriginShieldHit, etc.)
-    content_type                TEXT,               -- NULL when absent
-    content_length              INTEGER,            -- NULL when absent
-    range_start                 INTEGER,            -- NULL when no Content-Range header
-    range_end                   INTEGER,            -- NULL when no Content-Range header
-    country                     TEXT                -- ISO 3166-1 alpha-2
+    id                        INTEGER PRIMARY KEY,
+    timestamp                 TEXT NOT NULL,   -- ISO-8601 UTC
+    edge_location             TEXT,
+    sc_bytes                  INTEGER,
+    client_ip                 TEXT,
+    method                    TEXT,
+    uri_stem                  TEXT,
+    status                    INTEGER,
+    referer                   TEXT,
+    user_agent                TEXT,
+    edge_result_type          TEXT,
+    protocol                  TEXT,
+    cs_bytes                  INTEGER,
+    time_taken                REAL,
+    edge_response_result_type TEXT,
+    protocol_version          TEXT,
+    time_to_first_byte        REAL,
+    edge_detailed_result_type TEXT,
+    content_type              TEXT,
+    content_length            INTEGER,
+    country                   TEXT,            -- ISO 3166-1 alpha-2
+    ua_name                   TEXT             -- classified user-agent label
 )
 
 fetched_files (
-    s3_key      TEXT PRIMARY KEY,   -- tracks which log files have been imported
-    fetched_at  TEXT
+    s3_key     TEXT PRIMARY KEY,
+    fetched_at TEXT
 )
-```
-
-### Example queries
-
-```sql
--- Top requested paths
-SELECT uri_stem, COUNT(*) AS hits
-FROM cloudfront_logs
-GROUP BY uri_stem
-ORDER BY hits DESC
-LIMIT 20;
-
--- Error rate by edge location
-SELECT edge_location,
-       COUNT(*) AS total,
-       SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS errors
-FROM cloudfront_logs
-GROUP BY edge_location;
-
--- Cache hit ratio per day
-SELECT DATE(timestamp) AS day,
-       ROUND(100.0 * SUM(CASE WHEN edge_result_type = 'Hit' THEN 1 ELSE 0 END) / COUNT(*), 1) AS hit_pct
-FROM cloudfront_logs
-GROUP BY day
-ORDER BY day;
-
--- Top countries by bandwidth
-SELECT country, SUM(sc_bytes) AS bytes
-FROM cloudfront_logs
-GROUP BY country
-ORDER BY bytes DESC;
 ```
