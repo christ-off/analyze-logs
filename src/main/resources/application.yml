@@ -1,3 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:${app.db-path:logs.db}
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+
+app:
+  aws:
+    region: us-east-1
+    bucket: ""
+    prefix: ""
+    profile: ""
+  db-path: logs.db
+
 ua-classifier:
   rules:
     # AI crawlers
