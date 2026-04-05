@@ -5,7 +5,13 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <include file="db/changelog/changes/001-initial-schema.xml"/>
-    <include file="db/changelog/changes/002-add-ua-name.xml"/>
+    <changeSet id="002-add-ua-name" author="christophe">
+        <addColumn tableName="cloudfront_logs">
+            <column name="ua_name" type="TEXT"/>
+        </addColumn>
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_ua_name">
+            <column name="ua_name"/>
+        </createIndex>
+    </changeSet>
 
 </databaseChangeLog>

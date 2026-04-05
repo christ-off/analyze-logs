@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -43,7 +45,7 @@ public class CloudFrontLogParser {
                 text(n, "cs-uri-stem"),
                 intVal(n, "sc-status"),
                 nullIfDash(n, "cs(Referer)"),
-                nullIfDash(n, "cs(User-Agent)"),
+                decodeUA(nullIfDash(n, "cs(User-Agent)")),
                 text(n, "x-edge-result-type"),
                 text(n, "cs-protocol"),
                 longVal(n, "cs-bytes"),
@@ -65,6 +67,15 @@ public class CloudFrontLogParser {
     private static String text(JsonNode n, String field) {
         JsonNode v = n.get(field);
         return v != null ? v.asText() : null;
+    }
+
+    private static String decodeUA(String ua) {
+        if (ua == null) return null;
+        try {
+            return URLDecoder.decode(ua, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            return ua;
+        }
     }
 
     private static String nullIfDash(JsonNode n, String field) {

@@ -1,6 +1,7 @@
 package com.example.analyzelog.repository;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import com.example.analyzelog.service.UserAgentClassifier;
 import liquibase.Liquibase;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
@@ -56,8 +57,9 @@ public class LogRepository implements AutoCloseable {
                 uri_stem, status, referer, user_agent,
                 edge_result_type, protocol, cs_bytes, time_taken,
                 edge_response_result_type, protocol_version, time_to_first_byte,
-                edge_detailed_result_type, content_type, content_length, country
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                edge_detailed_result_type, content_type, content_length, country,
+                ua_name
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
@@ -82,6 +84,7 @@ public class LogRepository implements AutoCloseable {
                 stmt.setString(18, e.contentType());
                 setLongOrNull(stmt, 19, e.contentLength());
                 stmt.setString(20, e.country());
+                stmt.setString(21, UserAgentClassifier.classify(e.userAgent()));
                 stmt.addBatch();
             }
             stmt.executeBatch();

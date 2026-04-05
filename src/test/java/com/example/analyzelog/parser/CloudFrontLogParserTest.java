@@ -87,6 +87,14 @@ class CloudFrontLogParserTest {
     }
 
     @Test
+    void decodesUrlEncodedUserAgent() {
+        String line = SAMPLE_LINE.replace("\"Feedly/1.0\"", "\"Mozilla/5.0%20(compatible;%20Feedly/1.0)\"");
+        Optional<CloudFrontLogEntry> result = parser.parseLine(line);
+        assertTrue(result.isPresent());
+        assertEquals("Mozilla/5.0 (compatible; Feedly/1.0)", result.get().userAgent());
+    }
+
+    @Test
     void returnsEmptyForGarbage() {
         assertTrue(parser.parseLine("this is not json").isEmpty());
         assertTrue(parser.parseLine("{}").isEmpty()); // missing required date/time
