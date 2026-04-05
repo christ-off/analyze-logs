@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class DashboardService {
@@ -41,7 +42,14 @@ public class DashboardService {
                 ORDER BY count DESC
                 LIMIT ?
                 """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong("count")),
+                (rs, _) -> {
+                    String iso = rs.getString("name");
+                    String display = (iso != null && !iso.isBlank())
+                            ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
+                            : iso;
+                    String label = (display != null && !display.equals(iso)) ? display : iso;
+                    return new NameCount(label, rs.getLong("count"));
+                },
                 from.toString(), to.toString(), limit);
     }
 
