@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Error</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading" th:text="${status != null ? status + ' – ' + error : 'Error'}">Error</h4>
+        <p th:text="${message}">An unexpected error occurred.</p>
+        <hr/>
+        <a th:href="@{/}" class="btn btn-outline-secondary btn-sm">Back to dashboard</a>
+    </div>
+</div>
+</body>
+</html>

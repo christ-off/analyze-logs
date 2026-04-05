@@ -1,5 +1,85 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><title>AnalyzeLogs</title></head>
-<body><h1>AnalyzeLogs – coming in Phase 4</h1></body>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>CloudFront Dashboard</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">CloudFront Logs</a>
+    </div>
+</nav>
+
+<main class="container-fluid px-4">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <!-- Date range bar -->
+    <div class="card mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold me-2">Range:</span>
+            <a th:href="@{/?range=1d}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+            <a th:href="@{/?range=7d}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+            <a th:href="@{/?range=30d}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+            <a th:href="@{/?range=3m}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+
+            <form th:action="@{/}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                <label class="form-label mb-0 fw-semibold">Custom:</label>
+                <input type="date" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                <span>&ndash;</span>
+                <input type="date" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
+                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            </form>
+
+            <form th:action="@{/refresh}" method="post" class="ms-auto">
+                <button type="submit" class="btn btn-sm btn-warning">Refresh from S3</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Charts row 1 -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Top User Agents</div>
+                <div class="card-body"><canvas id="chartUaNames"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Top Blocked Countries (403)</div>
+                <div class="card-body"><canvas id="chartCountries"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Top Allowed URLs</div>
+                <div class="card-body"><canvas id="chartUriStems"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Requests per Day</div>
+                <div class="card-body"><canvas id="chartRequestsPerDay"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/webjars/chart.js/chart.umd.min.js}"></script>
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
 </html>
