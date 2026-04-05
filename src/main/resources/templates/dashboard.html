@@ -38,9 +38,7 @@
                 <button type="submit" class="btn btn-sm btn-primary">Apply</button>
             </form>
 
-            <form th:action="@{/refresh}" method="post" class="ms-auto">
-                <button type="submit" class="btn btn-sm btn-warning">Refresh from S3</button>
-            </form>
+            <a th:href="@{/refresh}" class="ms-auto btn btn-sm btn-warning">Refresh from S3</a>
         </div>
     </div>
 

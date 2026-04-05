@@ -3,6 +3,15 @@
 Spring Boot web dashboard for [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format).
 Fetches log files from S3, stores them in a local SQLite database, and displays four interactive charts.
 
+## Security notice
+
+**This application is intended for local, single-user use only.**
+
+- There is **no authentication or authorization**. Anyone who can reach port 8080 can view the dashboard and trigger S3 fetches.
+- There is **no CSRF protection**. The application uses no Spring Security, so state-changing operations are not protected against cross-site request forgery. The `Refresh from S3` action uses a GET request to mitigate this for the one write-like operation, but the application should not be exposed to untrusted networks.
+
+**Do not expose this application on a public interface or behind a shared reverse proxy without adding authentication (e.g. Spring Security with HTTP Basic, or an authenticating proxy such as nginx/Authelia).**
+
 ## Build & run
 
 Requires Java 25 and Maven.
