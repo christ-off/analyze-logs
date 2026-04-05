@@ -41,6 +41,7 @@ public record DateRange(Instant from, Instant to) {
     }
 
     public LocalDate toDate() {
-        return to.atZone(ZoneOffset.UTC).toLocalDate();
+        // subtract 1s so that an end-of-range midnight (exclusive) maps back to the intended date
+        return to.minusSeconds(1).atZone(ZoneOffset.UTC).toLocalDate();
     }
 }
