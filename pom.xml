@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.5.0</version>
         <relativePath/>
     </parent>
 
@@ -83,13 +83,6 @@
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator-lite</artifactId>
-        </dependency>
-
-        <!-- CLI (removed in Phase 3) -->
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
-            <version>4.7.6</version>
         </dependency>
 
         <!-- AWS SDK S3 -->

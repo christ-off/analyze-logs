@@ -1,12 +1,35 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.config.UaClassifierProperties;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.yaml.snakeyaml.Yaml;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class UserAgentClassifierTest {
+
+    private static UserAgentClassifier classifier;
+
+    @BeforeAll
+    @SuppressWarnings("unchecked")
+    static void loadClassifier() throws Exception {
+        var yaml = new Yaml();
+        try (var is = UserAgentClassifierTest.class.getResourceAsStream("/application.yml")) {
+            Map<String, Object> root = yaml.load(is);
+            var uaSection = (Map<String, Object>) root.get("ua-classifier");
+            var rawRules = (List<Map<String, String>>) uaSection.get("rules");
+            var rules = rawRules.stream()
+                    .map(r -> new UaClassifierProperties.Rule(r.get("pattern"), r.get("label")))
+                    .toList();
+            classifier = new UserAgentClassifier(new UaClassifierProperties(rules));
+        }
+    }
 
     @ParameterizedTest
     @CsvSource({
@@ -77,12 +100,12 @@ class UserAgentClassifierTest {
         "'   ', '(no user agent)'"
     })
     void classifiesCorrectly(String ua, String expected) {
-        assertEquals(expected, UserAgentClassifier.classify(ua));
+        assertEquals(expected, classifier.classify(ua));
     }
 
     @ParameterizedTest
     @NullSource
     void classifiesNull(String ua) {
-        assertEquals("(no user agent)", UserAgentClassifier.classify(ua));
+        assertEquals("(no user agent)", classifier.classify(ua));
     }
 }
