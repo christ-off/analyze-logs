@@ -43,7 +43,6 @@ class CloudFrontLogParserTest {
         assertEquals(304, e.status());
         assertNull(e.referer());
         assertEquals("Feedly/1.0", e.userAgent());
-        assertNull(e.uriQuery());
         assertEquals("Hit", e.edgeResultType());
         assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());
@@ -66,7 +65,6 @@ class CloudFrontLogParserTest {
 
         assertEquals(5_368_709_120L, e.scBytes()); // >2GB, verifies long
         assertEquals("https://example.com", e.referer());
-        assertEquals("q=test", e.uriQuery());
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
         assertEquals(1_048_576L, e.contentLength());

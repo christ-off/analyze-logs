@@ -53,11 +53,11 @@ public class LogRepository implements AutoCloseable {
         String insertLog = """
             INSERT INTO cloudfront_logs (
                 timestamp, edge_location, sc_bytes, client_ip, method,
-                uri_stem, status, referer, user_agent, uri_query,
+                uri_stem, status, referer, user_agent,
                 edge_result_type, protocol, cs_bytes, time_taken,
                 edge_response_result_type, protocol_version, time_to_first_byte,
                 edge_detailed_result_type, content_type, content_length, country
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """;
 
         try (PreparedStatement stmt = connection.prepareStatement(insertLog)) {
@@ -71,18 +71,17 @@ public class LogRepository implements AutoCloseable {
                 stmt.setInt(7, e.status());
                 stmt.setString(8, e.referer());
                 stmt.setString(9, e.userAgent());
-                stmt.setString(10, e.uriQuery());
-                stmt.setString(11, e.edgeResultType());
-                stmt.setString(12, e.protocol());
-                stmt.setLong(13, e.csBytes());
-                stmt.setDouble(14, e.timeTaken());
-                stmt.setString(15, e.edgeResponseResultType());
-                stmt.setString(16, e.protocolVersion());
-                stmt.setDouble(17, e.timeToFirstByte());
-                stmt.setString(18, e.edgeDetailedResultType());
-                stmt.setString(19, e.contentType());
-                setLongOrNull(stmt, 20, e.contentLength());
-                stmt.setString(21, e.country());
+                stmt.setString(10, e.edgeResultType());
+                stmt.setString(11, e.protocol());
+                stmt.setLong(12, e.csBytes());
+                stmt.setDouble(13, e.timeTaken());
+                stmt.setString(14, e.edgeResponseResultType());
+                stmt.setString(15, e.protocolVersion());
+                stmt.setDouble(16, e.timeToFirstByte());
+                stmt.setString(17, e.edgeDetailedResultType());
+                stmt.setString(18, e.contentType());
+                setLongOrNull(stmt, 19, e.contentLength());
+                stmt.setString(20, e.country());
                 stmt.addBatch();
             }
             stmt.executeBatch();

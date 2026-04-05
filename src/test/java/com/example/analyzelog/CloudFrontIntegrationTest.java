@@ -52,7 +52,6 @@ class CloudFrontIntegrationTest {
         assertEquals("/feed.xml", e.uriStem());
         assertEquals(304, e.status());
         assertNull(e.referer());
-        assertNull(e.uriQuery());
         assertEquals("Hit", e.edgeResultType());
         assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());

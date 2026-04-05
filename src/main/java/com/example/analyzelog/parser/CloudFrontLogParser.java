@@ -44,7 +44,6 @@ public class CloudFrontLogParser {
                 intVal(n, "sc-status"),
                 nullIfDash(n, "cs(Referer)"),
                 nullIfDash(n, "cs(User-Agent)"),
-                nullIfDash(n, "cs-uri-query"),
                 text(n, "x-edge-result-type"),
                 text(n, "cs-protocol"),
                 longVal(n, "cs-bytes"),

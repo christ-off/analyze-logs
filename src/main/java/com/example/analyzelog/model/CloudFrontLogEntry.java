@@ -12,7 +12,6 @@ public record CloudFrontLogEntry(
     int status,                   // sc-status
     String referer,               // cs(Referer)
     String userAgent,             // cs(User-Agent)
-    String uriQuery,              // cs-uri-query
     String edgeResultType,        // x-edge-result-type
     String protocol,              // cs-protocol
     long csBytes,                 // cs-bytes
