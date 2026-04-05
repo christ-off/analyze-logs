@@ -17,7 +17,7 @@ app:
     region: us-east-1
     bucket: ""
     prefix: ""
-    profile: ""
+    profile: "default"
   db-path: logs.db
 
 ua-classifier:
