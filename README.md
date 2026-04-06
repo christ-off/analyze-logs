@@ -12,6 +12,18 @@ Fetches log files from S3, stores them in a local SQLite database, and displays 
 
 **Do not expose this application on a public interface or behind a shared reverse proxy without adding authentication (e.g. Spring Security with HTTP Basic, or an authenticating proxy such as nginx/Authelia).**
 
+### Security controls in place
+
+A security review found no exploitable vulnerabilities. The following controls are verified:
+
+| Area | Control |
+|------|---------|
+| SQL injection | All database queries use `JdbcTemplate` with `?` bind parameters. User-supplied values are never interpolated into SQL strings. |
+| XSS (server-side) | All Thymeleaf templates use `th:text` / `th:content` for user-controlled output, which applies automatic HTML entity escaping. `th:utext` is not used anywhere. |
+| XSS (client-side) | API responses are rendered onto `<canvas>` via Chart.js. Canvas drawing APIs do not interpret HTML or JavaScript. `encodeURIComponent()` is applied to all user-derived values placed into URLs. |
+| Path traversal | No file-serving endpoints with user-controlled paths exist. S3 object keys come from AWS API responses, not from user input. |
+| Data exposure | API endpoints return only CloudFront access-log data, which is the application's stated purpose. No credentials or internal state are exposed. |
+
 ## Build & run
 
 Requires Java 25 and Maven.
