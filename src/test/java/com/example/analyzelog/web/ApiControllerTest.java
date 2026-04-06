@@ -1,7 +1,8 @@
 package com.example.analyzelog.web;
 
-import com.example.analyzelog.model.DailyStatusCount;
+import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -30,16 +31,23 @@ class ApiControllerTest {
 
     @Test
     void uaNamesReturnsJson() {
-        when(dashboardService.topUserAgents(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("Chrome / Windows", 42)));
+        when(dashboardService.topUserAgentsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 30, 10, 0, 1, 1)));
 
-        assertThat(mvc.get().uri("/api/ua-names")
+        assertThat(mvc.get().uri("/api/ua-names-split")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson()
                 .extractingPath("$[0].name").isEqualTo("Chrome / Windows");
+
+        assertThat(mvc.get().uri("/api/ua-names-split")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(30);
     }
 
     @Test
@@ -71,7 +79,7 @@ class ApiControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.requestsPerDay(any(Instant.class), any(Instant.class)))
-                .thenReturn(List.of(new DailyStatusCount(LocalDate.of(2026, 1, 15), 80, 15, 5)));
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 80, 20, 3, 5, 1)));
 
         assertThat(mvc.get().uri("/api/requests-per-day")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
@@ -79,11 +87,25 @@ class ApiControllerTest {
                 .hasStatusOk()
                 .bodyJson()
                 .extractingPath("$[0].day").isEqualTo("2026-01-15");
+
+        assertThat(mvc.get().uri("/api/requests-per-day")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(80);
+
+        assertThat(mvc.get().uri("/api/requests-per-day")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].miss").isEqualTo(20);
     }
 
     @Test
     void invalidFromToReturns400() {
-        assertThat(mvc.get().uri("/api/ua-names")
+        assertThat(mvc.get().uri("/api/ua-names-split")
                 .param("from", "2026-02-01").param("to", "2026-01-01")
                 .exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
@@ -91,7 +113,7 @@ class ApiControllerTest {
 
     @Test
     void missingParamsReturns400() {
-        assertThat(mvc.get().uri("/api/ua-names").exchange())
+        assertThat(mvc.get().uri("/api/ua-names-split").exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
 }

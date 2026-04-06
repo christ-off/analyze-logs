@@ -1,7 +1,8 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.model.DailyStatusCount;
+import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,16 @@ import java.util.Locale;
 public class DashboardService {
 
     private static final String COUNT_FIELD = "count";
+    private static final String RESULT_TYPE_SUMS = """
+            SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
+            SUM(CASE WHEN edge_response_result_type = 'Miss'   THEN 1 ELSE 0 END) as miss,
+            SUM(CASE WHEN edge_response_result_type IN (
+                    'FunctionGeneratedResponse',
+                    'FunctionExecutionError',
+                    'FunctionThrottledError')                  THEN 1 ELSE 0 END) as function,
+            SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
+            SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
+            """;
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
 
@@ -22,16 +33,24 @@ public class DashboardService {
         this.edgeLocationResolver = edgeLocationResolver;
     }
 
-    public List<NameCount> topUserAgents(Instant from, Instant to, int limit) {
+    public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
         return jdbc.query("""
-                SELECT ua_name as name, COUNT(*) as count
+                SELECT ua_name as name,
+                """ + RESULT_TYPE_SUMS + """
+
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                 GROUP BY ua_name
-                ORDER BY count DESC
+                ORDER BY (hit + miss + function + error + redirect) DESC
                 LIMIT ?
                 """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong("function"),
+                        rs.getLong("error"),
+                        rs.getLong("redirect")),
                 from.toString(), to.toString(), limit);
     }
 
@@ -86,22 +105,23 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    public List<DailyStatusCount> requestsPerDay(Instant from, Instant to) {
+    public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
         return jdbc.query("""
                 SELECT date(timestamp) as day,
-                       SUM(CASE WHEN status >= 200 AND status < 400 THEN 1 ELSE 0 END) as success,
-                       SUM(CASE WHEN status >= 400 AND status < 500 THEN 1 ELSE 0 END) as client_error,
-                       SUM(CASE WHEN status >= 500               THEN 1 ELSE 0 END) as server_error
+                """ + RESULT_TYPE_SUMS + """
+
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                 GROUP BY day
                 ORDER BY day
                 """,
-                (rs, _) -> new DailyStatusCount(
+                (rs, _) -> new DailyResultTypeCount(
                         LocalDate.parse(rs.getString("day")),
-                        rs.getLong("success"),
-                        rs.getLong("client_error"),
-                        rs.getLong("server_error")),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong("function"),
+                        rs.getLong("error"),
+                        rs.getLong("redirect")),
                 from.toString(), to.toString());
     }
 }

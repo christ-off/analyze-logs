@@ -16,6 +16,7 @@
         red:    'rgba(220, 53, 69, 0.8)',
         orange: 'rgba(253, 126, 20, 0.8)',
         green:  'rgba(40, 167, 69, 0.8)',
+        purple: 'rgba(111, 66, 193, 0.8)',
     };
 
     function horizontalBar(canvasId, data) {
@@ -40,6 +41,16 @@
         });
     }
 
+    function resultTypeDatasets(data) {
+        return [
+            { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: COLORS.green  },
+            { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: COLORS.blue   },
+            { label: 'Function', data: data.map(d => d.function), backgroundColor: COLORS.orange },
+            { label: 'Redirect', data: data.map(d => d.redirect), backgroundColor: COLORS.purple },
+            { label: 'Error',    data: data.map(d => d.error),    backgroundColor: COLORS.red    },
+        ];
+    }
+
     function stackedBar(canvasId, data) {
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
@@ -47,29 +58,33 @@
             type: 'bar',
             data: {
                 labels: data.map(d => d.day),
-                datasets: [
-                    {
-                        label: 'Success (2xx/3xx)',
-                        data: data.map(d => d.success),
-                        backgroundColor: COLORS.green,
-                    },
-                    {
-                        label: 'Client error (4xx)',
-                        data: data.map(d => d.clientError),
-                        backgroundColor: COLORS.orange,
-                    },
-                    {
-                        label: 'Server error (5xx)',
-                        data: data.map(d => d.serverError),
-                        backgroundColor: COLORS.red,
-                    },
-                ]
+                datasets: resultTypeDatasets(data),
             },
             options: {
                 responsive: true,
                 scales: {
                     x: { stacked: true },
                     y: { stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function horizontalStackedBar(canvasId, data) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: resultTypeDatasets(data),
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: {
+                    x: { stacked: true, beginAtZero: true },
+                    y: { stacked: true }
                 }
             }
         });
@@ -86,7 +101,7 @@
         }
     }
 
-    loadChart('ua-names',         data => horizontalBar('chartUaNames',        data));
+    loadChart('ua-names-split',   data => horizontalStackedBar('chartUaNames', data));
     loadChart('countries',        data => horizontalBar('chartCountries',       data));
     loadChart('uri-stems',        data => horizontalBar('chartUriStems',        data));
     loadChart('requests-per-day', data => stackedBar(   'chartRequestsPerDay',  data));
