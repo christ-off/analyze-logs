@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.DateRange;
+import java.util.Locale;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,25 @@ public class DashboardController {
         model.addAttribute("fromDate", range.fromDate().toString());
         model.addAttribute("toDate", range.toDate().toString());
         return "ua-detail";
+    }
+
+    @GetMapping("/country-detail")
+    public String countryDetail(
+            @RequestParam String country,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        DateRange range = (from != null && to != null)
+                ? DateRange.fromParams(from, to)
+                : DateRange.lastDays(7);
+        String displayName = Locale.of("", country).getDisplayCountry(Locale.ENGLISH);
+        model.addAttribute("countryCode", country);
+        model.addAttribute("countryName", displayName.isBlank() ? country : displayName);
+        model.addAttribute("from", range.fromIso());
+        model.addAttribute("to", range.toIso());
+        model.addAttribute("fromDate", range.fromDate().toString());
+        model.addAttribute("toDate", range.toDate().toString());
+        return "country-detail";
     }
 
     private String resolveActiveRange(String range, String from, String to) {

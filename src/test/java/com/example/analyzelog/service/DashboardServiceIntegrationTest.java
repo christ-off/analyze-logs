@@ -29,6 +29,8 @@ class DashboardServiceIntegrationTest {
         String dbUrl = "jdbc:sqlite:" + tempDir.resolve("dashboard-test.db");
         registry.add("spring.datasource.url", () -> dbUrl);
         registry.add("app.db-path", () -> tempDir.resolve("dashboard-test.db").toString());
+        registry.add("referer-filter.self-referers[0]", () -> "https://post-tenebras-lire.net/");
+        registry.add("referer-filter.self-referers[1]", () -> "http://post-tenebras-lire.net/");
     }
 
     @Autowired
@@ -208,6 +210,50 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void uaUriStems_aggregatesPhpUrlsUnderPhpLabel() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-php-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/other.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
+        ));
+
+        List<NameCount> result = dashboardService.uaUriStems(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
+        assertFalse(names.contains("/other.php"), "individual .php URLs must not appear");
+        assertTrue(names.contains("PHP"), "PHP label must be present");
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(3, phpCount);
+    }
+
+    @Test
+    void uaUriStems_aggregatesWpUrlsUnderWordpressLabel() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-wp-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),   // matches /wp-% → Wordpress, not PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-admin.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-content/themes/style"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
+        ));
+
+        List<NameCount> result = dashboardService.uaUriStems(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
+        assertFalse(names.contains("/wp-admin.php"), "individual /wp- URLs must not appear");
+        assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
+        assertTrue(names.contains("Wordpress"), "Wordpress label must be present");
+        assertFalse(names.contains("PHP"), "/wp-*.php must go to Wordpress, not PHP");
+        var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(3, wpCount);
+    }
+
+    @Test
     void uaRequestsPerDay_countsPerResultType() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-rpd-test.gz", List.of(
@@ -225,6 +271,32 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, today.hit());
         assertEquals(1, today.miss());
         assertEquals(0, today.error());
+    }
+
+    @Test
+    void topUriStems_aggregatesPhpAndWordpress() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/top-uri-stems-test.gz", List.of(
+                entryWithUri("/index.html"),
+                entryWithUri("/index.html"),
+                entryWithUri("/page.php"),
+                entryWithUri("/other.php"),
+                entryWithUri("/wp-login.php"),   // /wp-% wins over .php
+                entryWithUri("/wp-content/themes/style")
+        ));
+
+        var result = dashboardService.topUriStems(from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("/index.html"));
+        assertTrue(names.contains("PHP"));
+        assertTrue(names.contains("Wordpress"));
+        assertFalse(names.contains("/page.php"));
+        assertFalse(names.contains("/wp-login.php"));
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(2, phpCount);
+        var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(2, wpCount);
     }
 
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
@@ -291,5 +363,42 @@ class DashboardServiceIntegrationTest {
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
+    }
+
+    private CloudFrontLogEntry entryWithReferer(String referer) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                "/index.html", 200,
+                referer, "TestAgent/1.0",
+                "Hit", "https", 336L, 0.001,
+                "Hit", "HTTP/1.1", 0.001, "Hit",
+                null, null, "US"
+        );
+    }
+
+    @Test
+    void topReferers_excludesSelfReferersAndNulls() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/referers-test.gz", List.of(
+                entryWithReferer("https://external.com/page"),
+                entryWithReferer("https://external.com/page"),
+                entryWithReferer("https://other.org/"),
+                entryWithReferer(null),                                          // null — excluded
+                entryWithReferer("https://post-tenebras-lire.net/some-post"),    // https self — excluded
+                entryWithReferer("http://post-tenebras-lire.net/some-post")      // http self — excluded
+        ));
+
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("https://external.com/page"));
+        assertTrue(names.contains("https://other.org/"));
+        assertFalse(names.contains("https://post-tenebras-lire.net/some-post"), "https self must be excluded");
+        assertFalse(names.contains("http://post-tenebras-lire.net/some-post"),  "http self must be excluded");
+        assertFalse(names.stream().anyMatch(n -> n == null), "null referers must be excluded");
+        var extCount = result.stream()
+                .filter(n -> "https://external.com/page".equals(n.name()))
+                .mapToLong(NameCount::count).sum();
+        assertEquals(2, extCount);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.NameCount;
@@ -31,7 +32,7 @@ public class ApiController {
     }
 
     @GetMapping("/countries")
-    public List<NameCount> countries(@RequestParam String from, @RequestParam String to) {
+    public List<CountryCount> countries(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.topBlockedCountries(range.from(), range.to(), TOP_LIMIT);
     }
@@ -40,6 +41,12 @@ public class ApiController {
     public List<NameCount> uriStems(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.topAllowedUriStems(range.from(), range.to(), TOP_LIMIT);
+    }
+
+    @GetMapping("/top-uri-stems")
+    public List<NameCount> topUriStems(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topUriStems(range.from(), range.to(), TOP_LIMIT);
     }
 
     @GetMapping("/requests-per-day")
@@ -52,5 +59,11 @@ public class ApiController {
     public List<NameCount> edgeLocations(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.topEdgeLocations(range.from(), range.to(), TOP_LIMIT);
+    }
+
+    @GetMapping("/referers")
+    public List<NameCount> referers(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topReferers(range.from(), range.to(), TOP_LIMIT);
     }
 }

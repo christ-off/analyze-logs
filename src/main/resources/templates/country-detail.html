@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title th:text="'UA Detail – ' + ${uaName}">UA Detail</title>
+    <title th:text="'Country Detail – ' + ${countryName}">Country Detail</title>
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <meta name="cf-from" th:content="${from}"/>
-    <meta name="cf-to"   th:content="${to}"/>
-    <meta name="cf-ua"   th:content="${uaName}"/>
+    <meta name="cf-from"      th:content="${from}"/>
+    <meta name="cf-to"        th:content="${to}"/>
+    <meta name="cf-country"   th:content="${countryCode}"/>
 </head>
 <body class="bg-light">
 
@@ -24,7 +24,7 @@
     <div class="card mb-4">
         <div class="card-body d-flex align-items-center gap-3">
             <div>
-                <h5 class="mb-0" th:text="${uaName}">User Agent</h5>
+                <h5 class="mb-0" th:text="${countryName}">Country</h5>
                 <small class="text-muted">
                     <span th:text="${fromDate}"></span> &rarr; <span th:text="${toDate}"></span>
                 </small>
@@ -34,21 +34,15 @@
         </div>
     </div>
 
-    <!-- row 1: result types, countries, top URLs -->
+    <!-- row 1: result types, top blocked URLs -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-4">
+        <div class="col-xl-6">
             <div class="card h-100">
                 <div class="card-header fw-semibold">Result Types</div>
                 <div class="card-body"><canvas id="chartResultTypes"></canvas></div>
             </div>
         </div>
-        <div class="col-xl-4">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Countries</div>
-                <div class="card-body"><canvas id="chartCountries"></canvas></div>
-            </div>
-        </div>
-        <div class="col-xl-4">
+        <div class="col-xl-6">
             <div class="card h-100">
                 <div class="card-header fw-semibold">Top Blocked URLs</div>
                 <div class="card-body"><canvas id="chartUriStems"></canvas></div>
@@ -70,6 +64,6 @@
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>
-<script th:src="@{/js/ua-detail.js}"></script>
+<script th:src="@{/js/country-detail.js}"></script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
+import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -34,12 +36,15 @@ public class DashboardService {
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
     private final List<String> excludedExtensions;
+    private final List<String> selfReferers;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
-                            UriStemFilterProperties uriStemFilterProperties) {
+                            UriStemFilterProperties uriStemFilterProperties,
+                            RefererFilterProperties refererFilterProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
+        this.selfReferers = refererFilterProperties.selfReferers();
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
@@ -63,9 +68,9 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    public List<NameCount> topBlockedCountries(Instant from, Instant to, int limit) {
+    public List<CountryCount> topBlockedCountries(Instant from, Instant to, int limit) {
         return jdbc.query("""
-                SELECT country as name, COUNT(*) as count
+                SELECT country as code, COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                   AND status = 403
@@ -74,14 +79,114 @@ public class DashboardService {
                 LIMIT ?
                 """,
                 (rs, _) -> {
-                    String iso = rs.getString("name");
+                    String iso = rs.getString("code");
                     String display = (iso != null && !iso.isBlank())
                             ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
                             : iso;
-                    String label = (display != null && !display.equals(iso)) ? display : iso;
-                    return new NameCount(label, rs.getLong(COUNT_FIELD));
+                    String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
+                    return new CountryCount(iso, label, rs.getLong(COUNT_FIELD));
                 },
                 from.toString(), to.toString(), limit);
+    }
+
+    public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
+        return jdbc.query("""
+                SELECT edge_response_result_type as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND country = ?
+                GROUP BY edge_response_result_type
+                ORDER BY count DESC
+                """,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                from.toString(), to.toString(), countryCode);
+    }
+
+    public List<NameCount> countryUriStems(String countryCode, Instant from, Instant to, int limit) {
+        String exclusionClause = excludedExtensions.stream()
+                .map(_ -> "uri_stem NOT LIKE ?")
+                .collect(Collectors.joining(" AND "));
+        String sql = """
+                SELECT CASE
+                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
+                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
+                         ELSE uri_stem
+                       END as name,
+                       COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND country = ?
+                """
+                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
+                + """
+                GROUP BY name
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.add(countryCode);
+        excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
+        args.add(limit);
+
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                args.toArray());
+    }
+
+    public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
+        return jdbc.query("""
+                SELECT date(timestamp) as day,
+                """ + RESULT_TYPE_SUMS + """
+
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND country = ?
+                GROUP BY day
+                ORDER BY day
+                """,
+                (rs, _) -> new DailyResultTypeCount(
+                        LocalDate.parse(rs.getString("day")),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
+                from.toString(), to.toString(), countryCode);
+    }
+
+    public List<NameCount> topUriStems(Instant from, Instant to, int limit) {
+        String exclusionClause = excludedExtensions.stream()
+                .map(_ -> "uri_stem NOT LIKE ?")
+                .collect(Collectors.joining(" AND "));
+        String sql = """
+                SELECT CASE
+                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
+                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
+                         ELSE uri_stem
+                       END as name,
+                       COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                """
+                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
+                + """
+                GROUP BY name
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
+        args.add(limit);
+
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                args.toArray());
     }
 
     public List<NameCount> topAllowedUriStems(Instant from, Instant to, int limit) {
@@ -128,6 +233,34 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
+    public List<NameCount> topReferers(Instant from, Instant to, int limit) {
+        String selfExclusionClause = selfReferers.stream()
+                .map(_ -> "referer NOT LIKE ?")
+                .collect(Collectors.joining(" AND "));
+        String sql = """
+                SELECT referer as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND referer IS NOT NULL
+                """
+                + (selfExclusionClause.isEmpty() ? "" : "  AND " + selfExclusionClause + "\n")
+                + """
+                GROUP BY referer
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        selfReferers.forEach(prefix -> args.add(prefix + "%"));
+        args.add(limit);
+
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                args.toArray());
+    }
+
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
         return jdbc.query("""
                 SELECT edge_response_result_type as name, COUNT(*) as count
@@ -166,14 +299,19 @@ public class DashboardService {
                 .map(_ -> "uri_stem NOT LIKE ?")
                 .collect(Collectors.joining(" AND "));
         String sql = """
-                SELECT uri_stem as name, COUNT(*) as count
+                SELECT CASE
+                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
+                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
+                         ELSE uri_stem
+                       END as name,
+                       COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                   AND ua_name = ?
                 """
                 + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
                 + """
-                GROUP BY uri_stem
+                GROUP BY name
                 ORDER BY count DESC
                 LIMIT ?
                 """;

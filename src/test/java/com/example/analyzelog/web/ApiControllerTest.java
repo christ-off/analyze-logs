@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -53,14 +54,21 @@ class ApiControllerTest {
     @Test
     void countriesReturnsJson() {
         when(dashboardService.topBlockedCountries(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("CN", 100)));
+                .thenReturn(List.of(new CountryCount("CN", "China", 100)));
 
         assertThat(mvc.get().uri("/api/countries")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].name").isEqualTo("CN");
+                .extractingPath("$[0].code").isEqualTo("CN");
+
+        assertThat(mvc.get().uri("/api/countries")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("China");
     }
 
     @Test

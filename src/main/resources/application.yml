@@ -27,6 +27,9 @@ app:
     profile: "default"
   db-path: logs.db
 
+referer-filter:
+  self-referers: []
+
 uri-stem-filter:
   excluded-extensions:
     - .css

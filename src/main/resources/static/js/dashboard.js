@@ -19,7 +19,7 @@
         purple: 'rgba(111, 66, 193, 0.8)',
     };
 
-    function horizontalBar(canvasId, data) {
+    function horizontalBar(canvasId, data, urlFn) {
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
         new Chart(ctx, {
@@ -36,7 +36,16 @@
                 indexAxis: 'y',
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true } }
+                scales: { x: { beginAtZero: true } },
+                ...(urlFn ? {
+                    onClick: (event, elements) => {
+                        if (!elements.length) return;
+                        globalThis.location.href = urlFn(data[elements[0].index]);
+                    },
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                    },
+                } : {})
             }
         });
     }
@@ -110,8 +119,11 @@
         }
     }
 
-    loadChart('ua-names-split',   data => horizontalStackedBar('chartUaNames', data));
-    loadChart('countries',        data => horizontalBar('chartCountries',       data));
-    loadChart('uri-stems',        data => horizontalBar('chartUriStems',        data));
-    loadChart('requests-per-day', data => stackedBar(   'chartRequestsPerDay',  data));
+    loadChart('ua-names-split',   data => horizontalStackedBar('chartUaNames',      data));
+    loadChart('countries',        data => horizontalBar('chartCountries',           data,
+        item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${toDateParam(from)}&to=${toDateParam(to)}`));
+    loadChart('uri-stems',        data => horizontalBar('chartUriStems',            data));
+    loadChart('top-uri-stems',    data => horizontalBar('chartTopUriStems',         data));
+    loadChart('referers',         data => horizontalBar('chartReferers',             data));
+    loadChart('requests-per-day', data => stackedBar(   'chartRequestsPerDay',      data));
 })();
