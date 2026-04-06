@@ -4,3 +4,4 @@ logs.db
 **/application-local.yml
 /logs.db-shm
 /logs.db-wal
+.claude/settings.local.json
