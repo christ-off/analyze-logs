@@ -1,7 +1,7 @@
 # analyze-logs
 
 Spring Boot web dashboard for [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format).
-Fetches log files from S3, stores them in a local SQLite database, and displays four interactive charts.
+Fetches log files from S3, stores them in a local SQLite database, and displays interactive charts with drill-down detail pages.
 
 ## Security notice
 
@@ -43,12 +43,19 @@ Key properties:
 | `app.aws.profile` | `` | AWS credentials profile (`~/.aws/credentials`); empty = default chain |
 | `app.db-path` | `logs.db` | SQLite file path (relative to working directory) |
 | `server.port` | `8080` | HTTP port |
+| `uri-stem-filter.excluded-extensions` | `.css`, `.js`, `.png`, … | File extensions excluded from all URL charts (static assets) |
+| `referer-filter.self-referers` | `[]` | List of referer URL prefixes to exclude from the Top Referers chart (your own domain, both http and https variants) |
 
 ### `application-local.yml` (gitignored — your secrets)
 
 Create `src/main/resources/application-local.yml` to override values without touching the committed file:
 
 ```yaml
+referer-filter:
+  self-referers:
+    - "https://your-site.example.com/"
+    - "http://your-site.example.com/"
+
 app:
   aws:
     bucket: "my-cloudfront-logs"
@@ -73,18 +80,43 @@ ua-classifier:
 
 ## Dashboard
 
-Four charts, all scoped to the selected date range:
+### Main dashboard
+
+Six charts, all scoped to the selected date range:
 
 | Chart | Description |
 |-------|-------------|
-| Top User Agents | Horizontal bar — classified UA names by request count |
-| Top Blocked Countries | Horizontal bar — countries returning 403 |
-| Top Allowed URLs | Horizontal bar — most-requested paths (status < 400) |
-| Requests per Day | Stacked bar — success (2xx/3xx) / client error (4xx) / server error (5xx) |
+| Top User Agents | Horizontal stacked bar — classified UA names by request count, coloured by edge result type. Click a bar to open the UA detail page. |
+| Top Blocked Countries (403) | Horizontal bar — countries blocked with HTTP 403. Click a bar to open the country detail page. |
+| Top Allowed URLs | Horizontal bar — most-requested paths with status < 400; static assets (`.css`, `.js`, images, etc.) excluded. |
+| Top Blocked URLs | Horizontal bar — most-requested paths across all statuses; `.php` files grouped as **PHP**, `/wp-*` paths grouped as **Wordpress**. |
+| Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. |
+| Requests per Day | Stacked bar — daily breakdown by edge result type: Hit, Miss, Function, Redirect, Error. |
 
 Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
+
+### UA detail page
+
+Opened by clicking a bar in **Top User Agents**. Shows charts scoped to a single classified user-agent:
+
+| Chart | Description |
+|-------|-------------|
+| Result Types | Pie — edge result type breakdown for this UA |
+| Countries | Pie — geographic distribution of requests |
+| Top Blocked URLs | Horizontal bar — most-requested paths for this UA (PHP / Wordpress grouping applied) |
+| Requests per Day | Line — daily request trend by edge result type |
+
+### Country detail page
+
+Opened by clicking a bar in **Top Blocked Countries**. Shows charts scoped to a single country:
+
+| Chart | Description |
+|-------|-------------|
+| Result Types | Pie — edge result type breakdown for this country |
+| Top Blocked URLs | Horizontal bar — most-requested paths from this country (PHP / Wordpress grouping applied) |
+| Requests per Day | Line — daily request trend by edge result type |
 
 ## AWS credentials
 
