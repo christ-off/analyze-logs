@@ -46,4 +46,10 @@ public class ApiController {
         var range = DateRange.fromParams(from, to);
         return dashboardService.requestsPerDay(range.from(), range.to());
     }
+
+    @GetMapping("/edge-locations")
+    public List<NameCount> edgeLocations(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topEdgeLocations(range.from(), range.to(), TOP_LIMIT);
+    }
 }

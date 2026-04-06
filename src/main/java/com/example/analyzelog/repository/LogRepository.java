@@ -1,6 +1,7 @@
 package com.example.analyzelog.repository;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import com.example.analyzelog.service.EdgeLocationResolver;
 import com.example.analyzelog.service.UserAgentClassifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -15,10 +16,12 @@ public class LogRepository {
 
     private final JdbcTemplate jdbc;
     private final UserAgentClassifier classifier;
+    private final EdgeLocationResolver edgeLocationResolver;
 
-    public LogRepository(JdbcTemplate jdbc, UserAgentClassifier classifier) {
+    public LogRepository(JdbcTemplate jdbc, UserAgentClassifier classifier, EdgeLocationResolver edgeLocationResolver) {
         this.jdbc = jdbc;
         this.classifier = classifier;
+        this.edgeLocationResolver = edgeLocationResolver;
     }
 
     public boolean isAlreadyFetched(String s3Key) {
@@ -38,8 +41,8 @@ public class LogRepository {
                         edge_result_type, protocol, cs_bytes, time_taken,
                         edge_response_result_type, protocol_version, time_to_first_byte,
                         edge_detailed_result_type, content_type, content_length, country,
-                        ua_name
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        ua_name, edge_location_iata
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     entries,
                     entries.size(),
@@ -66,6 +69,7 @@ public class LogRepository {
                         else stmt.setLong(19, e.contentLength());
                         stmt.setString(20, e.country());
                         stmt.setString(21, classifier.classify(e.userAgent()));
+                        stmt.setString(22, edgeLocationResolver.extractIata(e.edgeLocation()));
                     });
         }
 

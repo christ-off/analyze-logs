@@ -15,9 +15,11 @@ public class DashboardService {
 
     private static final String COUNT_FIELD = "count";
     private final JdbcTemplate jdbc;
+    private final EdgeLocationResolver edgeLocationResolver;
 
-    public DashboardService(JdbcTemplate jdbc) {
+    public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver) {
         this.jdbc = jdbc;
+        this.edgeLocationResolver = edgeLocationResolver;
     }
 
     public List<NameCount> topUserAgents(Instant from, Instant to, int limit) {
@@ -65,6 +67,22 @@ public class DashboardService {
                 LIMIT ?
                 """,
                 (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                from.toString(), to.toString(), limit);
+    }
+
+    public List<NameCount> topEdgeLocations(Instant from, Instant to, int limit) {
+        return jdbc.query("""
+                SELECT edge_location_iata as iata, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND edge_location_iata IS NOT NULL
+                GROUP BY edge_location_iata
+                ORDER BY count DESC
+                LIMIT ?
+                """,
+                (rs, _) -> new NameCount(
+                        edgeLocationResolver.resolveDisplay(rs.getString("iata")),
+                        rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), limit);
     }
 
