@@ -51,6 +51,17 @@ public class DashboardService {
             SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
             SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
             """;
+    private static final String SQL_DAILY_SELECT = """
+            SELECT date(timestamp) as day,
+            """ + RESULT_TYPE_SUMS + """
+
+            FROM cloudfront_logs
+            WHERE timestamp BETWEEN ? AND ?
+            """;
+    private static final String SQL_DAILY_GROUP_ORDER = """
+            GROUP BY day
+            ORDER BY day
+            """;
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
     private final List<String> excludedExtensions;
@@ -150,16 +161,7 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT date(timestamp) as day,
-                """ + RESULT_TYPE_SUMS + """
-
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND country = ?
-                GROUP BY day
-                ORDER BY day
-                """,
+        return jdbc.query(SQL_DAILY_SELECT + "  AND country = ?\n" + SQL_DAILY_GROUP_ORDER,
                 (rs, _) -> new DailyResultTypeCount(
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
@@ -310,16 +312,7 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT date(timestamp) as day,
-                """ + RESULT_TYPE_SUMS + """
-
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND ua_name = ?
-                GROUP BY day
-                ORDER BY day
-                """,
+        return jdbc.query(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + SQL_DAILY_GROUP_ORDER,
                 (rs, _) -> new DailyResultTypeCount(
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
@@ -331,15 +324,7 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT date(timestamp) as day,
-                """ + RESULT_TYPE_SUMS + """
-
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                GROUP BY day
-                ORDER BY day
-                """,
+        return jdbc.query(SQL_DAILY_SELECT + SQL_DAILY_GROUP_ORDER,
                 (rs, _) -> new DailyResultTypeCount(
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
