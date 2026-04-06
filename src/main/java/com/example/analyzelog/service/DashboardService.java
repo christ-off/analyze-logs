@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private static final String COUNT_FIELD = "count";
+    private static final String FIELD_FUNCTION = "function";
+    private static final String FIELD_ERROR = "error";
+    private static final String FIELD_REDIRECT = "redirect";
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
             SUM(CASE WHEN edge_response_result_type = 'Miss'   THEN 1 ELSE 0 END) as miss,
@@ -54,9 +57,9 @@ public class DashboardService {
                         rs.getString("name"),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("function"),
-                        rs.getLong("error"),
-                        rs.getLong("redirect")),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
                 from.toString(), to.toString(), limit);
     }
 
@@ -202,9 +205,9 @@ public class DashboardService {
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("function"),
-                        rs.getLong("error"),
-                        rs.getLong("redirect")),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
                 from.toString(), to.toString(), uaName);
     }
 
@@ -222,9 +225,9 @@ public class DashboardService {
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("function"),
-                        rs.getLong("error"),
-                        rs.getLong("redirect")),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
                 from.toString(), to.toString());
     }
 }

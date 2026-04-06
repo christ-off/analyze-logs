@@ -85,7 +85,7 @@
                 onClick: (event, elements) => {
                     if (!elements.length) return;
                     const uaName = data[elements[0].index].name;
-                    window.location.href =
+                    globalThis.location.href =
                         `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${toDateParam(from)}&to=${toDateParam(to)}`;
                 },
                 onHover: (event, elements) => {
