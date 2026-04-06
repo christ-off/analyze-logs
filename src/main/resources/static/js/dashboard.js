@@ -82,6 +82,15 @@
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                onClick: (event, elements) => {
+                    if (!elements.length) return;
+                    const uaName = data[elements[0].index].name;
+                    window.location.href =
+                        `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${toDateParam(from)}&to=${toDateParam(to)}`;
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                },
                 scales: {
                     x: { stacked: true, beginAtZero: true },
                     y: { stacked: true }

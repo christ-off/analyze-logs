@@ -2,6 +2,7 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,30 @@ class DashboardServiceIntegrationTest {
 
     @Autowired
     DashboardService dashboardService;
+
+    @Test
+    void topAllowedUriStems_excludesStaticExtensions() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/uri-filter-test.gz", List.of(
+                entryWithUri("/index.html"),
+                entryWithUri("/about.html"),
+                entryWithUri("/about.html"),
+                entryWithUri("/style.css"),
+                entryWithUri("/app.js"),
+                entryWithUri("/logo.png"),
+                entryWithUri("/icon.svg")
+        ));
+
+        var result = dashboardService.topAllowedUriStems(from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(nc -> nc.name()).toList();
+        assertTrue(names.contains("/about.html"));
+        assertTrue(names.contains("/index.html"));
+        assertFalse(names.contains("/style.css"));
+        assertFalse(names.contains("/app.js"));
+        assertFalse(names.contains("/logo.png"));
+        assertFalse(names.contains("/icon.svg"));
+    }
 
     @Test
     void topEdgeLocations_resolvesToHumanReadable() {
@@ -127,6 +152,103 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, firefox.error());
     }
 
+    @Test
+    void uaResultTypes_countsPerType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-rt-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Hit")  // different UA — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.uaResultTypes(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(1, result.stream().filter(n -> "Error".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> "Miss".equals(n.name())));
+    }
+
+    @Test
+    void uaCountries_resolvesIsoToDisplayName() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-countries-test.gz", List.of(
+                entryWithUaAndCountry(UA_CHROME_WINDOWS, "FR"),
+                entryWithUaAndCountry(UA_CHROME_WINDOWS, "FR"),
+                entryWithUaAndCountry(UA_CHROME_WINDOWS, "US"),
+                entryWithUaAndCountry(UA_FIREFOX_LINUX,  "DE")  // different UA — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.uaCountries(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.stream().filter(n -> "France".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(1, result.stream().filter(n -> "United States".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> "Germany".equals(n.name())));
+    }
+
+    @Test
+    void uaUriStems_excludesStaticAndFiltersToUa() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-uri-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/style.css"),  // excluded extension
+                entryWithUaAndUri(UA_FIREFOX_LINUX,  "/about.html")  // different UA — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.uaUriStems(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("/index.html"));
+        assertFalse(names.contains("/style.css"));
+        assertFalse(names.contains("/about.html"));
+    }
+
+    @Test
+    void uaRequestsPerDay_countsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-rpd-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Miss"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Hit")  // different UA — must not count
+        ));
+
+        List<DailyResultTypeCount> result = dashboardService.uaRequestsPerDay(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        DailyResultTypeCount today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+        assertEquals(0, today.error());
+    }
+
+    private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                "/index.html", 200,
+                null, ua,
+                "Hit", "https", 336L, 0.001,
+                "Hit", "HTTP/1.1", 0.001, "Hit",
+                null, null, country
+        );
+    }
+
+    private CloudFrontLogEntry entryWithUaAndUri(String ua, String uriStem) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                uriStem, 200,
+                null, ua,
+                "Hit", "https", 336L, 0.001,
+                "Hit", "HTTP/1.1", 0.001, "Hit",
+                null, null, "US"
+        );
+    }
+
     private CloudFrontLogEntry entry(String edgeLocation) {
         return new CloudFrontLogEntry(
                 Instant.now(), edgeLocation, 1068L, "1.2.3.4", "GET",
@@ -145,6 +267,17 @@ class DashboardServiceIntegrationTest {
                 null, "TestAgent/1.0",
                 resultType, "https", 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
+                null, null, "US"
+        );
+    }
+
+    private CloudFrontLogEntry entryWithUri(String uriStem) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                uriStem, 200,
+                null, "TestAgent/1.0",
+                "Hit", "https", 336L, 0.001,
+                "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
     }

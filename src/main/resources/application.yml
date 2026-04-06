@@ -27,6 +27,19 @@ app:
     profile: "default"
   db-path: logs.db
 
+uri-stem-filter:
+  excluded-extensions:
+    - .css
+    - .js
+    - .svg
+    - .avif
+    - .ico
+    - .png
+    - .jpg
+    - .jpeg
+    - .webp
+    - .gif
+
 ua-classifier:
   rules:
     # AI crawlers

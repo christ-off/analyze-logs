@@ -28,6 +28,23 @@ public class DashboardController {
         return "dashboard";
     }
 
+    @GetMapping("/ua-detail")
+    public String uaDetail(
+            @RequestParam String ua,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        DateRange range = (from != null && to != null)
+                ? DateRange.fromParams(from, to)
+                : DateRange.lastDays(7);
+        model.addAttribute("uaName", ua);
+        model.addAttribute("from", range.fromIso());
+        model.addAttribute("to", range.toIso());
+        model.addAttribute("fromDate", range.fromDate().toString());
+        model.addAttribute("toDate", range.toDate().toString());
+        return "ua-detail";
+    }
+
     private DateRange resolveRange(String range, String from, String to) {
         if (from != null && to != null) return DateRange.fromParams(from, to);
         return switch (range != null ? range : "7d") {
