@@ -11,6 +11,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class DashboardController {
 
+    private static final String ATTR_FROM_DATE = "fromDate";
+    private static final String ATTR_TO_DATE = "toDate";
+
     @GetMapping("/")
     public String dashboard(
             @RequestParam(required = false) String range,
@@ -22,8 +25,8 @@ public class DashboardController {
         DateRange dateRange = resolveRange(range, from, to);
         model.addAttribute("from", dateRange.fromIso());
         model.addAttribute("to", dateRange.toIso());
-        model.addAttribute("fromDate", dateRange.fromDate().toString());
-        model.addAttribute("toDate", dateRange.toDate().toString());
+        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
         String activeRange = resolveActiveRange(range, from, to);
         model.addAttribute("activeRange", activeRange);
         return "dashboard";
@@ -41,8 +44,8 @@ public class DashboardController {
         model.addAttribute("uaName", ua);
         model.addAttribute("from", range.fromIso());
         model.addAttribute("to", range.toIso());
-        model.addAttribute("fromDate", range.fromDate().toString());
-        model.addAttribute("toDate", range.toDate().toString());
+        model.addAttribute(ATTR_FROM_DATE, range.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, range.toDate().toString());
         return "ua-detail";
     }
 
@@ -60,8 +63,8 @@ public class DashboardController {
         model.addAttribute("countryName", displayName.isBlank() ? country : displayName);
         model.addAttribute("from", range.fromIso());
         model.addAttribute("to", range.toIso());
-        model.addAttribute("fromDate", range.fromDate().toString());
-        model.addAttribute("toDate", range.toDate().toString());
+        model.addAttribute(ATTR_FROM_DATE, range.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, range.toDate().toString());
         return "country-detail";
     }
 

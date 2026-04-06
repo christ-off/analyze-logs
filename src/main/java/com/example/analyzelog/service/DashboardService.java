@@ -23,6 +23,24 @@ public class DashboardService {
     private static final String FIELD_FUNCTION = "function";
     private static final String FIELD_ERROR = "error";
     private static final String FIELD_REDIRECT = "redirect";
+    private static final String AND_SEPARATOR = " AND ";
+    private static final String SQL_AND_INDENT = "  AND ";
+    private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
+    private static final String SQL_GROUPED_URI_CASE = """
+            SELECT CASE
+                     WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
+                     WHEN uri_stem LIKE '%.php' THEN 'PHP'
+                     ELSE uri_stem
+                   END as name,
+                   COUNT(*) as count
+            FROM cloudfront_logs
+            WHERE timestamp BETWEEN ? AND ?
+            """;
+    private static final String SQL_GROUP_BY_NAME_LIMIT = """
+            GROUP BY name
+            ORDER BY count DESC
+            LIMIT ?
+            """;
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
             SUM(CASE WHEN edge_response_result_type = 'Miss'   THEN 1 ELSE 0 END) as miss,
@@ -45,6 +63,16 @@ public class DashboardService {
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
+    }
+
+    private String uriStemExclusionClause() {
+        return excludedExtensions.stream()
+                .map(_ -> URI_STEM_EXCLUSION_PREDICATE)
+                .collect(Collectors.joining(AND_SEPARATOR));
+    }
+
+    private static String andClause(String clause) {
+        return clause.isEmpty() ? "" : SQL_AND_INDENT + clause + "\n";
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
@@ -103,26 +131,11 @@ public class DashboardService {
     }
 
     public List<NameCount> countryUriStems(String countryCode, Instant from, Instant to, int limit) {
-        String exclusionClause = excludedExtensions.stream()
-                .map(_ -> "uri_stem NOT LIKE ?")
-                .collect(Collectors.joining(" AND "));
-        String sql = """
-                SELECT CASE
-                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
-                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
-                         ELSE uri_stem
-                       END as name,
-                       COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND country = ?
-                """
-                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
-                + """
-                GROUP BY name
-                ORDER BY count DESC
-                LIMIT ?
-                """;
+        String exclusionClause = uriStemExclusionClause();
+        String sql = SQL_GROUPED_URI_CASE
+                + "  AND country = ?\n"
+                + andClause(exclusionClause)
+                + SQL_GROUP_BY_NAME_LIMIT;
 
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -158,25 +171,10 @@ public class DashboardService {
     }
 
     public List<NameCount> topUriStems(Instant from, Instant to, int limit) {
-        String exclusionClause = excludedExtensions.stream()
-                .map(_ -> "uri_stem NOT LIKE ?")
-                .collect(Collectors.joining(" AND "));
-        String sql = """
-                SELECT CASE
-                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
-                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
-                         ELSE uri_stem
-                       END as name,
-                       COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                """
-                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
-                + """
-                GROUP BY name
-                ORDER BY count DESC
-                LIMIT ?
-                """;
+        String exclusionClause = uriStemExclusionClause();
+        String sql = SQL_GROUPED_URI_CASE
+                + andClause(exclusionClause)
+                + SQL_GROUP_BY_NAME_LIMIT;
 
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -190,16 +188,14 @@ public class DashboardService {
     }
 
     public List<NameCount> topAllowedUriStems(Instant from, Instant to, int limit) {
-        String exclusionClause = excludedExtensions.stream()
-                .map(_ -> "uri_stem NOT LIKE ?")
-                .collect(Collectors.joining(" AND "));
+        String exclusionClause = uriStemExclusionClause();
         String sql = """
                 SELECT uri_stem as name, COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                   AND status < 400
                 """
-                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
+                + andClause(exclusionClause)
                 + """
                 GROUP BY uri_stem
                 ORDER BY count DESC
@@ -236,14 +232,14 @@ public class DashboardService {
     public List<NameCount> topReferers(Instant from, Instant to, int limit) {
         String selfExclusionClause = selfReferers.stream()
                 .map(_ -> "referer NOT LIKE ?")
-                .collect(Collectors.joining(" AND "));
+                .collect(Collectors.joining(AND_SEPARATOR));
         String sql = """
                 SELECT referer as name, COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                   AND referer IS NOT NULL
                 """
-                + (selfExclusionClause.isEmpty() ? "" : "  AND " + selfExclusionClause + "\n")
+                + andClause(selfExclusionClause)
                 + """
                 GROUP BY referer
                 ORDER BY count DESC
@@ -295,26 +291,11 @@ public class DashboardService {
     }
 
     public List<NameCount> uaUriStems(String uaName, Instant from, Instant to, int limit) {
-        String exclusionClause = excludedExtensions.stream()
-                .map(_ -> "uri_stem NOT LIKE ?")
-                .collect(Collectors.joining(" AND "));
-        String sql = """
-                SELECT CASE
-                         WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
-                         WHEN uri_stem LIKE '%.php' THEN 'PHP'
-                         ELSE uri_stem
-                       END as name,
-                       COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND ua_name = ?
-                """
-                + (exclusionClause.isEmpty() ? "" : "  AND " + exclusionClause + "\n")
-                + """
-                GROUP BY name
-                ORDER BY count DESC
-                LIMIT ?
-                """;
+        String exclusionClause = uriStemExclusionClause();
+        String sql = SQL_GROUPED_URI_CASE
+                + "  AND ua_name = ?\n"
+                + andClause(exclusionClause)
+                + SQL_GROUP_BY_NAME_LIMIT;
 
         var args = new ArrayList<>();
         args.add(from.toString());
