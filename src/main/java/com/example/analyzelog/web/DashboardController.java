@@ -23,7 +23,8 @@ public class DashboardController {
         model.addAttribute("to", dateRange.toIso());
         model.addAttribute("fromDate", dateRange.fromDate().toString());
         model.addAttribute("toDate", dateRange.toDate().toString());
-        model.addAttribute("activeRange", (from != null && to != null) ? "custom" : (range != null ? range : "7d"));
+        String activeRange = (from != null && to != null) ? "custom" : (range != null ? range : "7d");
+        model.addAttribute("activeRange", activeRange);
         return "dashboard";
     }
 

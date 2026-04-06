@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -31,8 +31,8 @@
             <a th:href="@{/?range=3m}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
 
             <form th:action="@{/}" method="get" class="d-flex align-items-center gap-2 ms-2">
-                <label class="form-label mb-0 fw-semibold">Custom:</label>
-                <input type="date" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
+                <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
                 <span>&ndash;</span>
                 <input type="date" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
                 <button type="submit" class="btn btn-sm btn-primary">Apply</button>

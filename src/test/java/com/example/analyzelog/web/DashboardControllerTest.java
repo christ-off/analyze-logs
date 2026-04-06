@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.emptyString;
 
 @WebMvcTest(DashboardController.class)
 class DashboardControllerTest {

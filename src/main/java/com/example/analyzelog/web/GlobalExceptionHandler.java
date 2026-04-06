@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String ERROR_VIEW = "error";
 
     /**
      * Invalid date range or other application-level bad request.
@@ -25,7 +26,7 @@ public class GlobalExceptionHandler {
                                    HttpServletResponse response) {
         log.warn("Bad request [{}]: {}", request.getRequestURI(), ex.getMessage());
         response.setStatus(HttpStatus.BAD_REQUEST.value());
-        return "error";
+        return ERROR_VIEW;
     }
 
     /**
@@ -38,7 +39,7 @@ public class GlobalExceptionHandler {
                                      HttpServletResponse response) {
         log.warn("Missing parameter [{}]: {}", request.getRequestURI(), ex.getMessage());
         response.setStatus(HttpStatus.BAD_REQUEST.value());
-        return "error";
+        return ERROR_VIEW;
     }
 
     /**
@@ -57,6 +58,6 @@ public class GlobalExceptionHandler {
             return "redirect:/";
         }
         response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return "error";
+        return ERROR_VIEW;
     }
 }

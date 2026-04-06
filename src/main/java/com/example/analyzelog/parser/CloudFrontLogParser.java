@@ -76,7 +76,7 @@ public class CloudFrontLogParser {
         if (ua == null) return null;
         try {
             return URLDecoder.decode(ua, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return ua;
         }
     }

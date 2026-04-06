@@ -13,6 +13,7 @@ import java.util.Locale;
 @Service
 public class DashboardService {
 
+    private static final String COUNT_FIELD = "count";
     private final JdbcTemplate jdbc;
 
     public DashboardService(JdbcTemplate jdbc) {
@@ -28,7 +29,7 @@ public class DashboardService {
                 ORDER BY count DESC
                 LIMIT ?
                 """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong("count")),
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), limit);
     }
 
@@ -48,7 +49,7 @@ public class DashboardService {
                             ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
                             : iso;
                     String label = (display != null && !display.equals(iso)) ? display : iso;
-                    return new NameCount(label, rs.getLong("count"));
+                    return new NameCount(label, rs.getLong(COUNT_FIELD));
                 },
                 from.toString(), to.toString(), limit);
     }
@@ -63,7 +64,7 @@ public class DashboardService {
                 ORDER BY count DESC
                 LIMIT ?
                 """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong("count")),
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), limit);
     }
 
