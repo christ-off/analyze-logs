@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+              xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -38,7 +39,9 @@
                 <button type="submit" class="btn btn-sm btn-primary">Apply</button>
             </form>
 
-            <a th:href="@{/refresh}" class="ms-auto btn btn-sm btn-warning">Refresh from S3</a>
+            <form th:action="@{/refresh}" method="post" class="ms-auto d-inline">
+                <button type="submit" class="btn btn-sm btn-warning">Refresh from S3</button>
+            </form>
         </div>
     </div>
 
