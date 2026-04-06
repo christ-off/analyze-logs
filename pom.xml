@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.0</version>
+        <version>4.0.5</version>
         <relativePath/>
     </parent>
 
@@ -18,14 +18,9 @@
 
     <properties>
         <java.version>25</java.version>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <aws.sdk.version>2.30.31</aws.sdk.version>
+        <aws.sdk.version>2.34.0</aws.sdk.version>
         <sqlite.version>3.49.1.0</sqlite.version>
-        <!-- Override Spring Boot managed Liquibase to keep 4.31.1 -->
-        <liquibase.version>4.31.1</liquibase.version>
     </properties>
 
     <dependencyManagement>
@@ -57,10 +52,10 @@
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
-        <!-- Liquibase (auto-configured by Spring Boot when on classpath) -->
+        <!-- Liquibase (starter includes the auto-configuration module in SB4) -->
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-liquibase</artifactId>
         </dependency>
 
         <!-- Actuator -->
@@ -73,12 +68,12 @@
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>bootstrap</artifactId>
-            <version>5.3.3</version>
+            <version>5.3.7</version>
         </dependency>
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>chart.js</artifactId>
-            <version>4.4.4</version>
+            <version>4.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -108,6 +103,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -115,15 +115,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>25</source>
-                    <target>25</target>
-                </configuration>
             </plugin>
 
             <plugin>

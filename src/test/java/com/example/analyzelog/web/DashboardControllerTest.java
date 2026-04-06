@@ -2,57 +2,63 @@ package com.example.analyzelog.web;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.emptyString;
 
 @WebMvcTest(DashboardController.class)
 class DashboardControllerTest {
 
     @Autowired
-    MockMvc mvc;
+    MockMvcTester mvc;
 
     @Test
-    void rootReturns200() throws Exception {
-        mvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("dashboard"));
+    void rootReturns200() {
+        assertThat(mvc.get().uri("/").exchange())
+                .hasStatusOk()
+                .hasViewName("dashboard");
     }
 
     @Test
-    void defaultRangeIs7Days() throws Exception {
-        mvc.perform(get("/"))
-                .andExpect(model().attribute("activeRange", "7d"));
+    void defaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/").exchange())
+                .model().containsEntry("activeRange", "7d");
     }
 
     @Test
-    void rangeParamSetsActiveRange() throws Exception {
-        mvc.perform(get("/?range=30d"))
-                .andExpect(model().attribute("activeRange", "30d"));
+    void rangeParamSetsActiveRange() {
+        assertThat(mvc.get().uri("/").param("range", "30d").exchange())
+                .model().containsEntry("activeRange", "30d");
     }
 
     @Test
-    void customDateParamsSetCustomRange() throws Exception {
-        mvc.perform(get("/").param("from", "2026-01-01").param("to", "2026-01-31"))
-                .andExpect(model().attribute("activeRange", "custom"))
-                .andExpect(model().attribute("fromDate", "2026-01-01"))
-                .andExpect(model().attribute("toDate", "2026-01-31"));
+    void customDateParamsSetCustomRange() {
+        assertThat(mvc.get().uri("/")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .model()
+                .containsEntry("activeRange", "custom")
+                .containsEntry("fromDate", "2026-01-01")
+                .containsEntry("toDate", "2026-01-31");
     }
 
     @Test
-    void invalidDateRangeReturns400() throws Exception {
-        mvc.perform(get("/").param("from", "2026-02-01").param("to", "2026-01-01"))
-                .andExpect(status().isBadRequest());
+    void invalidDateRangeReturns400() {
+        assertThat(mvc.get().uri("/")
+                .param("from", "2026-02-01").param("to", "2026-01-01")
+                .exchange())
+                .hasStatus(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void modelContainsFromAndToIso() throws Exception {
-        mvc.perform(get("/?range=1d"))
-                .andExpect(model().attributeExists("from", "to"))
-                .andExpect(model().attribute("from", not(emptyString())))
-                .andExpect(model().attribute("to",   not(emptyString())));
+    void modelContainsFromAndToIso() {
+        assertThat(mvc.get().uri("/").param("range", "1d").exchange())
+                .model()
+                .containsKey("from")
+                .containsKey("to");
     }
 }

@@ -18,7 +18,7 @@ public class AppConfig {
                 ? aws.region() : "us-east-1";
         var credProv = (aws.profile() != null && !aws.profile().isBlank())
                 ? ProfileCredentialsProvider.create(aws.profile())
-                : DefaultCredentialsProvider.create();
+                : DefaultCredentialsProvider.builder().build();
         return S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credProv)

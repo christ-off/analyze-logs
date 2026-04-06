@@ -4,10 +4,17 @@ spring:
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
+      connection-init-sql: "PRAGMA journal_mode=WAL"
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   thymeleaf:
     cache: false
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
 
 server:
   port: 8080
