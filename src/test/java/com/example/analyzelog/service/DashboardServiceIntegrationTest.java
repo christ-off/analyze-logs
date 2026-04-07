@@ -234,9 +234,11 @@ class DashboardServiceIntegrationTest {
     void uaUriStems_aggregatesWpUrlsUnderWordpressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-test.gz", List.of(
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),   // matches /wp-% → Wordpress, not PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → Wordpress, not PHP
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-admin.php"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-content/themes/style"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-login.php"),   // matches //wp-% → also Wordpress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-admin/"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
@@ -247,10 +249,12 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-admin.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
+        assertFalse(names.contains("//wp-login.php"), "individual //wp- URLs must not appear");
+        assertFalse(names.contains("//wp-admin/"), "individual //wp- URLs must not appear");
         assertTrue(names.contains("Wordpress"), "Wordpress label must be present");
         assertFalse(names.contains("PHP"), "/wp-*.php must go to Wordpress, not PHP");
         var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
-        assertEquals(3, wpCount);
+        assertEquals(5, wpCount);
     }
 
     @Test
@@ -282,7 +286,8 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/page.php"),
                 entryWithUri("/other.php"),
                 entryWithUri("/wp-login.php"),   // /wp-% wins over .php
-                entryWithUri("/wp-content/themes/style")
+                entryWithUri("/wp-content/themes/style"),
+                entryWithUri("//wp-admin/")      // //wp-% also maps to Wordpress
         ));
 
         var result = dashboardService.topUriStems(from, Instant.now().plusSeconds(5), 10);
@@ -293,10 +298,11 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains("Wordpress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
+        assertFalse(names.contains("//wp-admin/"));
         var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
         assertEquals(2, phpCount);
         var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
-        assertEquals(2, wpCount);
+        assertEquals(3, wpCount);
     }
 
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {

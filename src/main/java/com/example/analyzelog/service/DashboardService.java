@@ -29,6 +29,7 @@ public class DashboardService {
     private static final String SQL_GROUPED_URI_CASE = """
             SELECT CASE
                      WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
+                     WHEN uri_stem LIKE '//wp-%' THEN 'Wordpress'
                      WHEN uri_stem LIKE '%.php' THEN 'PHP'
                      ELSE uri_stem
                    END as name,
