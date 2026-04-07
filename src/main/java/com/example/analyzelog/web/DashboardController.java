@@ -13,6 +13,7 @@ public class DashboardController {
 
     private static final String ATTR_FROM_DATE = "fromDate";
     private static final String ATTR_TO_DATE = "toDate";
+    private static final String ATTR_ACTIVE_RANGE = "activeRange";
 
     @GetMapping("/")
     public String dashboard(
@@ -28,7 +29,7 @@ public class DashboardController {
         model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
         model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
         String activeRange = resolveActiveRange(range, from, to);
-        model.addAttribute("activeRange", activeRange);
+        model.addAttribute(ATTR_ACTIVE_RANGE, activeRange);
         return "dashboard";
     }
 
@@ -45,7 +46,7 @@ public class DashboardController {
         model.addAttribute("to", dateRange.toIso());
         model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
         model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        model.addAttribute("activeRange", resolveActiveRange(range, from, to));
+        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
         return "ua-detail";
     }
 
@@ -64,7 +65,7 @@ public class DashboardController {
         model.addAttribute("to", dateRange.toIso());
         model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
         model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        model.addAttribute("activeRange", resolveActiveRange(range, from, to));
+        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
         return "country-detail";
     }
 

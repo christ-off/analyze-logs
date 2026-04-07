@@ -42,8 +42,8 @@
 
                 <form th:action="@{/ua-detail}" method="get" class="d-flex align-items-center gap-2 ms-2">
                     <input type="hidden" name="ua" th:value="${uaName}"/>
-                    <label class="form-label mb-0 fw-semibold">Custom:</label>
-                    <input type="date" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                    <label for="fromDateUa" class="form-label mb-0 fw-semibold">Custom:</label>
+                    <input type="date" id="fromDateUa" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
                     <span>&ndash;</span>
                     <input type="date" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
                     <button type="submit" class="btn btn-sm btn-primary">Apply</button>
