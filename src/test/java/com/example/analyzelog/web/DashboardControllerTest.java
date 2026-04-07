@@ -59,4 +59,48 @@ class DashboardControllerTest {
                 .containsKey("from")
                 .containsKey("to");
     }
+
+    @Test
+    void uaDetailDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/ua-detail").param("ua", "TestBot").exchange())
+                .hasStatusOk()
+                .hasViewName("ua-detail")
+                .model().containsEntry("activeRange", "7d");
+    }
+
+    @Test
+    void uaDetailRangeParamSetsActiveRange() {
+        assertThat(mvc.get().uri("/ua-detail").param("ua", "TestBot").param("range", "30d").exchange())
+                .model().containsEntry("activeRange", "30d");
+    }
+
+    @Test
+    void uaDetailCustomDateSetsCustomRange() {
+        assertThat(mvc.get().uri("/ua-detail")
+                .param("ua", "TestBot").param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .model().containsEntry("activeRange", "custom");
+    }
+
+    @Test
+    void countryDetailDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/country-detail").param("country", "US").exchange())
+                .hasStatusOk()
+                .hasViewName("country-detail")
+                .model().containsEntry("activeRange", "7d");
+    }
+
+    @Test
+    void countryDetailRangeParamSetsActiveRange() {
+        assertThat(mvc.get().uri("/country-detail").param("country", "US").param("range", "1d").exchange())
+                .model().containsEntry("activeRange", "1d");
+    }
+
+    @Test
+    void countryDetailCustomDateSetsCustomRange() {
+        assertThat(mvc.get().uri("/country-detail")
+                .param("country", "US").param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .model().containsEntry("activeRange", "custom");
+    }
 }

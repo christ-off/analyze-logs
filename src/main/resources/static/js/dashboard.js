@@ -4,59 +4,15 @@
     const from = document.querySelector('meta[name="cf-from"]').content;
     const to   = document.querySelector('meta[name="cf-to"]').content;
 
-    // Convert ISO instant string to "yyyy-MM-dd" for API params (date portion only)
-    function toDateParam(iso) {
-        return iso.substring(0, 10);
-    }
-
-    const params = new URLSearchParams({ from: toDateParam(from), to: toDateParam(to) });
-
-    const COLORS = {
-        blue:   'rgba(54, 162, 235, 0.8)',
-        red:    'rgba(220, 53, 69, 0.8)',
-        orange: 'rgba(253, 126, 20, 0.8)',
-        green:  'rgba(40, 167, 69, 0.8)',
-        purple: 'rgba(111, 66, 193, 0.8)',
-    };
-
-    function horizontalBar(canvasId, data, urlFn) {
-        const ctx = document.getElementById(canvasId);
-        if (!ctx) return;
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.name ?? '(unknown)'),
-                datasets: [{
-                    label: 'Requests',
-                    data: data.map(d => d.count),
-                    backgroundColor: COLORS.blue,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true } },
-                ...(urlFn ? {
-                    onClick: (event, elements) => {
-                        if (!elements.length) return;
-                        globalThis.location.href = urlFn(data[elements[0].index]);
-                    },
-                    onHover: (event, elements) => {
-                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                    },
-                } : {})
-            }
-        });
-    }
+    const params = new URLSearchParams({ from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
 
     function resultTypeDatasets(data) {
         return [
-            { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: COLORS.green  },
-            { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: COLORS.blue   },
-            { label: 'Function', data: data.map(d => d.function), backgroundColor: COLORS.orange },
-            { label: 'Redirect', data: data.map(d => d.redirect), backgroundColor: COLORS.purple },
-            { label: 'Error',    data: data.map(d => d.error),    backgroundColor: COLORS.red    },
+            { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: Charts.COLORS.green  },
+            { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: Charts.COLORS.blue   },
+            { label: 'Function', data: data.map(d => d.function), backgroundColor: Charts.COLORS.orange },
+            { label: 'Redirect', data: data.map(d => d.redirect), backgroundColor: Charts.COLORS.purple },
+            { label: 'Error',    data: data.map(d => d.error),    backgroundColor: Charts.COLORS.red    },
         ];
     }
 
@@ -95,7 +51,7 @@
                     if (!elements.length) return;
                     const uaName = data[elements[0].index].name;
                     globalThis.location.href =
-                        `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${toDateParam(from)}&to=${toDateParam(to)}`;
+                        `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`;
                 },
                 onHover: (event, elements) => {
                     event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
@@ -108,22 +64,12 @@
         });
     }
 
-    async function loadChart(endpoint, render) {
-        try {
-            const resp = await fetch(`/api/${endpoint}?${params}`);
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
-            render(data);
-        } catch (e) {
-            console.error(`Failed to load ${endpoint}:`, e);
-        }
-    }
-
-    loadChart('ua-names-split',   data => horizontalStackedBar('chartUaNames',      data));
-    loadChart('countries',        data => horizontalBar('chartCountries',           data,
-        item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${toDateParam(from)}&to=${toDateParam(to)}`));
-    loadChart('uri-stems',        data => horizontalBar('chartUriStems',            data));
-    loadChart('top-uri-stems',    data => horizontalBar('chartTopUriStems',         data));
-    loadChart('referers',         data => horizontalBar('chartReferers',             data));
-    loadChart('requests-per-day', data => stackedBar(   'chartRequestsPerDay',      data));
+    const p = params.toString();
+    Charts.loadChart(`ua-names-split?${p}`,   data => horizontalStackedBar('chartUaNames',      data));
+    Charts.loadChart(`countries?${p}`,        data => Charts.horizontalBar('chartCountries',    data,
+        item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+    Charts.loadChart(`uri-stems?${p}`,        data => Charts.horizontalBar('chartUriStems',     data));
+    Charts.loadChart(`top-uri-stems?${p}`,    data => Charts.horizontalBar('chartTopUriStems',  data));
+    Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',     data));
+    Charts.loadChart(`requests-per-day?${p}`, data => stackedBar(          'chartRequestsPerDay', data));
 })();

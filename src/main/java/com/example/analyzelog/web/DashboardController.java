@@ -35,36 +35,36 @@ public class DashboardController {
     @GetMapping("/ua-detail")
     public String uaDetail(
             @RequestParam String ua,
+            @RequestParam(required = false) String range,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
-        DateRange range = (from != null && to != null)
-                ? DateRange.fromParams(from, to)
-                : DateRange.lastDays(7);
+        DateRange dateRange = resolveRange(range, from, to);
         model.addAttribute("uaName", ua);
-        model.addAttribute("from", range.fromIso());
-        model.addAttribute("to", range.toIso());
-        model.addAttribute(ATTR_FROM_DATE, range.fromDate().toString());
-        model.addAttribute(ATTR_TO_DATE, range.toDate().toString());
+        model.addAttribute("from", dateRange.fromIso());
+        model.addAttribute("to", dateRange.toIso());
+        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
+        model.addAttribute("activeRange", resolveActiveRange(range, from, to));
         return "ua-detail";
     }
 
     @GetMapping("/country-detail")
     public String countryDetail(
             @RequestParam String country,
+            @RequestParam(required = false) String range,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
-        DateRange range = (from != null && to != null)
-                ? DateRange.fromParams(from, to)
-                : DateRange.lastDays(7);
+        DateRange dateRange = resolveRange(range, from, to);
         String displayName = Locale.of("", country).getDisplayCountry(Locale.ENGLISH);
         model.addAttribute("countryCode", country);
         model.addAttribute("countryName", displayName.isBlank() ? country : displayName);
-        model.addAttribute("from", range.fromIso());
-        model.addAttribute("to", range.toIso());
-        model.addAttribute(ATTR_FROM_DATE, range.fromDate().toString());
-        model.addAttribute(ATTR_TO_DATE, range.toDate().toString());
+        model.addAttribute("from", dateRange.fromIso());
+        model.addAttribute("to", dateRange.toIso());
+        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
+        model.addAttribute("activeRange", resolveActiveRange(range, from, to));
         return "country-detail";
     }
 
