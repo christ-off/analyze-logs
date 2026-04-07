@@ -3,6 +3,8 @@
 Spring Boot web dashboard for [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format).
 Fetches log files from S3, stores them in a local SQLite database, and displays interactive charts with drill-down detail pages.
 
+![Screenshot](etc/screenshot.png)
+
 ## Security notice
 
 **This application is intended for local, single-user use only.**
