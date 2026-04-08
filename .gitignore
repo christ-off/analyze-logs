@@ -1,5 +1,6 @@
 /.idea/
 /target/
+/node_modules/
 logs.db
 **/application-local.yml
 /logs.db-shm
