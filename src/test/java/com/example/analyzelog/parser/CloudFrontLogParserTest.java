@@ -99,4 +99,52 @@ class CloudFrontLogParserTest {
         assertTrue(parser.parseLine("this is not json").isEmpty());
         assertTrue(parser.parseLine("{}").isEmpty()); // missing required date/time
     }
+
+    @Test
+    void dashValuesProduceZeroOrNull() {
+        // Replace numeric/optional fields with "-" to exercise dash-branch in intVal/longVal/doubleVal/nullableLong
+        String line = SAMPLE_LINE
+                .replace("\"sc-bytes\":\"1068\"",       "\"sc-bytes\":\"-\"")
+                .replace("\"cs-bytes\":\"336\"",         "\"cs-bytes\":\"-\"")
+                .replace("\"time-taken\":\"0.001\"",     "\"time-taken\":\"-\"")
+                .replace("\"time-to-first-byte\":\"0.001\"", "\"time-to-first-byte\":\"-\"");
+
+        Optional<CloudFrontLogEntry> result = parser.parseLine(line);
+        assertTrue(result.isPresent());
+        CloudFrontLogEntry e = result.get();
+        assertEquals(0L,  e.scBytes());
+        assertEquals(0L,  e.csBytes());
+        assertEquals(0.0, e.timeTaken(),       1e-9);
+        assertEquals(0.0, e.timeToFirstByte(), 1e-9);
+        assertNull(e.contentLength()); // sc-content-len was already "-" in SAMPLE_LINE
+    }
+
+    @Test
+    void invalidNumericValuesProduceZeroOrNull() {
+        // Non-numeric strings trigger the NumberFormatException catch branches
+        String line = SAMPLE_LINE
+                .replace("\"sc-status\":\"304\"",        "\"sc-status\":\"INVALID\"")
+                .replace("\"sc-bytes\":\"1068\"",        "\"sc-bytes\":\"INVALID\"")
+                .replace("\"cs-bytes\":\"336\"",         "\"cs-bytes\":\"INVALID\"")
+                .replace("\"time-taken\":\"0.001\"",     "\"time-taken\":\"INVALID\"")
+                .replace("\"time-to-first-byte\":\"0.001\"", "\"time-to-first-byte\":\"INVALID\"");
+
+        Optional<CloudFrontLogEntry> result = parser.parseLine(line);
+        assertTrue(result.isPresent());
+        CloudFrontLogEntry e = result.get();
+        assertEquals(0,   e.status());
+        assertEquals(0L,  e.scBytes());
+        assertEquals(0L,  e.csBytes());
+        assertEquals(0.0, e.timeTaken(),       1e-9);
+        assertEquals(0.0, e.timeToFirstByte(), 1e-9);
+    }
+
+    @Test
+    void invalidPercentEncodingInUserAgentFallsBack() {
+        // URLDecoder throws IllegalArgumentException for a trailing lone '%'
+        String line = SAMPLE_LINE.replace("\"Feedly/1.0\"", "\"Bad%UA%\"");
+        Optional<CloudFrontLogEntry> result = parser.parseLine(line);
+        assertTrue(result.isPresent());
+        assertEquals("Bad%UA%", result.get().userAgent());
+    }
 }

@@ -38,4 +38,14 @@ class RefreshControllerTest {
                 .hasStatus3xxRedirection()
                 .hasRedirectedUrl("/");
     }
+
+    @Test
+    void postErrorRedirectsHomeWithFlash() {
+        when(fetchService.fetch(isNull(), anyBoolean()))
+                .thenThrow(new RuntimeException("S3 unavailable"));
+
+        assertThat(mvc.post().uri("/refresh").with(csrf()).exchange())
+                .hasStatus3xxRedirection()
+                .hasRedirectedUrl("/");
+    }
 }

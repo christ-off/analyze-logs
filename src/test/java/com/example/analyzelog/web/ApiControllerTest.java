@@ -156,4 +156,43 @@ class ApiControllerTest {
         assertThat(mvc.get().uri("/api/ua-names-split").exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    void edgeLocationsReturnsJson() {
+        when(dashboardService.topEdgeLocations(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameCount("Paris (CDG)", 120)));
+
+        assertThat(mvc.get().uri("/api/edge-locations")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Paris (CDG)");
+    }
+
+    @Test
+    void referersReturnsJson() {
+        when(dashboardService.topReferers(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameCount("https://example.com", 55)));
+
+        assertThat(mvc.get().uri("/api/referers")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("https://example.com");
+    }
+
+    @Test
+    void unexpectedErrorReturns500() {
+        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
+                .thenThrow(new RuntimeException("db failure"));
+
+        assertThat(mvc.get().uri("/api/ua-groups")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }
