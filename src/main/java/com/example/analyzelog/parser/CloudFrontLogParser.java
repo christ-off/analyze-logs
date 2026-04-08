@@ -36,7 +36,7 @@ public class CloudFrontLogParser {
         try {
             JsonNode n = mapper.readTree(line);
             Instant timestamp = LocalDateTime
-                .parse(n.get("date").asText() + "T" + n.get("time").asText())
+                .parse(n.get("date").asString() + "T" + n.get("time").asString())
                 .toInstant(ZoneOffset.UTC);
 
             return Optional.of(new CloudFrontLogEntry(
@@ -69,7 +69,7 @@ public class CloudFrontLogParser {
 
     private static String text(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        return v != null ? v.asText() : null;
+        return v != null ? v.asString() : null;
     }
 
     private static String decodeUA(String ua) {
@@ -88,29 +88,29 @@ public class CloudFrontLogParser {
 
     private static int intVal(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asText())) return 0;
-        try { return Integer.parseInt(v.asText()); }
+        if (v == null || "-".equals(v.asString())) return 0;
+        try { return Integer.parseInt(v.asString()); }
         catch (NumberFormatException _) { return 0; }
     }
 
     private static long longVal(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asText())) return 0L;
-        try { return Long.parseLong(v.asText()); }
+        if (v == null || "-".equals(v.asString())) return 0L;
+        try { return Long.parseLong(v.asString()); }
         catch (NumberFormatException _) { return 0L; }
     }
 
     private static Long nullableLong(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asText())) return null;
-        try { return Long.parseLong(v.asText()); }
+        if (v == null || "-".equals(v.asString())) return null;
+        try { return Long.parseLong(v.asString()); }
         catch (NumberFormatException _) { return null; }
     }
 
     private static double doubleVal(JsonNode n, String field) {
         JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asText())) return 0.0;
-        try { return Double.parseDouble(v.asText()); }
+        if (v == null || "-".equals(v.asString())) return 0.0;
+        try { return Double.parseDouble(v.asString()); }
         catch (NumberFormatException _) { return 0.0; }
     }
 }

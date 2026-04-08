@@ -1,7 +1,6 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
-import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -177,7 +176,7 @@ class DashboardServiceIntegrationTest {
 
         var result = dashboardService.topEdgeLocations(from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(nc -> nc.name()).toList();
+        var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.stream().anyMatch(n -> n.contains("Paris")));
         assertTrue(names.stream().anyMatch(n -> n.contains("London")));
     }

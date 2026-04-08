@@ -55,10 +55,10 @@ public class EdgeLocationResolver {
             root.properties().forEach(e -> {
                 JsonNode n = e.getValue();
                 map.put(e.getKey(), new Location(
-                        n.path("city").asText(),
-                        n.path("country").asText(),
-                        n.path("countryCode").asText(),
-                        n.path("pricingRegion").asText(null)
+                        n.path("city").asString(),
+                        n.path("country").asString(),
+                        n.path("countryCode").asString(),
+                        n.path("pricingRegion").asString(null)
                 ));
             });
             return Map.copyOf(map);
