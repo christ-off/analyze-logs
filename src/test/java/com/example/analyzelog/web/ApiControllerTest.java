@@ -2,7 +2,6 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,16 +71,24 @@ class ApiControllerTest {
     }
 
     @Test
-    void uriStemsReturnsJson() {
-        when(dashboardService.topAllowedUriStems(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("/feed.xml", 55)));
+    void topUrlsSplitReturnsJson() {
+        when(dashboardService.topUrlsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("/feed.xml", 40, 10, 0, 2, 3)));
 
-        assertThat(mvc.get().uri("/api/uri-stems")
+        assertThat(mvc.get().uri("/api/top-urls-split")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("/feed.xml");
+
+        assertThat(mvc.get().uri("/api/top-urls-split")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].name").isEqualTo("/feed.xml");
+                .extractingPath("$[0].hit").isEqualTo(40);
     }
 
     @Test

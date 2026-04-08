@@ -35,7 +35,7 @@
         });
     }
 
-    function horizontalStackedBar(canvasId, data) {
+    function horizontalStackedBar(canvasId, data, urlFn) {
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
         new Chart(ctx, {
@@ -47,15 +47,15 @@
             options: {
                 indexAxis: 'y',
                 responsive: true,
-                onClick: (event, elements) => {
-                    if (!elements.length) return;
-                    const uaName = data[elements[0].index].name;
-                    globalThis.location.href =
-                        `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`;
-                },
-                onHover: (event, elements) => {
-                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                },
+                ...(urlFn ? {
+                    onClick: (event, elements) => {
+                        if (!elements.length) return;
+                        globalThis.location.href = urlFn(data[elements[0].index]);
+                    },
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                    },
+                } : {}),
                 scales: {
                     x: { stacked: true, beginAtZero: true },
                     y: { stacked: true }
@@ -65,11 +65,11 @@
     }
 
     const p = params.toString();
-    Charts.loadChart(`ua-names-split?${p}`,   data => horizontalStackedBar('chartUaNames',      data));
-    Charts.loadChart(`countries?${p}`,        data => Charts.horizontalBar('chartCountries',    data,
+    Charts.loadChart(`ua-names-split?${p}`,   data => horizontalStackedBar('chartUaNames', data,
+        d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+    Charts.loadChart(`countries?${p}`,        data => Charts.horizontalBar('chartCountries', data,
         item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
-    Charts.loadChart(`uri-stems?${p}`,        data => Charts.horizontalBar('chartUriStems',     data));
-    Charts.loadChart(`top-uri-stems?${p}`,    data => Charts.horizontalBar('chartTopUriStems',  data));
-    Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',     data));
+    Charts.loadChart(`top-urls-split?${p}`,   data => horizontalStackedBar('chartTopUrls',  data));
+    Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',  data));
     Charts.loadChart(`requests-per-day?${p}`, data => stackedBar(          'chartRequestsPerDay', data));
 })();

@@ -40,9 +40,9 @@ class DashboardServiceIntegrationTest {
     DashboardService dashboardService;
 
     @Test
-    void topAllowedUriStems_excludesStaticExtensions() {
+    void topUrlsByResultType_excludesStaticExtensions() {
         Instant from = Instant.now();
-        repository.saveEntries("logs/uri-filter-test.gz", List.of(
+        repository.saveEntries("logs/urls-split-filter-test.gz", List.of(
                 entryWithUri("/index.html"),
                 entryWithUri("/about.html"),
                 entryWithUri("/about.html"),
@@ -52,15 +52,49 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/icon.svg")
         ));
 
-        var result = dashboardService.topAllowedUriStems(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(nc -> nc.name()).toList();
+        var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/about.html"));
         assertTrue(names.contains("/index.html"));
         assertFalse(names.contains("/style.css"));
         assertFalse(names.contains("/app.js"));
         assertFalse(names.contains("/logo.png"));
         assertFalse(names.contains("/icon.svg"));
+    }
+
+    @Test
+    void topUrlsByResultType_countsResultTypesAndAggregatesPhpWordpress() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/urls-split-rt-test.gz", List.of(
+                entryWithUriAndResultType("/index.html", "Hit"),
+                entryWithUriAndResultType("/index.html", "Miss"),
+                entryWithUriAndResultType("/page.php",   "Hit"),
+                entryWithUriAndResultType("/other.php",  "Error"),
+                entryWithUriAndResultType("/wp-login.php", "Redirect"),
+                entryWithUriAndResultType("/wp-content/themes/style", "Hit")
+        ));
+
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(r -> r.name()).toList();
+        assertTrue(names.contains("/index.html"));
+        assertTrue(names.contains("PHP"));
+        assertTrue(names.contains("Wordpress"));
+        assertFalse(names.contains("/page.php"));
+        assertFalse(names.contains("/wp-login.php"));
+
+        var index = result.stream().filter(r -> "/index.html".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, index.hit());
+        assertEquals(1, index.miss());
+
+        var php = result.stream().filter(r -> "PHP".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, php.hit());
+        assertEquals(1, php.error());
+
+        var wp = result.stream().filter(r -> "Wordpress".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, wp.hit());
+        assertEquals(1, wp.redirect());
     }
 
     @Test
@@ -278,9 +312,9 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void topUriStems_aggregatesPhpAndWordpress() {
+    void topUrlsByResultType_aggregatesPhpAndWordpress() {
         Instant from = Instant.now();
-        repository.saveEntries("logs/top-uri-stems-test.gz", List.of(
+        repository.saveEntries("logs/urls-split-grouping-test.gz", List.of(
                 entryWithUri("/index.html"),
                 entryWithUri("/index.html"),
                 entryWithUri("/page.php"),
@@ -290,19 +324,21 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("//wp-admin/")      // //wp-% also maps to Wordpress
         ));
 
-        var result = dashboardService.topUriStems(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
         assertTrue(names.contains("PHP"));
         assertTrue(names.contains("Wordpress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
         assertFalse(names.contains("//wp-admin/"));
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
-        assertEquals(2, phpCount);
-        var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
-        assertEquals(3, wpCount);
+        var phpTotal = result.stream().filter(r -> "PHP".equals(r.name()))
+                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        assertEquals(2, phpTotal);
+        var wpTotal = result.stream().filter(r -> "Wordpress".equals(r.name()))
+                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        assertEquals(3, wpTotal);
     }
 
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
@@ -356,6 +392,17 @@ class DashboardServiceIntegrationTest {
                 null, "TestAgent/1.0",
                 "Hit", "https", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
+                null, null, "US"
+        );
+    }
+
+    private CloudFrontLogEntry entryWithUriAndResultType(String uriStem, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                uriStem, 200,
+                null, "TestAgent/1.0",
+                resultType, "https", 336L, 0.001,
+                resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
     }

@@ -37,16 +37,10 @@ public class ApiController {
         return dashboardService.topBlockedCountries(range.from(), range.to(), TOP_LIMIT);
     }
 
-    @GetMapping("/uri-stems")
-    public List<NameCount> uriStems(@RequestParam String from, @RequestParam String to) {
+    @GetMapping("/top-urls-split")
+    public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topAllowedUriStems(range.from(), range.to(), TOP_LIMIT);
-    }
-
-    @GetMapping("/top-uri-stems")
-    public List<NameCount> topUriStems(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.topUriStems(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topUrlsByResultType(range.from(), range.to(), TOP_LIMIT);
     }
 
     @GetMapping("/requests-per-day")

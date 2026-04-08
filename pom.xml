@@ -102,6 +102,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sts</artifactId>
         </dependency>
+        <!-- Required when ~/.aws/config contains login_session property (SDK >= 2.42.x) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>signin</artifactId>
+        </dependency>
 
         <!-- SQLite (not managed by Spring Boot) -->
         <dependency>

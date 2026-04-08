@@ -52,6 +52,20 @@ public class DashboardService {
             SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
             SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
             """;
+    private static final String SQL_URI_BY_RESULT_TYPE = "SELECT CASE\n" +
+            "         WHEN uri_stem LIKE '/wp-%'  THEN 'Wordpress'\n" +
+            "         WHEN uri_stem LIKE '//wp-%' THEN 'Wordpress'\n" +
+            "         WHEN uri_stem LIKE '%.php'  THEN 'PHP'\n" +
+            "         ELSE uri_stem\n" +
+            "       END as name,\n" +
+            RESULT_TYPE_SUMS + "\n" +
+            "FROM cloudfront_logs\n" +
+            "WHERE timestamp BETWEEN ? AND ?\n";
+    private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
+            GROUP BY name
+            ORDER BY (hit + miss + function + error + redirect) DESC
+            LIMIT ?
+            """;
     private static final String SQL_DAILY_SELECT = """
             SELECT date(timestamp) as day,
             """ + RESULT_TYPE_SUMS + """
@@ -173,11 +187,11 @@ public class DashboardService {
                 from.toString(), to.toString(), countryCode);
     }
 
-    public List<NameCount> topUriStems(Instant from, Instant to, int limit) {
+    public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
         String exclusionClause = uriStemExclusionClause();
-        String sql = SQL_GROUPED_URI_CASE
+        String sql = SQL_URI_BY_RESULT_TYPE
                 + andClause(exclusionClause)
-                + SQL_GROUP_BY_NAME_LIMIT;
+                + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -186,33 +200,13 @@ public class DashboardService {
         args.add(limit);
 
         return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
-    }
-
-    public List<NameCount> topAllowedUriStems(Instant from, Instant to, int limit) {
-        String exclusionClause = uriStemExclusionClause();
-        String sql = """
-                SELECT uri_stem as name, COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND status < 400
-                """
-                + andClause(exclusionClause)
-                + """
-                GROUP BY uri_stem
-                ORDER BY count DESC
-                LIMIT ?
-                """;
-
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
-        args.add(limit);
-
-        return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
                 args.toArray());
     }
 
