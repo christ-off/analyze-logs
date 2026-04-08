@@ -1,23 +1,8 @@
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { Charts } from '../../main/resources/static/js/charts.js';
 
-// charts.js is a plain browser script that sets a global Charts object.
-// We load it via eval into the jsdom globalThis so it works without modification.
-const chartsPath = resolve('src/main/resources/static/js/charts.js');
-
-let Charts;
-
-beforeAll(() => {
-    // Stub Chart.js constructor before loading charts.js
-    globalThis.Chart = vi.fn();
-    // charts.js uses `const Charts = {}` in strict mode, so const doesn't
-    // attach to globalThis via indirect eval. We append an explicit assignment.
-    const code = readFileSync(chartsPath, 'utf8') + '\nglobalThis.Charts = Charts;';
-    // eslint-disable-next-line no-eval
-    globalThis.eval(code);
-    Charts = globalThis.Charts;
-});
+// Stub the Chart.js constructor (loaded via CDN/webjars in browser, not available in tests)
+globalThis.Chart = vi.fn();
 
 beforeEach(() => {
     vi.clearAllMocks();

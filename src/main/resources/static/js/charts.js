@@ -135,6 +135,8 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
     });
 };
 
+export { Charts };
+
 Charts.linePerDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
