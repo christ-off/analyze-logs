@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,30 @@ class ApiControllerTest {
 
     @MockitoBean
     DashboardService dashboardService;
+
+    @Test
+    void uaGroupsReturnsJson() {
+        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(
+                        new NameCount("Browsers", 400),
+                        new NameCount("AI Bots",  180),
+                        new NameCount("Other",     20)));
+
+        assertThat(mvc.get().uri("/api/ua-groups")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Browsers");
+
+        assertThat(mvc.get().uri("/api/ua-groups")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].count").isEqualTo(400);
+    }
 
     @Test
     void uaNamesReturnsJson() {

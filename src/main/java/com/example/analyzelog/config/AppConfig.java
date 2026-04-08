@@ -1,5 +1,6 @@
 package com.example.analyzelog.config;
 
+import com.example.analyzelog.service.UaGroupClassifier;
 import com.example.analyzelog.service.UserAgentClassifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +29,10 @@ public class AppConfig {
     @Bean
     public UserAgentClassifier userAgentClassifier(UaClassifierProperties props) {
         return new UserAgentClassifier(props);
+    }
+
+    @Bean
+    public UaGroupClassifier uaGroupClassifier(UaGroupProperties props) {
+        return new UaGroupClassifier(props);
     }
 }

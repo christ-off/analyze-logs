@@ -25,6 +25,12 @@ public class ApiController {
         this.dashboardService = dashboardService;
     }
 
+    @GetMapping("/ua-groups")
+    public List<NameCount> uaGroups(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.uaGroupCounts(range.from(), range.to());
+    }
+
     @GetMapping("/ua-names-split")
     public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

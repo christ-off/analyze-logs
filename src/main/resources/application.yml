@@ -43,6 +43,75 @@ uri-stem-filter:
     - .webp
     - .gif
 
+ua-groups:
+  groups:
+    - name: "AI Bots"
+      labels:
+        - "ClaudeBot"
+        - "Claude-SearchBot"
+        - "OAI-SearchBot"
+        - "PerplexityBot"
+    - name: "Browsers"
+      labels:
+        - "Unknown"
+      labelPrefixes:
+        - "Chrome / "
+        - "Firefox / "
+        - "Safari / "
+        - "Edge / "
+    - name: "Fediverse"
+      labels:
+        - "Mastodon"
+        - "Misskey"
+    - name: "Feed Readers"
+      labels:
+        - "Feedly"
+        - "Feedbin"
+        - "Reeder"
+        - "FreshRSS"
+        - "NewsBlur"
+        - "rss-parser"
+        - "sfFeedReader"
+        - "Feeder"
+        - "Flus"
+        - "WP.com FeedBot"
+    - name: "Search Bots"
+      labels:
+        - "Googlebot"
+        - "Google ImageProxy"
+        - "Google FeedFetcher"
+        - "Bingbot"
+        - "YandexBot"
+        - "Baiduspider"
+        - "DuckDuckBot"
+        - "Qwantbot"
+    - name: "Other Bots"
+      labels:
+        - "AhrefsBot"
+        - "SemrushBot"
+        - "SERankingBot"
+        - "Barkrowler"
+        - "DotBot"
+        - "MJ12bot"
+        - "HeadlineBot"
+        - "PetalBot"
+        - "CocCocBot"
+        - "SeznamBot"
+        - "SummalyBot"
+        - "Yumechi Proxy"
+        - "WellKnownBot"
+        - "Censys Scanner"
+        - "Palo Alto Scanner"
+        - "VisionHeight Scanner"
+        - "2ip Scanner"
+        - "HeadlessChrome"
+    - name: "Apps"
+      labels:
+        - "Obsidian"
+        - "Google Search App"
+        - "okhttp"
+        - "Go HTTP client"
+
 ua-classifier:
   rules:
     # AI crawlers
