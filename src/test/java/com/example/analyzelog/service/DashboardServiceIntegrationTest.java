@@ -65,7 +65,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void topUrlsByResultType_countsResultTypesAndAggregatesPhpWordpress() {
+    void topUrlsByResultType_countsResultTypesAndAggregatesPhpWordPress() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-rt-test.gz", List.of(
                 entryWithUriAndResultType("/index.html", "Hit"),
@@ -81,7 +81,7 @@ class DashboardServiceIntegrationTest {
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
         assertTrue(names.contains("PHP"));
-        assertTrue(names.contains("Wordpress"));
+        assertTrue(names.contains("WordPress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
 
@@ -93,9 +93,37 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, php.hit());
         assertEquals(1, php.error());
 
-        var wp = result.stream().filter(r -> "Wordpress".equals(r.name())).findFirst().orElseThrow();
+        var wp = result.stream().filter(r -> "WordPress".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, wp.hit());
         assertEquals(1, wp.redirect());
+    }
+
+    @Test
+    void countryUrlsByResultType_countsPerResultTypeAndExcludesStaticExtensions() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-urls-split-test.gz", List.of(
+                entryWithCountryAndUriAndResultType("FR", "/index.html", "Hit"),
+                entryWithCountryAndUriAndResultType("FR", "/index.html", "Hit"),
+                entryWithCountryAndUriAndResultType("FR", "/index.html", "Miss"),
+                entryWithCountryAndUriAndResultType("FR", "/page.php",   "Error"),
+                entryWithCountryAndUriAndResultType("FR", "/style.css",  "Hit"),  // excluded
+                entryWithCountryAndUriAndResultType("US", "/index.html", "Hit")   // different country
+        ));
+
+        var result = dashboardService.countryUrlsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(r -> r.name()).toList();
+        assertTrue(names.contains("/index.html"));
+        assertTrue(names.contains("PHP"));
+        assertFalse(names.contains("/style.css"), "static extensions must be excluded");
+
+        var index = result.stream().filter(r -> "/index.html".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, index.hit());
+        assertEquals(1, index.miss());
+
+        // US entries must not appear
+        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        assertEquals(4, total);
     }
 
     @Test
@@ -290,13 +318,13 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void uaUriStems_aggregatesWpUrlsUnderWordpressLabel() {
+    void uaUriStems_aggregatesWpUrlsUnderWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-test.gz", List.of(
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → Wordpress, not PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → WordPress, not PHP
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-admin.php"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-content/themes/style"),
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-login.php"),   // matches //wp-% → also Wordpress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-login.php"),   // matches //wp-% → also WordPress
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-admin/"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
@@ -310,10 +338,37 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("//wp-login.php"), "individual //wp- URLs must not appear");
         assertFalse(names.contains("//wp-admin/"), "individual //wp- URLs must not appear");
-        assertTrue(names.contains("Wordpress"), "Wordpress label must be present");
-        assertFalse(names.contains("PHP"), "/wp-*.php must go to Wordpress, not PHP");
-        var wpCount = result.stream().filter(n -> "Wordpress".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertTrue(names.contains("WordPress"), "WordPress label must be present");
+        assertFalse(names.contains("PHP"), "/wp-*.php must go to WordPress, not PHP");
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
         assertEquals(5, wpCount);
+    }
+
+    @Test
+    void uaUriStems_aggregatesNewWordPressPatternsUnderWordPressLabel() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-wp-new-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/page"),    // /wordpress/% → WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/admin"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp/api"),            // /wp/% → WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php7"),         // .php7 → PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/PAGE.PHP7"),         // case-insensitive → PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
+        ));
+
+        List<NameCount> result = dashboardService.uaUriStems(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("WordPress"), "WordPress label must be present");
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(3, wpCount);
+
+        assertTrue(names.contains("PHP"), "PHP label must be present for .php7");
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        assertEquals(2, phpCount);
+
+        assertTrue(names.contains("/index.html"));
     }
 
     @Test
@@ -337,7 +392,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void topUrlsByResultType_aggregatesPhpAndWordpress() {
+    void topUrlsByResultType_aggregatesPhpAndWordPress() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-grouping-test.gz", List.of(
                 entryWithUri("/index.html"),
@@ -346,7 +401,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/other.php"),
                 entryWithUri("/wp-login.php"),   // /wp-% wins over .php
                 entryWithUri("/wp-content/themes/style"),
-                entryWithUri("//wp-admin/")      // //wp-% also maps to Wordpress
+                entryWithUri("//wp-admin/")      // //wp-% also maps to WordPress
         ));
 
         var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
@@ -354,14 +409,14 @@ class DashboardServiceIntegrationTest {
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
         assertTrue(names.contains("PHP"));
-        assertTrue(names.contains("Wordpress"));
+        assertTrue(names.contains("WordPress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
         assertFalse(names.contains("//wp-admin/"));
         var phpTotal = result.stream().filter(r -> "PHP".equals(r.name()))
                 .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
         assertEquals(2, phpTotal);
-        var wpTotal = result.stream().filter(r -> "Wordpress".equals(r.name()))
+        var wpTotal = result.stream().filter(r -> "WordPress".equals(r.name()))
                 .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
         assertEquals(3, wpTotal);
     }
@@ -421,6 +476,17 @@ class DashboardServiceIntegrationTest {
         );
     }
 
+    private CloudFrontLogEntry entryWithCountryAndUriAndResultType(String country, String uriStem, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                uriStem, 200,
+                null, "TestAgent/1.0",
+                resultType, "https", 336L, 0.001,
+                resultType, "HTTP/1.1", 0.001, resultType,
+                null, null, country
+        );
+    }
+
     private CloudFrontLogEntry entryWithCountryAndResultType(String country, String resultType) {
         return new CloudFrontLogEntry(
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
@@ -463,6 +529,33 @@ class DashboardServiceIntegrationTest {
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
+    }
+
+    @Test
+    void uaGroupCounts_groupsByConfiguredGroups() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-groups-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // → Browsers (Chrome / Windows)
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // → Browsers
+                entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Miss"), // → Browsers (Firefox / Linux)
+                entryWithUaAndResultType("ClaudeBot/1.0",   "Hit"),  // → AI Bots (ua_name = "ClaudeBot")
+                entryWithUaAndResultType(null,              "Hit")   // → Other (ua_name = "(no user agent)")
+        ));
+
+        var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        var browsers = result.stream().filter(r -> "Browsers".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(3, browsers.count());
+
+        var aiBots = result.stream().filter(r -> "AI Bots".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, aiBots.count());
+
+        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, other.count());
+
+        // sorted by count DESC
+        assertTrue(result.get(0).count() >= result.get(result.size() - 1).count());
     }
 
     @Test

@@ -96,6 +96,45 @@ Charts.pie = function (canvasId, data, colorMap) {
     });
 };
 
+Charts.resultTypeDatasets = function (data) {
+    return [
+        { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: Charts.COLORS.green  },
+        { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: Charts.COLORS.blue   },
+        { label: 'Function', data: data.map(d => d.function), backgroundColor: Charts.COLORS.orange },
+        { label: 'Redirect', data: data.map(d => d.redirect), backgroundColor: Charts.COLORS.purple },
+        { label: 'Error',    data: data.map(d => d.error),    backgroundColor: Charts.COLORS.red    },
+    ];
+};
+
+Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.name),
+            datasets: Charts.resultTypeDatasets(data),
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            ...(urlFn ? {
+                onClick: (event, elements) => {
+                    if (!elements.length) return;
+                    globalThis.location.href = urlFn(data[elements[0].index]);
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                },
+            } : {}),
+            scales: {
+                x: { stacked: true, beginAtZero: true },
+                y: { stacked: true }
+            }
+        }
+    });
+};
+
 Charts.linePerDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;

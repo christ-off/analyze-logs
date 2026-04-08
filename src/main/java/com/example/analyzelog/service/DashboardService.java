@@ -12,8 +12,11 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,17 +29,22 @@ public class DashboardService {
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
-    private static final String SQL_GROUPED_URI_CASE = """
-            SELECT CASE
-                     WHEN uri_stem LIKE '/wp-%' THEN 'Wordpress'
-                     WHEN uri_stem LIKE '//wp-%' THEN 'Wordpress'
-                     WHEN uri_stem LIKE '%.php' THEN 'PHP'
-                     ELSE uri_stem
-                   END as name,
-                   COUNT(*) as count
-            FROM cloudfront_logs
-            WHERE timestamp BETWEEN ? AND ?
+    private static final String URI_STEM_NAME_CASE = """
+            CASE
+                WHEN uri_stem LIKE '/wp-%' THEN 'WordPress'
+                WHEN uri_stem LIKE '//wp-%' THEN 'WordPress'
+                WHEN uri_stem LIKE '/wordpress/%' THEN 'WordPress'
+                WHEN uri_stem LIKE '/wp/%' THEN 'WordPress'
+                WHEN uri_stem LIKE '%.php' THEN 'PHP'
+                WHEN LOWER(uri_stem) LIKE '%.php7' THEN 'PHP'
+                ELSE uri_stem
+            END as name,
             """;
+    private static final String SQL_GROUPED_URI_CASE = "SELECT \n"+
+            URI_STEM_NAME_CASE+
+                "COUNT(*) as count \n"+
+            "FROM cloudfront_logs \n"+
+            "WHERE timestamp BETWEEN ? AND ?";
     private static final String SQL_GROUP_BY_NAME_LIMIT = """
             GROUP BY name
             ORDER BY count DESC
@@ -52,12 +60,8 @@ public class DashboardService {
             SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
             SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
             """;
-    private static final String SQL_URI_BY_RESULT_TYPE = "SELECT CASE\n" +
-            "         WHEN uri_stem LIKE '/wp-%'  THEN 'Wordpress'\n" +
-            "         WHEN uri_stem LIKE '//wp-%' THEN 'Wordpress'\n" +
-            "         WHEN uri_stem LIKE '%.php'  THEN 'PHP'\n" +
-            "         ELSE uri_stem\n" +
-            "       END as name,\n" +
+    private static final String SQL_URI_BY_RESULT_TYPE = "SELECT \n" +
+            URI_STEM_NAME_CASE +
             RESULT_TYPE_SUMS + "\n" +
             "FROM cloudfront_logs\n" +
             "WHERE timestamp BETWEEN ? AND ?\n";
@@ -79,14 +83,17 @@ public class DashboardService {
             """;
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
+    private final UaGroupClassifier uaGroupClassifier;
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
+                            UaGroupClassifier uaGroupClassifier,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
+        this.uaGroupClassifier = uaGroupClassifier;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
     }
@@ -99,6 +106,28 @@ public class DashboardService {
 
     private static String andClause(String clause) {
         return clause.isEmpty() ? "" : SQL_AND_INDENT + clause + "\n";
+    }
+
+    public List<NameCount> uaGroupCounts(Instant from, Instant to) {
+        List<NameCount> rawCounts = jdbc.query("""
+                SELECT ua_name as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                GROUP BY ua_name
+                """,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                from.toString(), to.toString());
+
+        Map<String, Long> totals = new LinkedHashMap<>();
+        for (NameCount raw : rawCounts) {
+            String group = uaGroupClassifier.classify(raw.name());
+            totals.merge(group, raw.count(), Long::sum);
+        }
+
+        return totals.entrySet().stream()
+                .map(e -> new NameCount(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparingLong(NameCount::count).reversed())
+                .toList();
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
@@ -163,12 +192,12 @@ public class DashboardService {
                 from.toString(), to.toString(), countryCode);
     }
 
-    public List<NameCount> countryUriStems(String countryCode, Instant from, Instant to, int limit) {
+    public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit) {
         String exclusionClause = uriStemExclusionClause();
-        String sql = SQL_GROUPED_URI_CASE
+        String sql = SQL_URI_BY_RESULT_TYPE
                 + "  AND country = ?\n"
                 + andClause(exclusionClause)
-                + SQL_GROUP_BY_NAME_LIMIT;
+                + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -178,7 +207,13 @@ public class DashboardService {
         args.add(limit);
 
         return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
                 args.toArray());
     }
 
