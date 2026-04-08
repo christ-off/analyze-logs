@@ -539,7 +539,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // → Browsers
                 entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Miss"), // → Browsers (Firefox / Linux)
                 entryWithUaAndResultType("ClaudeBot/1.0",   "Hit"),  // → AI Bots (ua_name = "ClaudeBot")
-                entryWithUaAndResultType(null,              "Hit")   // → Other (ua_name = "(no user agent)")
+                entryWithUaAndResultType(null,              "Hit")   // excluded (ua_name = "(no user agent)")
         ));
 
         var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5));
@@ -551,8 +551,8 @@ class DashboardServiceIntegrationTest {
         var aiBots = result.stream().filter(r -> "AI Bots".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, aiBots.count());
 
-        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(1, other.count());
+        // "(no user agent)" must be excluded entirely
+        assertTrue(result.stream().noneMatch(r -> "Other".equals(r.name())));
 
         // sorted by count DESC
         assertTrue(result.get(0).count() >= result.get(result.size() - 1).count());

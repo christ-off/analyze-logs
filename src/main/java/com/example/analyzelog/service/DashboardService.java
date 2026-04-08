@@ -113,6 +113,7 @@ public class DashboardService {
                 SELECT ua_name as name, COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
+                  AND ua_name != '(no user agent)'
                 GROUP BY ua_name
                 """,
                 (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
