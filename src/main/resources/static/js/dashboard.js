@@ -67,7 +67,7 @@
     const p = params.toString();
     Charts.loadChart(`ua-names-split?${p}`,   data => horizontalStackedBar('chartUaNames', data,
         d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
-    Charts.loadChart(`countries?${p}`,        data => Charts.horizontalBar('chartCountries', data,
+    Charts.loadChart(`countries?${p}`,        data => horizontalStackedBar('chartCountries', data,
         item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`top-urls-split?${p}`,   data => horizontalStackedBar('chartTopUrls',  data));
     Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',  data));

@@ -1,6 +1,7 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -95,6 +96,30 @@ class DashboardServiceIntegrationTest {
         var wp = result.stream().filter(r -> "Wordpress".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, wp.hit());
         assertEquals(1, wp.redirect());
+    }
+
+    @Test
+    void topCountriesByResultType_countsPerResultTypeAndResolvesDisplayName() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/countries-split-test.gz", List.of(
+                entryWithCountryAndResultType("FR", "Hit"),
+                entryWithCountryAndResultType("FR", "Hit"),
+                entryWithCountryAndResultType("FR", "Error"),
+                entryWithCountryAndResultType("US", "Miss")
+        ));
+
+        var result = dashboardService.topCountriesByResultType(from, Instant.now().plusSeconds(5), 10);
+
+        assertFalse(result.isEmpty());
+        var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
+        assertEquals("France", fr.name());
+        assertEquals(2, fr.hit());
+        assertEquals(1, fr.error());
+        assertEquals(0, fr.miss());
+
+        var us = result.stream().filter(r -> "US".equals(r.code())).findFirst().orElseThrow();
+        assertEquals("United States", us.name());
+        assertEquals(1, us.miss());
     }
 
     @Test
@@ -393,6 +418,17 @@ class DashboardServiceIntegrationTest {
                 "Hit", "https", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
+        );
+    }
+
+    private CloudFrontLogEntry entryWithCountryAndResultType(String country, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                "/index.html", 200,
+                null, "TestAgent/1.0",
+                resultType, "https", 336L, 0.001,
+                resultType, "HTTP/1.1", 0.001, resultType,
+                null, null, country
         );
     }
 

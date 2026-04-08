@@ -2,7 +2,7 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
-import com.example.analyzelog.model.CountryCount;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -122,14 +122,16 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    public List<CountryCount> topBlockedCountries(Instant from, Instant to, int limit) {
+    public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit) {
         return jdbc.query("""
-                SELECT country as code, COUNT(*) as count
+                SELECT country as code,
+                """ + RESULT_TYPE_SUMS + """
+
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
-                  AND status = 403
+                  AND country IS NOT NULL
                 GROUP BY country
-                ORDER BY count DESC
+                ORDER BY (hit + miss + function + error + redirect) DESC
                 LIMIT ?
                 """,
                 (rs, _) -> {
@@ -138,7 +140,12 @@ public class DashboardService {
                             ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
                             : iso;
                     String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
-                    return new CountryCount(iso, label, rs.getLong(COUNT_FIELD));
+                    return new CountryResultTypeCount(iso, label,
+                            rs.getLong("hit"),
+                            rs.getLong("miss"),
+                            rs.getLong(FIELD_FUNCTION),
+                            rs.getLong(FIELD_ERROR),
+                            rs.getLong(FIELD_REDIRECT));
                 },
                 from.toString(), to.toString(), limit);
     }

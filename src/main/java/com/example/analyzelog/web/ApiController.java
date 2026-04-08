@@ -1,6 +1,6 @@
 package com.example.analyzelog.web;
 
-import com.example.analyzelog.model.CountryCount;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.NameCount;
@@ -32,9 +32,9 @@ public class ApiController {
     }
 
     @GetMapping("/countries")
-    public List<CountryCount> countries(@RequestParam String from, @RequestParam String to) {
+    public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topBlockedCountries(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topCountriesByResultType(range.from(), range.to(), TOP_LIMIT);
     }
 
     @GetMapping("/top-urls-split")
