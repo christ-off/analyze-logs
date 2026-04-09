@@ -23,6 +23,15 @@ public class UaDetailController {
         this.dashboardService = dashboardService;
     }
 
+    @GetMapping("/user-agents")
+    public List<NameResultTypeCount> userAgents(
+            @RequestParam String ua,
+            @RequestParam String from,
+            @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.uaRawUserAgents(ua, range.from(), range.to());
+    }
+
     @GetMapping("/result-types")
     public List<NameCount> resultTypes(
             @RequestParam String ua,

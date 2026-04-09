@@ -87,6 +87,23 @@ class UaDetailControllerTest {
     }
 
     @Test
+    void userAgentsReturnsJson() {
+        when(dashboardService.uaRawUserAgents(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(
+                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0)", 80, 30, 5, 3, 2),
+                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 6.1)", 20, 8, 0, 1, 1)));
+
+        assertThat(mvc.get().uri("/api/ua-detail/user-agents")
+                .param("ua", "Chrome / Windows")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Mozilla/5.0 (Windows NT 10.0)");
+    }
+
+    @Test
     void invalidDateRangeReturns400() {
         assertThat(mvc.get().uri("/api/ua-detail/result-types")
                 .param("ua", "Chrome / Windows")

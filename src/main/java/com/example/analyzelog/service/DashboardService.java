@@ -359,6 +359,23 @@ public class DashboardService {
         return referer;
     }
 
+    public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to) {
+        return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND ua_name = ?\n" +
+                "GROUP BY user_agent\n" +
+                "ORDER BY (hit + miss + function + error + redirect) DESC\n",
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
+                from.toString(), to.toString(), uaName);
+    }
+
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
         return queryResultTypesByFilter("ua_name", uaName, from, to);
     }
