@@ -20,8 +20,8 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: JavaScript tests
-        run: npm ci && npm test
+      - name: JavaScript tests with coverage
+        run: npm ci && npm run coverage
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -39,3 +39,4 @@ jobs:
           -Dsonar.organization=christ-off
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
