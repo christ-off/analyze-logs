@@ -46,6 +46,8 @@ referer-normalizer:
       domain: "bing.com"
     - label: "Yahoo"
       domain-ends-with: "yahoo.com"
+    - label: "Brave"
+      domain-ends-with: "brave.com"
 
 uri-stem-filter:
   excluded-extensions:
