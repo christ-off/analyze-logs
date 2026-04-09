@@ -205,6 +205,80 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, today.function());
     }
 
+    // Bot filter (excludeBots) tests
+
+    private static final String UA_CLAUDEBOT = "ClaudeBot/1.0";
+    private static final String UA_GOOGLEBOT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+
+    @Test
+    void uaGroupCounts_excludeBots_removesBotGroups() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-groups-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),   // Browsers — kept
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),   // AI Bots — excluded
+                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")    // Search Bots — excluded
+        ));
+
+        var withBots    = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
+        var withoutBots = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), true);
+
+        assertTrue(withBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
+        assertFalse(withoutBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
+        assertFalse(withoutBots.stream().anyMatch(r -> "Search Bots".equals(r.name())));
+        assertTrue(withoutBots.stream().anyMatch(r -> "Browsers".equals(r.name())));
+    }
+
+    @Test
+    void topUserAgentsByResultType_excludeBots_removesBotEntries() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-split-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
+                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")
+        ));
+
+        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
+
+        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.contains("Chrome / Windows"));
+        assertFalse(names.contains("ClaudeBot"));
+        assertFalse(names.contains("Googlebot"));
+    }
+
+    @Test
+    void topUserAgentsByResultType_excludeBots_removesNoUserAgent() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-no-ua-exclude-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(null,              "Hit")   // ua_name = "(no user agent)"
+        ));
+
+        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
+
+        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.contains("Chrome / Windows"));
+        assertFalse(names.contains("(no user agent)"));
+    }
+
+    @Test
+    void requestsPerDay_excludeBots_reducesDailyCounts() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/rpd-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit")
+        ));
+
+        var withBots    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
+        var withoutBots = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
+
+        assertFalse(withBots.isEmpty());
+        assertFalse(withoutBots.isEmpty());
+        long totalWith    = withBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        long totalWithout = withoutBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        assertTrue(totalWith > totalWithout, "bot hits must be excluded from daily count");
+    }
+
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";

@@ -110,6 +110,8 @@ Six charts, all scoped to the selected date range:
 
 Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
 
+**Hide bots & apps** toggle removes traffic from the *AI Bots*, *Search Bots*, *Other Bots*, and *Apps* UA groups — as well as entries with no user agent — from all six charts simultaneously. State is persisted in `localStorage`.
+
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 
 ### UA detail page
