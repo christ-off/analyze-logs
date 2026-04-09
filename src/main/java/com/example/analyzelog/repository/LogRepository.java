@@ -38,11 +38,11 @@ public class LogRepository {
                     INSERT INTO cloudfront_logs (
                         timestamp, edge_location, sc_bytes, client_ip, method,
                         uri_stem, status, referer, user_agent,
-                        edge_result_type, protocol, cs_bytes, time_taken,
+                        edge_result_type, cs_bytes, time_taken,
                         edge_response_result_type, protocol_version, time_to_first_byte,
                         edge_detailed_result_type, content_type, content_length, country,
                         ua_name, edge_location_iata
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     entries,
                     entries.size(),
@@ -57,19 +57,18 @@ public class LogRepository {
                         stmt.setString(8, e.referer());
                         stmt.setString(9, e.userAgent());
                         stmt.setString(10, e.edgeResultType());
-                        stmt.setString(11, e.protocol());
-                        stmt.setLong(12, e.csBytes());
-                        stmt.setDouble(13, e.timeTaken());
-                        stmt.setString(14, e.edgeResponseResultType());
-                        stmt.setString(15, e.protocolVersion());
-                        stmt.setDouble(16, e.timeToFirstByte());
-                        stmt.setString(17, e.edgeDetailedResultType());
-                        stmt.setString(18, e.contentType());
-                        if (e.contentLength() == null) stmt.setNull(19, Types.INTEGER);
-                        else stmt.setLong(19, e.contentLength());
-                        stmt.setString(20, e.country());
-                        stmt.setString(21, classifier.classify(e.userAgent()));
-                        stmt.setString(22, edgeLocationResolver.extractIata(e.edgeLocation()));
+                        stmt.setLong(11, e.csBytes());
+                        stmt.setDouble(12, e.timeTaken());
+                        stmt.setString(13, e.edgeResponseResultType());
+                        stmt.setString(14, e.protocolVersion());
+                        stmt.setDouble(15, e.timeToFirstByte());
+                        stmt.setString(16, e.edgeDetailedResultType());
+                        stmt.setString(17, e.contentType());
+                        if (e.contentLength() == null) stmt.setNull(18, Types.INTEGER);
+                        else stmt.setLong(18, e.contentLength());
+                        stmt.setString(19, e.country());
+                        stmt.setString(20, classifier.classify(e.userAgent()));
+                        stmt.setString(21, edgeLocationResolver.extractIata(e.edgeLocation()));
                     });
         }
 

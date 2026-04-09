@@ -39,6 +39,10 @@ public class CloudFrontLogParser {
                 .parse(n.get("date").asString() + "T" + n.get("time").asString())
                 .toInstant(ZoneOffset.UTC);
 
+            if ("http".equals(text(n, "cs-protocol"))) {
+                return Optional.empty();
+            }
+
             return Optional.of(new CloudFrontLogEntry(
                 timestamp,
                 text(n, "x-edge-location"),
@@ -50,7 +54,6 @@ public class CloudFrontLogParser {
                 nullIfDash(n, "cs(Referer)"),
                 decodeUA(nullIfDash(n, "cs(User-Agent)")),
                 text(n, "x-edge-result-type"),
-                text(n, "cs-protocol"),
                 longVal(n, "cs-bytes"),
                 doubleVal(n, "time-taken"),
                 text(n, "x-edge-response-result-type"),

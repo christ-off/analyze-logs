@@ -499,7 +499,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, ua,
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, country
         );
@@ -510,7 +510,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, ua,
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -521,7 +521,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), edgeLocation, 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -532,7 +532,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -543,7 +543,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -554,7 +554,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, country
         );
@@ -565,7 +565,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, country
         );
@@ -576,7 +576,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -587,7 +587,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, ua,
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -598,7 +598,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 referer, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );

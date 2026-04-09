@@ -44,7 +44,6 @@ class CloudFrontLogParserTest {
         assertNull(e.referer());
         assertEquals("Feedly/1.0", e.userAgent());
         assertEquals("Hit", e.edgeResultType());
-        assertEquals("https", e.protocol());
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
         assertEquals("Hit", e.edgeResponseResultType());
@@ -137,6 +136,12 @@ class CloudFrontLogParserTest {
         assertEquals(0L,  e.csBytes());
         assertEquals(0.0, e.timeTaken(),       1e-9);
         assertEquals(0.0, e.timeToFirstByte(), 1e-9);
+    }
+
+    @Test
+    void skipsHttpEntries() {
+        String line = SAMPLE_LINE.replace("\"cs-protocol\":\"https\"", "\"cs-protocol\":\"http\"");
+        assertTrue(parser.parseLine(line).isEmpty());
     }
 
     @Test

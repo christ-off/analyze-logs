@@ -5,9 +5,9 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <include file="db/changelog/changes/001-initial-schema.xml"/>
-    <include file="db/changelog/changes/002-add-ua-name.xml"/>
-    <include file="db/changelog/changes/003-add-edge-location-iata.xml"/>
-    <include file="db/changelog/changes/004-drop-protocol.xml"/>
+    <changeSet id="004-drop-protocol" author="analyze-logs">
+        <sql>DELETE FROM cloudfront_logs WHERE protocol = 'http'</sql>
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN protocol</sql>
+    </changeSet>
 
 </databaseChangeLog>
