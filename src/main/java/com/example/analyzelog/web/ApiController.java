@@ -18,6 +18,7 @@ import java.util.List;
 public class ApiController {
 
     private static final int TOP_LIMIT = 10;
+    private static final int TOP_URLS_LIMIT = 20;
 
     private final DashboardService dashboardService;
 
@@ -46,7 +47,7 @@ public class ApiController {
     @GetMapping("/top-urls-split")
     public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUrlsByResultType(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topUrlsByResultType(range.from(), range.to(), TOP_URLS_LIMIT);
     }
 
     @GetMapping("/requests-per-day")

@@ -1,6 +1,7 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.config.RefererFilterProperties;
+import com.example.analyzelog.config.RefererNormalizerProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -9,6 +10,7 @@ import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,16 +42,6 @@ public class DashboardService {
                 WHEN LOWER(uri_stem) LIKE '%.php7' THEN 'PHP'
                 ELSE uri_stem
             END as name,
-            """;
-    private static final String SQL_GROUPED_URI_CASE = "SELECT \n"+
-            URI_STEM_NAME_CASE+
-                "COUNT(*) as count \n"+
-            "FROM cloudfront_logs \n"+
-            "WHERE timestamp BETWEEN ? AND ?";
-    private static final String SQL_GROUP_BY_NAME_LIMIT = """
-            GROUP BY name
-            ORDER BY count DESC
-            LIMIT ?
             """;
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
@@ -86,16 +79,19 @@ public class DashboardService {
     private final UaGroupClassifier uaGroupClassifier;
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
+    private final List<RefererNormalizerProperties.Rule> normalizerRules;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UaGroupClassifier uaGroupClassifier,
                             UriStemFilterProperties uriStemFilterProperties,
-                            RefererFilterProperties refererFilterProperties) {
+                            RefererFilterProperties refererFilterProperties,
+                            RefererNormalizerProperties refererNormalizerProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.uaGroupClassifier = uaGroupClassifier;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
+        this.normalizerRules = refererNormalizerProperties.rules();
     }
 
     private String uriStemExclusionClause() {
@@ -118,17 +114,7 @@ public class DashboardService {
                 """,
                 (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString());
-
-        Map<String, Long> totals = new LinkedHashMap<>();
-        for (NameCount raw : rawCounts) {
-            String group = uaGroupClassifier.classify(raw.name());
-            totals.merge(group, raw.count(), Long::sum);
-        }
-
-        return totals.entrySet().stream()
-                .map(e -> new NameCount(e.getKey(), e.getValue()))
-                .sorted(Comparator.comparingLong(NameCount::count).reversed())
-                .toList();
+        return aggregateByLabel(rawCounts, uaGroupClassifier::classify);
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
@@ -181,64 +167,30 @@ public class DashboardService {
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT edge_response_result_type as name, COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND country = ?
-                GROUP BY edge_response_result_type
-                ORDER BY count DESC
-                """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), countryCode);
+        return queryResultTypesByFilter("country", countryCode, from, to);
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        String exclusionClause = uriStemExclusionClause();
-        String sql = SQL_URI_BY_RESULT_TYPE
-                + "  AND country = ?\n"
-                + andClause(exclusionClause)
-                + SQL_URI_RESULT_TYPE_GROUP_ORDER;
-
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.add(countryCode);
-        excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
-        args.add(limit);
-
-        return jdbc.query(sql,
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
-                args.toArray());
+        return urlsByResultType("country = ?", List.of(from.toString(), to.toString(), countryCode), limit);
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
-        return jdbc.query(SQL_DAILY_SELECT + "  AND country = ?\n" + SQL_DAILY_GROUP_ORDER,
-                (rs, _) -> new DailyResultTypeCount(
-                        LocalDate.parse(rs.getString("day")),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString(), countryCode);
     }
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
+        return urlsByResultType("", List.of(from.toString(), to.toString()), limit);
+    }
+
+    private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit) {
         String exclusionClause = uriStemExclusionClause();
         String sql = SQL_URI_BY_RESULT_TYPE
+                + andClause(additionalFilter)
                 + andClause(exclusionClause)
                 + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        var args = new ArrayList<>(baseArgs);
         excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
         args.add(limit);
 
@@ -270,7 +222,10 @@ public class DashboardService {
     }
 
     public List<NameCount> topReferers(Instant from, Instant to, int limit) {
-        String selfExclusionClause = selfReferers.stream()
+        List<String> exclusionPatterns = selfReferers.stream()
+                .flatMap(prefix -> selfExclusionPatterns(prefix).stream())
+                .toList();
+        String selfExclusionClause = exclusionPatterns.stream()
                 .map(_ -> "referer NOT LIKE ?")
                 .collect(Collectors.joining(AND_SEPARATOR));
         String sql = """
@@ -283,31 +238,62 @@ public class DashboardService {
                 + """
                 GROUP BY referer
                 ORDER BY count DESC
-                LIMIT ?
                 """;
 
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
-        selfReferers.forEach(prefix -> args.add(prefix + "%"));
-        args.add(limit);
+        exclusionPatterns.forEach(args::add);
 
-        return jdbc.query(sql,
+        List<NameCount> raw = jdbc.query(sql,
                 (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
                 args.toArray());
+
+        return aggregateByLabel(raw, this::normalizeReferer).stream()
+                .limit(limit)
+                .toList();
+    }
+
+    private static List<String> selfExclusionPatterns(String configuredReferer) {
+        String stripped = configuredReferer.endsWith("/")
+                ? configuredReferer.substring(0, configuredReferer.length() - 1)
+                : configuredReferer;
+        List<String> patterns = new ArrayList<>();
+        patterns.add(stripped + "%");
+        try {
+            String host = URI.create(configuredReferer).getHost();
+            if (host != null) patterns.add(host + "%");
+        } catch (IllegalArgumentException _) {
+            // malformed URI — skip bare-domain pattern
+        }
+        return patterns;
+    }
+
+    private String normalizeReferer(String referer) {
+        try {
+            URI uri = URI.create(referer);
+            String host = uri.getHost();
+            if (host == null) {
+                // schemeless referer (e.g. "www.google.com/path") — prepend scheme to parse host
+                host = URI.create("https://" + referer).getHost();
+            }
+            if (host == null) return referer;
+            String h = host.startsWith("www.") ? host.substring(4) : host;
+            for (RefererNormalizerProperties.Rule rule : normalizerRules) {
+                if ((rule.domain() != null && h.equals(rule.domain()))
+                        || (rule.domainStartsWith() != null && h.startsWith(rule.domainStartsWith()))
+                        || (rule.domainEndsWith() != null && h.endsWith(rule.domainEndsWith()))) {
+                    return rule.label();
+                }
+            }
+        } catch (IllegalArgumentException _) {
+            // malformed URI — return as-is
+        }
+        return referer;
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT edge_response_result_type as name, COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND ua_name = ?
-                GROUP BY edge_response_result_type
-                ORDER BY count DESC
-                """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), uaName);
+        return queryResultTypesByFilter("ua_name", uaName, from, to);
     }
 
     public List<NameCount> uaCountries(String uaName, Instant from, Instant to) {
@@ -330,39 +316,22 @@ public class DashboardService {
                 from.toString(), to.toString(), uaName);
     }
 
-    public List<NameCount> uaUriStems(String uaName, Instant from, Instant to, int limit) {
-        String exclusionClause = uriStemExclusionClause();
-        String sql = SQL_GROUPED_URI_CASE
-                + "  AND ua_name = ?\n"
-                + andClause(exclusionClause)
-                + SQL_GROUP_BY_NAME_LIMIT;
-
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.add(uaName);
-        excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
-        args.add(limit);
-
-        return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
+    public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
+        return urlsByResultType("ua_name = ?", List.of(from.toString(), to.toString(), uaName), limit);
     }
 
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to) {
-        return jdbc.query(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + SQL_DAILY_GROUP_ORDER,
-                (rs, _) -> new DailyResultTypeCount(
-                        LocalDate.parse(rs.getString("day")),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString(), uaName);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
-        return jdbc.query(SQL_DAILY_SELECT + SQL_DAILY_GROUP_ORDER,
+        return queryDailyByResultType(SQL_DAILY_SELECT + SQL_DAILY_GROUP_ORDER,
+                from.toString(), to.toString());
+    }
+
+    private List<DailyResultTypeCount> queryDailyByResultType(String sql, Object... args) {
+        return jdbc.query(sql,
                 (rs, _) -> new DailyResultTypeCount(
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("hit"),
@@ -370,6 +339,30 @@ public class DashboardService {
                         rs.getLong(FIELD_FUNCTION),
                         rs.getLong(FIELD_ERROR),
                         rs.getLong(FIELD_REDIRECT)),
-                from.toString(), to.toString());
+                args);
+    }
+
+    // filterColumn is always a trusted Java constant, never user input
+    private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to) {
+        String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
+                + "FROM cloudfront_logs\n"
+                + "WHERE timestamp BETWEEN ? AND ?\n"
+                + "  AND " + filterColumn + " = ?\n"
+                + "GROUP BY edge_response_result_type\n"
+                + "ORDER BY count DESC\n";
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                from.toString(), to.toString(), value);
+    }
+
+    private static List<NameCount> aggregateByLabel(List<NameCount> raw, UnaryOperator<String> labeler) {
+        Map<String, Long> totals = new LinkedHashMap<>();
+        for (NameCount entry : raw) {
+            totals.merge(labeler.apply(entry.name()), entry.count(), Long::sum);
+        }
+        return totals.entrySet().stream()
+                .map(e -> new NameCount(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparingLong(NameCount::count).reversed())
+                .toList();
     }
 }

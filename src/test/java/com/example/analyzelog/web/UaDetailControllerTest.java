@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,8 +60,8 @@ class UaDetailControllerTest {
 
     @Test
     void uriStemsReturnsJson() {
-        when(dashboardService.uaUriStems(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("/index.html", 30)));
+        when(dashboardService.uaUrlsByResultType(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3, 2)));
 
         assertThat(mvc.get().uri("/api/ua-detail/uri-stems")
                 .param("ua", "Chrome / Windows")

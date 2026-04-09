@@ -277,7 +277,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void uaUriStems_excludesStaticAndFiltersToUa() {
+    void uaUrlsByResultType_excludesStaticAndFiltersToUa() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-uri-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html"),
@@ -286,17 +286,17 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_FIREFOX_LINUX,  "/about.html")  // different UA — must not appear
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/index.html"));
         assertFalse(names.contains("/style.css"));
         assertFalse(names.contains("/about.html"));
     }
 
     @Test
-    void uaUriStems_aggregatesPhpUrlsUnderPhpLabel() {
+    void uaUrlsByResultType_aggregatesPhpUrlsUnderPhpLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-php-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
@@ -305,19 +305,19 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
         assertFalse(names.contains("/other.php"), "individual .php URLs must not appear");
         assertTrue(names.contains("PHP"), "PHP label must be present");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(3, phpCount);
     }
 
     @Test
-    void uaUriStems_aggregatesWpUrlsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesWpUrlsUnderWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → WordPress, not PHP
@@ -328,10 +328,10 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-admin.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
@@ -339,12 +339,12 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("//wp-admin/"), "individual //wp- URLs must not appear");
         assertTrue(names.contains("WordPress"), "WordPress label must be present");
         assertFalse(names.contains("PHP"), "/wp-*.php must go to WordPress, not PHP");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(5, wpCount);
     }
 
     @Test
-    void uaUriStems_aggregatesNewWordPressPatternsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesNewWordPressPatternsUnderWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-new-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/page"),    // /wordpress/% → WordPress
@@ -355,16 +355,16 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("WordPress"), "WordPress label must be present");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(3, wpCount);
 
         assertTrue(names.contains("PHP"), "PHP label must be present for .php7");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(2, phpCount);
 
         assertTrue(names.contains("/index.html"));
@@ -558,6 +558,38 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void topReferers_normalizesSearchEngines() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/referers-search-test.gz", List.of(
+                entryWithReferer("https://www.google.com/search?q=test"),
+                entryWithReferer("https://www.google.com/search?q=other"),
+                entryWithReferer("https://google.fr/search?q=test"),
+                entryWithReferer("www.google.com/search?q=schemeless"),          // schemeless Google
+                entryWithReferer("https://www.facebook.com/page"),
+                entryWithReferer("https://www.babelio.com/livres/test"),
+                entryWithReferer("https://www.qwant.com/?q=test"),
+                entryWithReferer("https://www.duckduckgo.com/?q=test"),
+                entryWithReferer("https://www.duckduckgo.com/?q=other"),
+                entryWithReferer("https://www.bing.com/search?q=test"),
+                entryWithReferer("https://fr.search.yahoo.com/search?p=test"),
+                entryWithReferer("https://search.yahoo.com/search?p=other"),
+                entryWithReferer("https://external.com/page")
+        ));
+
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
+        var map = result.stream().collect(java.util.stream.Collectors.toMap(NameCount::name, NameCount::count));
+
+        assertEquals(4L, map.get("Google"), "all google.* referers including schemeless must be grouped");
+        assertEquals(1L, map.get("Facebook"));
+        assertEquals(1L, map.get("Babelio"));
+        assertEquals(1L, map.get("Bing"));
+        assertEquals(1L, map.get("Qwant"));
+        assertEquals(2L, map.get("DuckDuckGo"));
+        assertEquals(2L, map.get("Yahoo"), "all *.search.yahoo.com must be grouped");
+        assertTrue(map.containsKey("https://external.com/page"), "unknown referers pass through unchanged");
+    }
+
+    @Test
     void topReferers_excludesSelfReferersAndNulls() {
         Instant from = Instant.now();
         repository.saveEntries("logs/referers-test.gz", List.of(
@@ -565,8 +597,10 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("https://external.com/page"),
                 entryWithReferer("https://other.org/"),
                 entryWithReferer(null),                                          // null — excluded
-                entryWithReferer("https://post-tenebras-lire.net/some-post"),    // https self — excluded
-                entryWithReferer("http://post-tenebras-lire.net/some-post")      // http self — excluded
+                entryWithReferer("https://post-tenebras-lire.net/some-post"),    // https self with path — excluded
+                entryWithReferer("http://post-tenebras-lire.net/some-post"),     // http self with path — excluded
+                entryWithReferer("https://post-tenebras-lire.net"),               // https self bare domain — excluded
+                entryWithReferer("post-tenebras-lire.net")                        // no-scheme self — excluded
         ));
 
         var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
@@ -576,6 +610,8 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains("https://other.org/"));
         assertFalse(names.contains("https://post-tenebras-lire.net/some-post"), "https self must be excluded");
         assertFalse(names.contains("http://post-tenebras-lire.net/some-post"),  "http self must be excluded");
+        assertFalse(names.contains("https://post-tenebras-lire.net"),           "bare domain self must be excluded");
+        assertFalse(names.contains("post-tenebras-lire.net"),                   "no-scheme self must be excluded");
         assertFalse(names.stream().anyMatch(n -> n == null), "null referers must be excluded");
         var extCount = result.stream()
                 .filter(n -> "https://external.com/page".equals(n.name()))
