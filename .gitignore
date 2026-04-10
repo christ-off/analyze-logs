@@ -1,6 +1,7 @@
 /.idea/
 /target/
 /node_modules/
+/coverage/
 logs.db
 **/application-local.yml
 /logs.db-shm

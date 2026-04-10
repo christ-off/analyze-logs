@@ -40,6 +40,33 @@ class DashboardServiceIntegrationTest {
     DashboardService dashboardService;
 
     @Test
+    void countryTopUserAgentsByResultType_filtersToCountryAndCountsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-ua-split-test.gz", List.of(
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
+                entryWithUaAndCountryAndResultType(UA_FIREFOX_LINUX,  "FR", "Error"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")  // different country — must not appear
+        ));
+
+        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+
+        assertFalse(result.isEmpty());
+        var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, chrome.hit());
+        assertEquals(1, chrome.miss());
+        assertEquals(0, chrome.error());
+
+        var firefox = result.stream().filter(r -> "Firefox / Linux".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, firefox.error());
+
+        // US entry must not inflate FR counts
+        long totalHits = result.stream().mapToLong(NameResultTypeCount::hit).sum();
+        assertEquals(2, totalHits);
+    }
+
+    @Test
     void topUrlsByResultType_excludesStaticExtensions() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-filter-test.gz", List.of(
@@ -205,6 +232,80 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, today.function());
     }
 
+    // Bot filter (excludeBots) tests
+
+    private static final String UA_CLAUDEBOT = "ClaudeBot/1.0";
+    private static final String UA_GOOGLEBOT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+
+    @Test
+    void uaGroupCounts_excludeBots_removesBotGroups() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-groups-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),   // Browsers — kept
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),   // AI Bots — excluded
+                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")    // Search Bots — excluded
+        ));
+
+        var withBots    = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
+        var withoutBots = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), true);
+
+        assertTrue(withBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
+        assertFalse(withoutBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
+        assertFalse(withoutBots.stream().anyMatch(r -> "Search Bots".equals(r.name())));
+        assertTrue(withoutBots.stream().anyMatch(r -> "Browsers".equals(r.name())));
+    }
+
+    @Test
+    void topUserAgentsByResultType_excludeBots_removesBotEntries() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-split-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
+                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")
+        ));
+
+        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
+
+        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.contains("Chrome / Windows"));
+        assertFalse(names.contains("ClaudeBot"));
+        assertFalse(names.contains("Googlebot"));
+    }
+
+    @Test
+    void topUserAgentsByResultType_excludeBots_removesNoUserAgent() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-no-ua-exclude-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(null,              "Hit")   // ua_name = "(no user agent)"
+        ));
+
+        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
+
+        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.contains("Chrome / Windows"));
+        assertFalse(names.contains("(no user agent)"));
+    }
+
+    @Test
+    void requestsPerDay_excludeBots_reducesDailyCounts() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/rpd-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit")
+        ));
+
+        var withBots    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
+        var withoutBots = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
+
+        assertFalse(withBots.isEmpty());
+        assertFalse(withoutBots.isEmpty());
+        long totalWith    = withBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        long totalWithout = withoutBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        assertTrue(totalWith > totalWithout, "bot hits must be excluded from daily count");
+    }
+
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -277,7 +378,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void uaUriStems_excludesStaticAndFiltersToUa() {
+    void uaUrlsByResultType_excludesStaticAndFiltersToUa() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-uri-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html"),
@@ -286,17 +387,17 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_FIREFOX_LINUX,  "/about.html")  // different UA — must not appear
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/index.html"));
         assertFalse(names.contains("/style.css"));
         assertFalse(names.contains("/about.html"));
     }
 
     @Test
-    void uaUriStems_aggregatesPhpUrlsUnderPhpLabel() {
+    void uaUrlsByResultType_aggregatesPhpUrlsUnderPhpLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-php-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
@@ -305,19 +406,19 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
         assertFalse(names.contains("/other.php"), "individual .php URLs must not appear");
         assertTrue(names.contains("PHP"), "PHP label must be present");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(3, phpCount);
     }
 
     @Test
-    void uaUriStems_aggregatesWpUrlsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesWpUrlsUnderWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → WordPress, not PHP
@@ -328,10 +429,10 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-admin.php"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
@@ -339,12 +440,12 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("//wp-admin/"), "individual //wp- URLs must not appear");
         assertTrue(names.contains("WordPress"), "WordPress label must be present");
         assertFalse(names.contains("PHP"), "/wp-*.php must go to WordPress, not PHP");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(5, wpCount);
     }
 
     @Test
-    void uaUriStems_aggregatesNewWordPressPatternsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesNewWordPressPatternsUnderWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-new-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/page"),    // /wordpress/% → WordPress
@@ -355,16 +456,16 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
-        List<NameCount> result = dashboardService.uaUriStems(
+        List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("WordPress"), "WordPress label must be present");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameCount::count).sum();
+        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(3, wpCount);
 
         assertTrue(names.contains("PHP"), "PHP label must be present for .php7");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameCount::count).sum();
+        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
         assertEquals(2, phpCount);
 
         assertTrue(names.contains("/index.html"));
@@ -420,12 +521,23 @@ class DashboardServiceIntegrationTest {
         assertEquals(3, wpTotal);
     }
 
+    private CloudFrontLogEntry entryWithUaAndCountryAndResultType(String ua, String country, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                "/index.html", 200,
+                null, ua,
+                resultType, 336L, 0.001,
+                resultType, "HTTP/1.1", 0.001, resultType,
+                null, null, country
+        );
+    }
+
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
         return new CloudFrontLogEntry(
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, ua,
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, country
         );
@@ -436,7 +548,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, ua,
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -447,7 +559,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), edgeLocation, 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -458,7 +570,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -469,7 +581,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -480,7 +592,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, country
         );
@@ -491,7 +603,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, country
         );
@@ -502,7 +614,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 uriStem, 200,
                 null, "TestAgent/1.0",
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -513,7 +625,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, ua,
-                resultType, "https", 336L, 0.001,
+                resultType, 336L, 0.001,
                 resultType, "HTTP/1.1", 0.001, resultType,
                 null, null, "US"
         );
@@ -524,7 +636,7 @@ class DashboardServiceIntegrationTest {
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
                 "/index.html", 200,
                 referer, "TestAgent/1.0",
-                "Hit", "https", 336L, 0.001,
+                "Hit", 336L, 0.001,
                 "Hit", "HTTP/1.1", 0.001, "Hit",
                 null, null, "US"
         );
@@ -558,6 +670,38 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void topReferers_normalizesSearchEngines() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/referers-search-test.gz", List.of(
+                entryWithReferer("https://www.google.com/search?q=test"),
+                entryWithReferer("https://www.google.com/search?q=other"),
+                entryWithReferer("https://google.fr/search?q=test"),
+                entryWithReferer("www.google.com/search?q=schemeless"),          // schemeless Google
+                entryWithReferer("https://www.facebook.com/page"),
+                entryWithReferer("https://www.babelio.com/livres/test"),
+                entryWithReferer("https://www.qwant.com/?q=test"),
+                entryWithReferer("https://www.duckduckgo.com/?q=test"),
+                entryWithReferer("https://www.duckduckgo.com/?q=other"),
+                entryWithReferer("https://www.bing.com/search?q=test"),
+                entryWithReferer("https://fr.search.yahoo.com/search?p=test"),
+                entryWithReferer("https://search.yahoo.com/search?p=other"),
+                entryWithReferer("https://external.com/page")
+        ));
+
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
+        var map = result.stream().collect(java.util.stream.Collectors.toMap(NameCount::name, NameCount::count));
+
+        assertEquals(4L, map.get("Google"), "all google.* referers including schemeless must be grouped");
+        assertEquals(1L, map.get("Facebook"));
+        assertEquals(1L, map.get("Babelio"));
+        assertEquals(1L, map.get("Bing"));
+        assertEquals(1L, map.get("Qwant"));
+        assertEquals(2L, map.get("DuckDuckGo"));
+        assertEquals(2L, map.get("Yahoo"), "all *.search.yahoo.com must be grouped");
+        assertTrue(map.containsKey("https://external.com/page"), "unknown referers pass through unchanged");
+    }
+
+    @Test
     void topReferers_excludesSelfReferersAndNulls() {
         Instant from = Instant.now();
         repository.saveEntries("logs/referers-test.gz", List.of(
@@ -565,8 +709,10 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("https://external.com/page"),
                 entryWithReferer("https://other.org/"),
                 entryWithReferer(null),                                          // null — excluded
-                entryWithReferer("https://post-tenebras-lire.net/some-post"),    // https self — excluded
-                entryWithReferer("http://post-tenebras-lire.net/some-post")      // http self — excluded
+                entryWithReferer("https://post-tenebras-lire.net/some-post"),    // https self with path — excluded
+                entryWithReferer("http://post-tenebras-lire.net/some-post"),     // http self with path — excluded
+                entryWithReferer("https://post-tenebras-lire.net"),               // https self bare domain — excluded
+                entryWithReferer("post-tenebras-lire.net")                        // no-scheme self — excluded
         ));
 
         var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
@@ -576,6 +722,8 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains("https://other.org/"));
         assertFalse(names.contains("https://post-tenebras-lire.net/some-post"), "https self must be excluded");
         assertFalse(names.contains("http://post-tenebras-lire.net/some-post"),  "http self must be excluded");
+        assertFalse(names.contains("https://post-tenebras-lire.net"),           "bare domain self must be excluded");
+        assertFalse(names.contains("post-tenebras-lire.net"),                   "no-scheme self must be excluded");
         assertFalse(names.stream().anyMatch(n -> n == null), "null referers must be excluded");
         var extCount = result.stream()
                 .filter(n -> "https://external.com/page".equals(n.name()))

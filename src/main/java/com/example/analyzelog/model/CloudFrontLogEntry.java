@@ -13,7 +13,6 @@ public record CloudFrontLogEntry(
     String referer,               // cs(Referer)
     String userAgent,             // cs(User-Agent)
     String edgeResultType,        // x-edge-result-type
-    String protocol,              // cs-protocol
     long csBytes,                 // cs-bytes
     double timeTaken,             // time-taken
     String edgeResponseResultType,// x-edge-response-result-type

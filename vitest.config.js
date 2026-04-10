@@ -8,6 +8,7 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             include: ['src/main/resources/static/js/charts.js'],
+            reporter: ['text', 'lcov'],
         },
     },
 });

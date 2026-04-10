@@ -16,11 +16,21 @@ import java.util.List;
 @RequestMapping("/api/country-detail")
 public class CountryDetailController {
 
-    private static final int TOP_LIMIT = 10;
+    private static final int TOP_URLS_LIMIT = 20;
+    private static final int TOP_UA_LIMIT   = 10;
     private final DashboardService dashboardService;
 
     public CountryDetailController(DashboardService dashboardService) {
         this.dashboardService = dashboardService;
+    }
+
+    @GetMapping("/ua-split")
+    public List<NameResultTypeCount> uaSplit(
+            @RequestParam String country,
+            @RequestParam String from,
+            @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.countryTopUserAgentsByResultType(country, range.from(), range.to(), TOP_UA_LIMIT);
     }
 
     @GetMapping("/result-types")
@@ -38,7 +48,7 @@ public class CountryDetailController {
             @RequestParam String from,
             @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.countryUrlsByResultType(country, range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.countryUrlsByResultType(country, range.from(), range.to(), TOP_URLS_LIMIT);
     }
 
     @GetMapping("/requests-per-day")

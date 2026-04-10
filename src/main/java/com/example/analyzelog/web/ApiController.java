@@ -18,6 +18,7 @@ import java.util.List;
 public class ApiController {
 
     private static final int TOP_LIMIT = 10;
+    private static final int TOP_URLS_LIMIT = 20;
 
     private final DashboardService dashboardService;
 
@@ -26,33 +27,38 @@ public class ApiController {
     }
 
     @GetMapping("/ua-groups")
-    public List<NameCount> uaGroups(@RequestParam String from, @RequestParam String to) {
+    public List<NameCount> uaGroups(@RequestParam String from, @RequestParam String to,
+                                    @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.uaGroupCounts(range.from(), range.to());
+        return dashboardService.uaGroupCounts(range.from(), range.to(), excludeBots);
     }
 
     @GetMapping("/ua-names-split")
-    public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to) {
+    public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to,
+                                             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), TOP_LIMIT, excludeBots);
     }
 
     @GetMapping("/countries")
-    public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to) {
+    public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to,
+                                                  @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topCountriesByResultType(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topCountriesByResultType(range.from(), range.to(), TOP_LIMIT, excludeBots);
     }
 
     @GetMapping("/top-urls-split")
-    public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to) {
+    public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to,
+                                                  @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUrlsByResultType(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topUrlsByResultType(range.from(), range.to(), TOP_URLS_LIMIT, excludeBots);
     }
 
     @GetMapping("/requests-per-day")
-    public List<DailyResultTypeCount> requestsPerDay(@RequestParam String from, @RequestParam String to) {
+    public List<DailyResultTypeCount> requestsPerDay(@RequestParam String from, @RequestParam String to,
+                                                     @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.requestsPerDay(range.from(), range.to());
+        return dashboardService.requestsPerDay(range.from(), range.to(), excludeBots);
     }
 
     @GetMapping("/edge-locations")
@@ -62,8 +68,9 @@ public class ApiController {
     }
 
     @GetMapping("/referers")
-    public List<NameCount> referers(@RequestParam String from, @RequestParam String to) {
+    public List<NameCount> referers(@RequestParam String from, @RequestParam String to,
+                                    @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topReferers(range.from(), range.to(), TOP_LIMIT);
+        return dashboardService.topReferers(range.from(), range.to(), TOP_LIMIT, excludeBots);
     }
 }

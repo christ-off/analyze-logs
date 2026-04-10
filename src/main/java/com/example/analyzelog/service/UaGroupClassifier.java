@@ -2,6 +2,7 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.config.UaGroupProperties;
 
+import java.util.Collection;
 import java.util.List;
 
 public class UaGroupClassifier {
@@ -12,6 +13,20 @@ public class UaGroupClassifier {
 
     public UaGroupClassifier(UaGroupProperties properties) {
         this.groups = properties.groups();
+    }
+
+    public List<String> labelsForGroups(Collection<String> groupNames) {
+        return groups.stream()
+                .filter(g -> groupNames.contains(g.name()))
+                .flatMap(g -> g.labels() == null ? java.util.stream.Stream.empty() : g.labels().stream())
+                .toList();
+    }
+
+    public List<String> prefixesForGroups(Collection<String> groupNames) {
+        return groups.stream()
+                .filter(g -> groupNames.contains(g.name()))
+                .flatMap(g -> g.labelPrefixes() == null ? java.util.stream.Stream.empty() : g.labelPrefixes().stream())
+                .toList();
     }
 
     public String classify(String uaName) {

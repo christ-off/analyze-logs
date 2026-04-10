@@ -58,7 +58,8 @@ Key properties:
 | `app.db-path` | `logs.db` | SQLite file path (relative to working directory) |
 | `server.port` | `8080` | HTTP port |
 | `uri-stem-filter.excluded-extensions` | `.css`, `.js`, `.png`, … | File extensions excluded from all URL charts (static assets) |
-| `referer-filter.self-referers` | `[]` | List of referer URL prefixes to exclude from the Top Referers chart (your own domain, both http and https variants) |
+| `referer-filter.self-referers` | `[]` | Referer prefixes to exclude from Top Referers (your own domain). Matched with and without trailing slash, and as a bare domain without scheme. |
+| `referer-normalizer.rules` | Google, Bing, Yahoo, … | Rules to group referer URLs into a single label. Each rule has `label` and one of `domain` (exact), `domain-starts-with`, or `domain-ends-with`. |
 
 ### `application-local.yml` (gitignored — your secrets)
 
@@ -104,10 +105,12 @@ Six charts, all scoped to the selected date range:
 | Top Blocked Countries (403) | Horizontal bar — countries blocked with HTTP 403. Click a bar to open the country detail page. |
 | Top Allowed URLs | Horizontal bar — most-requested paths with status < 400; static assets (`.css`, `.js`, images, etc.) excluded. |
 | Top Blocked URLs | Horizontal bar — most-requested paths across all statuses; `.php` files grouped as **PHP**, `/wp-*` paths grouped as **Wordpress**. |
-| Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. |
+| Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. Known search engines and social sites (Google, Bing, Yahoo, DuckDuckGo, Qwant, Facebook, Babelio) are grouped under a single label. Configurable via `referer-normalizer.rules`. |
 | Requests per Day | Stacked bar — daily breakdown by edge result type: Hit, Miss, Function, Redirect, Error. |
 
 Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
+
+**Hide bots & apps** toggle removes traffic from the *AI Bots*, *Search Bots*, *Other Bots*, and *Apps* UA groups — as well as entries with no user agent — from all six charts simultaneously. State is persisted in `localStorage`.
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 
@@ -119,7 +122,7 @@ Opened by clicking a bar in **Top User Agents**. Shows charts scoped to a single
 |-------|-------------|
 | Result Types | Pie — edge result type breakdown for this UA |
 | Countries | Pie — geographic distribution of requests |
-| Top Blocked URLs | Horizontal bar — most-requested paths for this UA (PHP / Wordpress grouping applied) |
+| Top URLs | Horizontal stacked bar — most-requested paths for this UA, coloured by edge result type (PHP / WordPress grouping applied) |
 | Requests per Day | Line — daily request trend by edge result type |
 
 ### Country detail page
@@ -129,7 +132,7 @@ Opened by clicking a bar in **Top Blocked Countries**. Shows charts scoped to a 
 | Chart | Description |
 |-------|-------------|
 | Result Types | Pie — edge result type breakdown for this country |
-| Top Blocked URLs | Horizontal bar — most-requested paths from this country (PHP / Wordpress grouping applied) |
+| Top URLs | Horizontal stacked bar — most-requested paths from this country, coloured by edge result type (PHP / WordPress grouping applied) |
 | Requests per Day | Line — daily request trend by edge result type |
 
 ## AWS credentials

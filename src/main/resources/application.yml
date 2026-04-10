@@ -30,6 +30,25 @@ app:
 referer-filter:
   self-referers: []
 
+referer-normalizer:
+  rules:
+    - label: "Google"
+      domain-starts-with: "google."
+    - label: "Facebook"
+      domain: "facebook.com"
+    - label: "Babelio"
+      domain: "babelio.com"
+    - label: "Qwant"
+      domain: "qwant.com"
+    - label: "DuckDuckGo"
+      domain: "duckduckgo.com"
+    - label: "Bing"
+      domain: "bing.com"
+    - label: "Yahoo"
+      domain-ends-with: "yahoo.com"
+    - label: "Brave"
+      domain-ends-with: "brave.com"
+
 uri-stem-filter:
   excluded-extensions:
     - .css
