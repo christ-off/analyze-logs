@@ -217,6 +217,25 @@ public class DashboardService {
                 args.toArray());
     }
 
+    public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit) {
+        String sql = "SELECT ua_name as name,\n" + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND country = ?\n" +
+                "GROUP BY ua_name\n" +
+                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "LIMIT ?\n";
+        return jdbc.query(sql,
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR),
+                        rs.getLong(FIELD_REDIRECT)),
+                from.toString(), to.toString(), countryCode, limit);
+    }
+
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
         return queryResultTypesByFilter("country", countryCode, from, to);
     }

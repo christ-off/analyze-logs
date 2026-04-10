@@ -30,6 +30,29 @@ class CountryDetailControllerTest {
     DashboardService dashboardService;
 
     @Test
+    void uaSplitReturnsJson() {
+        when(dashboardService.countryTopUserAgentsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 50, 10, 0, 2, 0)));
+
+        assertThat(mvc.get().uri("/api/country-detail/ua-split")
+                .param("country", "FR")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Chrome / Windows");
+
+        assertThat(mvc.get().uri("/api/country-detail/ua-split")
+                .param("country", "FR")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(50);
+    }
+
+    @Test
     void resultTypesReturnsJson() {
         when(dashboardService.countryResultTypes(eq("FR"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));

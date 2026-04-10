@@ -40,6 +40,33 @@ class DashboardServiceIntegrationTest {
     DashboardService dashboardService;
 
     @Test
+    void countryTopUserAgentsByResultType_filtersToCountryAndCountsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-ua-split-test.gz", List.of(
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
+                entryWithUaAndCountryAndResultType(UA_FIREFOX_LINUX,  "FR", "Error"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")  // different country — must not appear
+        ));
+
+        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+
+        assertFalse(result.isEmpty());
+        var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, chrome.hit());
+        assertEquals(1, chrome.miss());
+        assertEquals(0, chrome.error());
+
+        var firefox = result.stream().filter(r -> "Firefox / Linux".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, firefox.error());
+
+        // US entry must not inflate FR counts
+        long totalHits = result.stream().mapToLong(NameResultTypeCount::hit).sum();
+        assertEquals(2, totalHits);
+    }
+
+    @Test
     void topUrlsByResultType_excludesStaticExtensions() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-filter-test.gz", List.of(
@@ -492,6 +519,17 @@ class DashboardServiceIntegrationTest {
         var wpTotal = result.stream().filter(r -> "WordPress".equals(r.name()))
                 .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
         assertEquals(3, wpTotal);
+    }
+
+    private CloudFrontLogEntry entryWithUaAndCountryAndResultType(String ua, String country, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                "/index.html", 200,
+                null, ua,
+                resultType, 336L, 0.001,
+                resultType, "HTTP/1.1", 0.001, resultType,
+                null, null, country
+        );
     }
 
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
