@@ -31,25 +31,22 @@ function stackedBar(row) {
         }).join('');
 }
 
-fetch(`/api/ua-detail/user-agents?${p}`)
-    .then(r => r.json())
-    .then(data => {
-        const tbody = document.getElementById('tbodyUserAgents');
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
-            return;
-        }
-        const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
-        tbody.innerHTML = data.map((row, i) => `
+const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
+const tbody = document.getElementById('tbodyUserAgents');
+if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
+} else {
+    const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
+    tbody.innerHTML = data.map((row, i) => `
             <tr>
                 <td class="text-muted">${i + 1}</td>
                 <td class="font-monospace small text-break">${escapeHtml(row.name ?? '(none)')}</td>
                 <td class="text-end">${total(row).toLocaleString()}</td>
                 <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
             </tr>`).join('');
-        document.getElementById('uaBarLegend').style.removeProperty('display');
-    });
+    document.getElementById('uaBarLegend').style.removeProperty('display');
+}
 
 function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 }

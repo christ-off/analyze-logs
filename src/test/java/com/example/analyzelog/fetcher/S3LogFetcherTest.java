@@ -34,7 +34,7 @@ class S3LogFetcherTest {
     @Mock S3Client s3;
     @InjectMocks S3LogFetcher fetcher;
 
-    private void stubS3Download(String key, byte[] bytes) {
+    private void stubS3Download(byte[] bytes) {
         @SuppressWarnings("unchecked")
         ResponseBytes<GetObjectResponse> response = mock(ResponseBytes.class);
         when(response.asByteArray()).thenReturn(bytes);
@@ -55,7 +55,7 @@ class S3LogFetcherTest {
     @Test
     void downloadPlainTextFile() {
         String content = "log line one\nlog line two\n";
-        stubS3Download("file.log", content.getBytes(StandardCharsets.UTF_8));
+        stubS3Download(content.getBytes(StandardCharsets.UTF_8));
 
         String result = fetcher.downloadLogFile("bucket", "file.log");
 
@@ -65,7 +65,7 @@ class S3LogFetcherTest {
     @Test
     void downloadGzipFile() {
         String content = "compressed log content\n";
-        stubS3Download("file.log.gz", gzip(content));
+        stubS3Download(gzip(content));
 
         String result = fetcher.downloadLogFile("bucket", "file.log.gz");
 

@@ -30,7 +30,7 @@ function stackedBar(canvasId, data) {
 function buildParams() {
     const p = new URLSearchParams({ from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
     const toggleEl = document.getElementById('toggleBots');
-    if (toggleEl && toggleEl.checked) p.set('excludeBots', 'true');
+    if (toggleEl?.checked) p.set('excludeBots', 'true');
     return p.toString();
 }
 
