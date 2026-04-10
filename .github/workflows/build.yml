@@ -30,7 +30,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-            - name: Build and test
+      - name: Build and test
         run: mvn -B verify
 
       - name: SonarCloud analysis
