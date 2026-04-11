@@ -109,6 +109,7 @@ ua-groups:
         - "Feeder"
         - "Flus"
         - "WP.com FeedBot"
+        - "Inoreader"
     - name: "Search Bots"
       labels:
         - "Googlebot"

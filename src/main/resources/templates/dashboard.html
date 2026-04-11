@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <!-- Charts row 1 -->
+    <!-- Charts row 1: user agents + countries -->
     <div class="row g-4 mb-4">
         <div class="col-xl-6">
             <div class="card h-100">
@@ -80,32 +80,40 @@
         </div>
     </div>
 
-    <!-- Charts row 2 -->
+    <!-- Charts row 2: Top URLs full width -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">User Agent Groups</div>
-                <div class="card-body"><canvas id="chartUaGroups"></canvas></div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
+        <div class="col-12">
+            <div class="card">
                 <div class="card-header fw-semibold">Top URLs</div>
-                <div class="card-body"><canvas id="chartTopUrls"></canvas></div>
+                <div class="card-body" style="position:relative;height:420px">
+                    <canvas id="chartTopUrls"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts row 3 -->
+    <!-- Charts row 3: UA groups (small pie) + referers (wide) -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-6">
+        <div class="col-xl-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">User Agent Groups</div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="position:relative;height:280px">
+                    <canvas id="chartUaGroups"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
             <div class="card h-100">
                 <div class="card-header fw-semibold">Top Referers</div>
                 <div class="card-body"><canvas id="chartReferers"></canvas></div>
             </div>
         </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
+    </div>
+
+    <!-- Charts row 4: requests per day full width -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
                 <div class="card-header fw-semibold">Requests per Day</div>
                 <div class="card-body"><canvas id="chartRequestsPerDay"></canvas></div>
             </div>

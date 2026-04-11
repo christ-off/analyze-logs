@@ -7,3 +7,12 @@ logs.db
 /logs.db-shm
 /logs.db-wal
 .claude/settings.local.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+/.playwright-mcp/
