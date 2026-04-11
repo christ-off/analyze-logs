@@ -33,9 +33,7 @@ function stackedBar(row) {
 
 const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
 const tbody = document.getElementById('tbodyUserAgents');
-if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
-} else {
+if (data.length) {
     const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
     tbody.innerHTML = data.map((row, i) => `
             <tr>
@@ -45,6 +43,8 @@ if (!data.length) {
                 <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
             </tr>`).join('');
     document.getElementById('uaBarLegend').style.removeProperty('display');
+} else {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
 }
 
 function escapeHtml(s) {

@@ -34,6 +34,7 @@ public class DashboardService {
     private static final String FIELD_REDIRECT = "redirect";
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
+    private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final Set<String> BOT_GROUP_NAMES =
             Set.of("AI Bots", "Search Bots", "Other Bots", "Apps");
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
@@ -178,7 +179,7 @@ public class DashboardService {
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(botExclusionClause()) : "";
-        String sql = "SELECT ua_name as name,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 exclusion +
@@ -238,7 +239,7 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        String sql = "SELECT ua_name as name,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country = ?\n" +
@@ -534,7 +535,7 @@ public class DashboardService {
 
     public List<NameResultTypeCount> urlTopUserAgentsByResultType(String urlName, Instant from, Instant to, int limit) {
         var entry = uriStemPredicate(urlName);
-        String sql = "SELECT ua_name as name,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
@@ -556,7 +557,7 @@ public class DashboardService {
 
     public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to) {
         var entry = uriStemPredicate(urlName);
-        String sql = SQL_DAILY_SELECT + "  AND " + entry.getKey() + "\n" + SQL_DAILY_GROUP_ORDER;
+        String sql = SQL_DAILY_SELECT + SQL_AND_INDENT + entry.getKey() + "\n" + SQL_DAILY_GROUP_ORDER;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
