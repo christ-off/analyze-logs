@@ -6,11 +6,12 @@
     <title th:text="'UA Detail – ' + ${uaName}">UA Detail</title>
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
     <meta name="cf-ua"   th:content="${uaName}"/>
 </head>
-<body class="bg-light">
+<body>
 
 <nav class="navbar navbar-dark bg-dark mb-4">
     <div class="container-fluid">
@@ -21,14 +22,14 @@
 <main class="container-fluid px-4">
 
     <!-- info + date range bar -->
-    <div class="card mb-4">
+    <div class="card mb-4 cf-toolbar">
         <div class="card-body">
             <div class="d-flex align-items-center gap-3 mb-2">
                 <div>
-                    <h5 class="mb-0" th:text="${uaName}">User Agent</h5>
-                    <small class="text-muted">
+                    <div class="cf-detail-title" th:text="${uaName}">User Agent</div>
+                    <div class="cf-detail-subtitle">
                         <span th:text="${fromDate}"></span> &rarr; <span th:text="${toDate}"></span>
-                    </small>
+                    </div>
                 </div>
                 <a th:href="@{/(from=${fromDate},to=${toDate})}"
                    class="btn btn-sm btn-outline-secondary ms-auto">&#8592; Back</a>

@@ -1,0 +1,242 @@
+/* ─── CloudFront Logs – app.css ───────────────────────────────────────────── */
+
+:root {
+  --cf-accent:        #2563eb;           /* blue-600  */
+  --cf-accent-hover:  #1d4ed8;           /* blue-700  */
+  --cf-accent-light:  #eff6ff;           /* blue-50   */
+  --cf-nav-bg:        #0f172a;           /* slate-900 */
+  --cf-body-bg:       #f1f5f9;           /* slate-100 */
+  --cf-card-border:   #e2e8f0;           /* slate-200 */
+  --cf-muted:         #64748b;           /* slate-500 */
+  --cf-heading:       #334155;           /* slate-700 */
+  --cf-text:          #1e293b;           /* slate-800 */
+  --cf-shadow-sm:     0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --cf-shadow-md:     0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05);
+  --cf-radius:        .625rem;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--cf-body-bg);
+  color: var(--cf-text);
+}
+
+/* ── Navbar ───────────────────────────────────────────────────────────────── */
+.navbar {
+  background-color: var(--cf-nav-bg) !important;
+  padding: .875rem 1.25rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,.4);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: .04em;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.navbar-brand::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cf-accent);
+  box-shadow: 0 0 8px var(--cf-accent);
+  flex-shrink: 0;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--cf-card-border);
+  border-radius: var(--cf-radius);
+  box-shadow: var(--cf-shadow-sm);
+  transition: box-shadow .15s ease;
+  background: #fff;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: var(--cf-shadow-md);
+}
+
+.card-header {
+  background: #fff;
+  border-bottom: 1px solid var(--cf-card-border);
+  padding: .7rem 1.1rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--cf-muted);
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.card-header::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: .9rem;
+  border-radius: 2px;
+  background: var(--cf-accent);
+  flex-shrink: 0;
+}
+
+.card-body {
+  background: #fff;
+}
+
+.card-footer {
+  background: #f8fafc;
+  border-top: 1px solid var(--cf-card-border);
+}
+
+/* ── Toolbar card (date range + filters) ──────────────────────────────────── */
+.cf-toolbar {
+  border-left: 3px solid var(--cf-accent);
+}
+
+/* ── Range / preset buttons ───────────────────────────────────────────────── */
+.btn-outline-secondary {
+  border-radius: 2rem !important;
+  font-size: .78rem;
+  padding: .25rem .85rem;
+  border-color: #cbd5e1;
+  color: var(--cf-heading);
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary.active {
+  background-color: var(--cf-accent) !important;
+  border-color: var(--cf-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(37,99,235,.3);
+}
+
+/* ── Primary / Apply button ───────────────────────────────────────────────── */
+.btn-primary {
+  background-color: var(--cf-accent);
+  border-color: var(--cf-accent);
+  border-radius: .375rem;
+  font-size: .82rem;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--cf-accent-hover);
+  border-color: var(--cf-accent-hover);
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 .2rem rgba(37,99,235,.3);
+}
+
+/* ── Warning / Refresh button ─────────────────────────────────────────────── */
+.btn-warning {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+  border-radius: .375rem;
+  font-size: .82rem;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.btn-warning:hover,
+.btn-warning:focus {
+  background-color: #d97706;
+  border-color: #d97706;
+  color: #fff;
+}
+
+.btn-warning:focus {
+  box-shadow: 0 0 0 .2rem rgba(245,158,11,.3);
+}
+
+/* ── Form controls ────────────────────────────────────────────────────────── */
+.form-control-sm {
+  border-color: #cbd5e1;
+  border-radius: .375rem;
+  font-size: .82rem;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-control-sm:focus {
+  border-color: var(--cf-accent);
+  box-shadow: 0 0 0 .2rem rgba(37,99,235,.15);
+}
+
+/* ── Toggle switch ────────────────────────────────────────────────────────── */
+.form-check-input:checked {
+  background-color: var(--cf-accent);
+  border-color: var(--cf-accent);
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 .2rem rgba(37,99,235,.2);
+  border-color: var(--cf-accent);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+.table {
+  font-size: .855rem;
+}
+
+.table thead th {
+  background: #f8fafc;
+  font-size: .71rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--cf-muted);
+  border-bottom: 2px solid var(--cf-card-border);
+  padding: .65rem 1rem;
+}
+
+.table-hover tbody tr:hover > td {
+  background-color: var(--cf-accent-light);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  --bs-table-accent-bg: #fafbfc;
+}
+
+/* ── Detail page – context header inside toolbar card ─────────────────────── */
+.cf-detail-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cf-heading);
+  margin-bottom: .1rem;
+}
+
+.cf-detail-subtitle {
+  font-size: .78rem;
+  color: var(--cf-muted);
+}
+
+/* ── Alert / Flash messages ───────────────────────────────────────────────── */
+.alert {
+  border-radius: .5rem;
+  font-size: .875rem;
+}
+
+/* ── Scrollbar (optional polish for Webkit) ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cf-body-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

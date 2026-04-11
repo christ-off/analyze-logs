@@ -4,8 +4,9 @@
     <meta charset="UTF-8"/>
     <title>Error</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
-<body class="bg-light">
+<body>
 <div class="container mt-5">
     <div class="alert alert-danger">
         <h4 class="alert-heading" th:text="${status != null ? status + ' – ' + error : 'Error'}">Error</h4>

@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>CloudFront Dashboard</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
 </head>
-<body class="bg-light">
+<body>
 
 <nav class="navbar navbar-dark bg-dark mb-4">
     <div class="container-fluid">
@@ -23,7 +24,7 @@
     <div th:replace="~{fragments/flash :: messages}"></div>
 
     <!-- Date range bar -->
-    <div class="card mb-4">
+    <div class="card mb-4 cf-toolbar">
         <div class="card-body d-flex flex-wrap align-items-center gap-2">
             <span class="fw-semibold me-2">Range:</span>
             <a th:href="@{/?range=1d}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
