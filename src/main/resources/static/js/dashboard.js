@@ -8,24 +8,6 @@ const CHART_IDS = [
     'chartTopUrls', 'chartReferers', 'chartRequestsPerDay',
 ];
 
-function stackedBar(canvasId, data) {
-    const ctx = document.getElementById(canvasId);
-    if (!ctx) return;
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(d => d.day),
-            datasets: Charts.resultTypeDatasets(data),
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true, beginAtZero: true }
-            }
-        }
-    });
-}
 
 function buildParams() {
     const p = new URLSearchParams({ from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
@@ -45,7 +27,7 @@ function loadAllCharts() {
     Charts.loadChart(`top-urls-split?${p}`,   data => Charts.horizontalStackedBar('chartTopUrls',  data,
         d => `/url-detail?url=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',         data));
-    Charts.loadChart(`requests-per-day?${p}`, data => stackedBar(          'chartRequestsPerDay',   data));
+    Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
 }
 
 const toggleEl = document.getElementById('toggleBots');

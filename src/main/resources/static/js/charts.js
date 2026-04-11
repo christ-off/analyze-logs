@@ -156,24 +156,3 @@ Charts.stackedBarByDay = function (canvasId, data) {
     });
 };
 
-Charts.linePerDay = function (canvasId, data) {
-    const ctx = document.getElementById(canvasId);
-    if (!ctx) return;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.map(d => d.day),
-            datasets: [
-                { label: 'Hit',      data: data.map(d => d.hit),      borderColor: Charts.COLORS.green,  backgroundColor: 'transparent', tension: 0.3 },
-                { label: 'Miss',     data: data.map(d => d.miss),     borderColor: Charts.COLORS.blue,   backgroundColor: 'transparent', tension: 0.3 },
-                { label: 'Function', data: data.map(d => d.function), borderColor: Charts.COLORS.orange, backgroundColor: 'transparent', tension: 0.3 },
-                { label: 'Redirect', data: data.map(d => d.redirect), borderColor: Charts.COLORS.purple, backgroundColor: 'transparent', tension: 0.3 },
-                { label: 'Error',    data: data.map(d => d.error),    borderColor: Charts.COLORS.red,    backgroundColor: 'transparent', tension: 0.3 },
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true } }
-        }
-    });
-};

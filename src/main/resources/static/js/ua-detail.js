@@ -10,7 +10,7 @@ const p = uaParams.toString();
 Charts.loadChart(`ua-detail/result-types?${p}`,     d => Charts.pie('chartResultTypes',          d, Charts.RESULT_TYPE_COLORS));
 Charts.loadChart(`ua-detail/countries?${p}`,        d => Charts.pie('chartCountries',             d, null));
 Charts.loadChart(`ua-detail/uri-stems?${p}`,        d => Charts.horizontalStackedBar('chartUriStems', d));
-Charts.loadChart(`ua-detail/requests-per-day?${p}`, d => Charts.linePerDay('chartRequestsPerDay', d));
+Charts.loadChart(`ua-detail/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
 
 const BAR_COLORS = {
     hit:      'rgba(40,167,69,0.8)',

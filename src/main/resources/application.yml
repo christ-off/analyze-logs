@@ -48,6 +48,8 @@ referer-normalizer:
       domain-ends-with: "yahoo.com"
     - label: "Brave"
       domain-ends-with: "brave.com"
+    - label: "InoReader"
+      domain: "inoreader.com"
 
 uri-stem-groups:
   groups:
