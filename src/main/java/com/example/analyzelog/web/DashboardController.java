@@ -69,6 +69,23 @@ public class DashboardController {
         return "country-detail";
     }
 
+    @GetMapping("/url-detail")
+    public String urlDetail(
+            @RequestParam String url,
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        DateRange dateRange = resolveRange(range, from, to);
+        model.addAttribute("urlName", url);
+        model.addAttribute("from", dateRange.fromIso());
+        model.addAttribute("to", dateRange.toIso());
+        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
+        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
+        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
+        return "url-detail";
+    }
+
     private String resolveActiveRange(String range, String from, String to) {
         if (from != null && to != null) return "custom";
         return range != null ? range : "7d";

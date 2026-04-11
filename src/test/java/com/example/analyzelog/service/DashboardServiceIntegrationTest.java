@@ -620,6 +620,124 @@ class DashboardServiceIntegrationTest {
         );
     }
 
+    // --- url-detail integration tests ---
+
+    @Test
+    void urlMatchingUriStems_singleUrl_returnsOnlyStem() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-stems-single-test.gz", List.of(
+                entryWithUri("/index.html"),
+                entryWithUri("/index.html"),
+                entryWithUri("/about.html")   // different stem — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5));
+
+        assertEquals(1, result.size());
+        assertEquals("/index.html", result.getFirst().name());
+        assertEquals(2, result.getFirst().count());
+    }
+
+    @Test
+    void urlMatchingUriStems_phpGroup_aggregatesPhpStems() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-stems-php-test.gz", List.of(
+                entryWithUri("/page.php"),
+                entryWithUri("/page.php"),
+                entryWithUri("/other.php"),
+                entryWithUri("/index.html")   // not PHP — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP", from, Instant.now().plusSeconds(5));
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("/page.php"));
+        assertTrue(names.contains("/other.php"));
+        assertFalse(names.contains("/index.html"));
+        long total = result.stream().mapToLong(NameCount::count).sum();
+        assertEquals(3, total);
+    }
+
+    @Test
+    void urlMatchingUriStems_wordPressGroup_aggregatesWpStems() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-stems-wp-test.gz", List.of(
+                entryWithUri("/wp-login.php"),
+                entryWithUri("/wp-content/themes/style"),
+                entryWithUri("//wp-admin/"),
+                entryWithUri("/index.html")   // not WordPress — must not appear
+        ));
+
+        List<NameCount> result = dashboardService.urlMatchingUriStems("WordPress", from, Instant.now().plusSeconds(5));
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertTrue(names.contains("/wp-login.php"));
+        assertTrue(names.contains("/wp-content/themes/style"));
+        assertTrue(names.contains("//wp-admin/"));
+        assertFalse(names.contains("/index.html"));
+    }
+
+    @Test
+    void urlTopCountriesByResultType_singleUrl_filtersToStem() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-countries-test.gz", List.of(
+                entryWithCountryAndUriAndResultType("FR", "/index.html", "Hit"),
+                entryWithCountryAndUriAndResultType("FR", "/index.html", "Hit"),
+                entryWithCountryAndUriAndResultType("US", "/index.html", "Miss"),
+                entryWithCountryAndUriAndResultType("FR", "/about.html", "Hit")  // different stem
+        ));
+
+        var result = dashboardService.urlTopCountriesByResultType("/index.html", from, Instant.now().plusSeconds(5), 10);
+
+        var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
+        assertEquals(2, fr.hit());
+        var us = result.stream().filter(r -> "US".equals(r.code())).findFirst().orElseThrow();
+        assertEquals(1, us.miss());
+        // /about.html entry must not inflate FR count
+        assertEquals(2, fr.hit() + fr.miss() + fr.function() + fr.error() + fr.redirect());
+    }
+
+    @Test
+    void urlTopUserAgentsByResultType_phpGroup_aggregatesAllPhpStems() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-ua-php-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/other.php"),
+                entryWithUaAndUri(UA_FIREFOX_LINUX,  "/page.php"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")  // not PHP
+        ));
+
+        var result = dashboardService.urlTopUserAgentsByResultType("PHP", from, Instant.now().plusSeconds(5), 10);
+
+        var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, chrome.hit());
+        var firefox = result.stream().filter(r -> "Firefox / Linux".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, firefox.hit());
+        // /index.html must not contribute
+        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        assertEquals(3, total);
+    }
+
+    @Test
+    void urlRequestsPerDay_singleUrl_countsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/url-rpd-test.gz", List.of(
+                entryWithUriAndResultType("/index.html", "Hit"),
+                entryWithUriAndResultType("/index.html", "Hit"),
+                entryWithUriAndResultType("/index.html", "Miss"),
+                entryWithUriAndResultType("/about.html", "Hit")  // different stem — must not count
+        ));
+
+        List<DailyResultTypeCount> result = dashboardService.urlRequestsPerDay(
+                "/index.html", from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        DailyResultTypeCount today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+        assertEquals(0, today.error());
+    }
+
     private CloudFrontLogEntry entryWithUaAndResultType(String ua, String resultType) {
         return new CloudFrontLogEntry(
                 Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",

@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.RefererNormalizerProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
+import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
@@ -36,17 +37,6 @@ public class DashboardService {
     private static final Set<String> BOT_GROUP_NAMES =
             Set.of("AI Bots", "Search Bots", "Other Bots", "Apps");
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
-    private static final String URI_STEM_NAME_CASE = """
-            CASE
-                WHEN uri_stem LIKE '/wp-%' THEN 'WordPress'
-                WHEN uri_stem LIKE '//wp-%' THEN 'WordPress'
-                WHEN uri_stem LIKE '/wordpress/%' THEN 'WordPress'
-                WHEN uri_stem LIKE '/wp/%' THEN 'WordPress'
-                WHEN uri_stem LIKE '%.php' THEN 'PHP'
-                WHEN LOWER(uri_stem) LIKE '%.php7' THEN 'PHP'
-                ELSE uri_stem
-            END as name,
-            """;
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
             SUM(CASE WHEN edge_response_result_type = 'Miss'   THEN 1 ELSE 0 END) as miss,
@@ -57,11 +47,7 @@ public class DashboardService {
             SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
             SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
             """;
-    private static final String SQL_URI_BY_RESULT_TYPE = "SELECT \n" +
-            URI_STEM_NAME_CASE +
-            RESULT_TYPE_SUMS + "\n" +
-            "FROM cloudfront_logs\n" +
-            "WHERE timestamp BETWEEN ? AND ?\n";
+    private final String sqlUriByResultType;
     private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
             GROUP BY name
             ORDER BY (hit + miss + function + error + redirect) DESC
@@ -86,12 +72,14 @@ public class DashboardService {
     private final List<RefererNormalizerProperties.Rule> normalizerRules;
     private final List<String> botUaLabels;
     private final List<String> botUaPrefixes;
+    private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UaGroupClassifier uaGroupClassifier,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
-                            RefererNormalizerProperties refererNormalizerProperties) {
+                            RefererNormalizerProperties refererNormalizerProperties,
+                            UriStemGroupProperties uriStemGroupProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.uaGroupClassifier = uaGroupClassifier;
@@ -100,6 +88,38 @@ public class DashboardService {
         this.normalizerRules = refererNormalizerProperties.rules();
         this.botUaLabels   = uaGroupClassifier.labelsForGroups(BOT_GROUP_NAMES);
         this.botUaPrefixes = uaGroupClassifier.prefixesForGroups(BOT_GROUP_NAMES);
+        this.groupPatterns = uriStemGroupProperties.groups().stream()
+                .collect(Collectors.toMap(
+                        UriStemGroupProperties.Group::name,
+                        UriStemGroupProperties.Group::patterns));
+        this.sqlUriByResultType = "SELECT \n" +
+                buildUriStemNameCase(uriStemGroupProperties.groups()) +
+                RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n";
+    }
+
+    private static String buildUriStemNameCase(List<UriStemGroupProperties.Group> groups) {
+        StringBuilder sb = new StringBuilder("CASE\n");
+        for (var g : groups) {
+            for (String pattern : g.patterns()) {
+                sb.append("    WHEN LOWER(uri_stem) LIKE LOWER('").append(pattern).append("') THEN '")
+                  .append(g.name()).append("'\n");
+            }
+        }
+        sb.append("    ELSE uri_stem\nEND as name,\n");
+        return sb.toString();
+    }
+
+    private Map.Entry<String, List<Object>> uriStemPredicate(String urlName) {
+        List<String> patterns = groupPatterns.get(urlName);
+        if (patterns != null) {
+            String pred = patterns.stream()
+                    .map(_ -> "LOWER(uri_stem) LIKE LOWER(?)")
+                    .collect(Collectors.joining(" OR ", "(", ")"));
+            return Map.entry(pred, List.copyOf(patterns));
+        }
+        return Map.entry("uri_stem = ?", List.of(urlName));
     }
 
     private String uriStemExclusionClause() {
@@ -267,7 +287,7 @@ public class DashboardService {
         String combinedFilter = Stream.of(additionalFilter, botClause)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(AND_SEPARATOR));
-        String sql = SQL_URI_BY_RESULT_TYPE
+        String sql = sqlUriByResultType
                 + andClause(combinedFilter)
                 + andClause(exclusionClause)
                 + SQL_URI_RESULT_TYPE_GROUP_ORDER;
@@ -465,6 +485,83 @@ public class DashboardService {
         return jdbc.query(sql,
                 (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), value);
+    }
+
+    public List<NameCount> urlMatchingUriStems(String urlName, Instant from, Instant to) {
+        var entry = uriStemPredicate(urlName);
+        String sql = "SELECT uri_stem as name, COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND " + entry.getKey() + "\n" +
+                "GROUP BY uri_stem\n" +
+                "ORDER BY count DESC\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                args.toArray());
+    }
+
+    public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit) {
+        var entry = uriStemPredicate(urlName);
+        String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND country IS NOT NULL\n" +
+                "  AND " + entry.getKey() + "\n" +
+                "GROUP BY country\n" +
+                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "LIMIT ?\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        args.add(limit);
+        return jdbc.query(sql,
+                (rs, _) -> {
+                    String iso = rs.getString("code");
+                    String display = (iso != null && !iso.isBlank())
+                            ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH) : iso;
+                    String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
+                    return new CountryResultTypeCount(iso, label,
+                            rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
+                            rs.getLong(FIELD_ERROR), rs.getLong(FIELD_REDIRECT));
+                },
+                args.toArray());
+    }
+
+    public List<NameResultTypeCount> urlTopUserAgentsByResultType(String urlName, Instant from, Instant to, int limit) {
+        var entry = uriStemPredicate(urlName);
+        String sql = "SELECT ua_name as name,\n" + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND " + entry.getKey() + "\n" +
+                "GROUP BY ua_name\n" +
+                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "LIMIT ?\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        args.add(limit);
+        return jdbc.query(sql,
+                (rs, _) -> new NameResultTypeCount(
+                        rs.getString("name"),
+                        rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
+                        rs.getLong(FIELD_ERROR), rs.getLong(FIELD_REDIRECT)),
+                args.toArray());
+    }
+
+    public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to) {
+        var entry = uriStemPredicate(urlName);
+        String sql = SQL_DAILY_SELECT + "  AND " + entry.getKey() + "\n" + SQL_DAILY_GROUP_ORDER;
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        return queryDailyByResultType(sql, args.toArray());
     }
 
     private static List<NameCount> aggregateByLabel(List<NameCount> raw, UnaryOperator<String> labeler) {

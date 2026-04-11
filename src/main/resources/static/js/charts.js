@@ -137,6 +137,25 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
 
 export { Charts };
 
+Charts.stackedBarByDay = function (canvasId, data) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.day),
+            datasets: Charts.resultTypeDatasets(data),
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
+            }
+        }
+    });
+};
+
 Charts.linePerDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;

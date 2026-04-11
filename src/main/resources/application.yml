@@ -49,6 +49,19 @@ referer-normalizer:
     - label: "Brave"
       domain-ends-with: "brave.com"
 
+uri-stem-groups:
+  groups:
+    - name: "WordPress"
+      patterns:
+        - "/wp-%"
+        - "//wp-%"
+        - "/wordpress/%"
+        - "/wp/%"
+    - name: "PHP"
+      patterns:
+        - "%.php"
+        - "%.php7"
+
 uri-stem-filter:
   excluded-extensions:
     - .css
