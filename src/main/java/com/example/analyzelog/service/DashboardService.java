@@ -41,6 +41,10 @@ public class DashboardService {
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN (" +
             "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')";
+    private static final String RESULT_TYPE_GROUP_EXPR =
+            "CASE WHEN edge_response_result_type IN " +
+            "('FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError') " +
+            "THEN 'Function' ELSE edge_response_result_type END";
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -262,12 +266,12 @@ public class DashboardService {
         args.add(to.toString());
         args.add(countryCode);
         if (excludeBots) addBotExclusionArgs(args);
-        String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
+        String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
                 + "  AND country = ?\n"
                 + exclusion
-                + "GROUP BY edge_response_result_type\n"
+                + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";
         return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
@@ -450,12 +454,12 @@ public class DashboardService {
 
     // filterColumn is always a trusted Java constant, never user input
     private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to, String extraClause) {
-        String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
+        String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
                 + "  AND " + filterColumn + " = ?\n"
                 + extraClause
-                + "GROUP BY edge_response_result_type\n"
+                + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";
         return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), value);
     }

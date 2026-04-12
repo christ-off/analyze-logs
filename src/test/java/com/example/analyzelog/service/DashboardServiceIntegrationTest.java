@@ -382,6 +382,9 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionGeneratedResponse"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionExecutionError"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionThrottledError"),
                 entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Hit")  // different UA — must not appear
         ));
 
@@ -390,7 +393,9 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Error".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(3, result.stream().filter(n -> "Function".equals(n.name())).findFirst().orElseThrow().count());
         assertTrue(result.stream().noneMatch(n -> "Miss".equals(n.name())));
+        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Function".equals(n.name())));
     }
 
     @Test
@@ -890,11 +895,15 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "FunctionGeneratedResponse"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "FunctionExecutionError"),
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")
         ));
         var result = dashboardService.countryResultTypes("FR", from, Instant.now().plusSeconds(5), false);
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(2, result.stream().filter(n -> "Function".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Function".equals(n.name())));
     }
 
     @Test
