@@ -306,6 +306,42 @@ class DashboardServiceIntegrationTest {
         assertTrue(totalWith > totalWithout, "bot hits must be excluded from daily count");
     }
 
+    @Test
+    void requestsPerDay_excludeBots_excludesErrorResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/rpd-exclude-error-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error")
+        ));
+
+        var withFilter    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
+        var withoutFilter = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
+
+        long errorsWith    = withFilter.stream().mapToLong(DailyResultTypeCount::error).sum();
+        long errorsWithout = withoutFilter.stream().mapToLong(DailyResultTypeCount::error).sum();
+        assertEquals(0, errorsWith, "Error rows must be excluded when filter is active");
+        assertEquals(2, errorsWithout, "Error rows must remain when filter is inactive");
+    }
+
+    @Test
+    void requestsPerDay_excludeBots_excludesFunctionResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/rpd-exclude-function-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionGeneratedResponse"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionExecutionError")
+        ));
+
+        var withFilter    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
+        var withoutFilter = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
+
+        long functionWith    = withFilter.stream().mapToLong(DailyResultTypeCount::function).sum();
+        long functionWithout = withoutFilter.stream().mapToLong(DailyResultTypeCount::function).sum();
+        assertEquals(0, functionWith, "Function rows must be excluded when filter is active");
+        assertEquals(2, functionWithout, "Function rows must remain when filter is inactive");
+    }
+
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";

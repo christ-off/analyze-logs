@@ -37,6 +37,9 @@ public class DashboardService {
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final Set<String> BOT_GROUP_NAMES =
             Set.of("AI Bots", "Search Bots", "Other Bots", "Apps");
+    private static final String RESULT_TYPE_EXCLUSION =
+            "edge_response_result_type NOT IN (" +
+            "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')";
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
@@ -146,6 +149,12 @@ public class DashboardService {
                 .collect(Collectors.joining(AND_SEPARATOR));
     }
 
+    private String humanTrafficExclusionClause() {
+        return Stream.of(botExclusionClause(), RESULT_TYPE_EXCLUSION)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(AND_SEPARATOR));
+    }
+
     private void addBotExclusionArgs(List<Object> args) {
         args.addAll(botUaLabels);
         botUaPrefixes.forEach(p -> args.add(p + "%"));
@@ -156,7 +165,7 @@ public class DashboardService {
     }
 
     public List<NameCount> uaGroupCounts(Instant from, Instant to, boolean excludeBots) {
-        String exclusion = excludeBots ? andClause(botExclusionClause()) : "";
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = "SELECT ua_name as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
@@ -178,7 +187,7 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
-        String exclusion = excludeBots ? andClause(botExclusionClause()) : "";
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
@@ -207,7 +216,7 @@ public class DashboardService {
     }
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
-        String exclusion = excludeBots ? andClause(botExclusionClause()) : "";
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
@@ -239,13 +248,25 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit) {
+        return countryTopUserAgentsByResultType(countryCode, from, to, limit, false);
+    }
+
+    public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country = ?\n" +
+                exclusion +
                 "GROUP BY ua_name\n" +
                 "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
                 "LIMIT ?\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.add(countryCode);
+        if (excludeBots) addBotExclusionArgs(args);
+        args.add(limit);
         return jdbc.query(sql,
                 (rs, _) -> new NameResultTypeCount(
                         rs.getString("name"),
@@ -254,20 +275,53 @@ public class DashboardService {
                         rs.getLong(FIELD_FUNCTION),
                         rs.getLong(FIELD_ERROR),
                         rs.getLong(FIELD_REDIRECT)),
-                from.toString(), to.toString(), countryCode, limit);
+                args.toArray());
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
-        return queryResultTypesByFilter("country", countryCode, from, to);
+        return countryResultTypes(countryCode, from, to, false);
+    }
+
+    public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.add(countryCode);
+        if (excludeBots) addBotExclusionArgs(args);
+        String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
+                + "FROM cloudfront_logs\n"
+                + "WHERE timestamp BETWEEN ? AND ?\n"
+                + "  AND country = ?\n"
+                + exclusion
+                + "GROUP BY edge_response_result_type\n"
+                + "ORDER BY count DESC\n";
+        return jdbc.query(sql,
+                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
+                args.toArray());
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        return urlsByResultType("country = ?", List.of(from.toString(), to.toString(), countryCode), limit);
+        return countryUrlsByResultType(countryCode, from, to, limit, false);
+    }
+
+    public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
+        return urlsByResultType("country = ?", List.of(from.toString(), to.toString(), countryCode), limit, excludeBots);
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), countryCode);
+        return countryRequestsPerDay(countryCode, from, to, false);
+    }
+
+    public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.add(countryCode);
+        if (excludeBots) addBotExclusionArgs(args);
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
+                args.toArray());
     }
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
@@ -284,7 +338,7 @@ public class DashboardService {
 
     private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit, boolean excludeBots) {
         String exclusionClause = uriStemExclusionClause();
-        String botClause = excludeBots ? botExclusionClause() : "";
+        String botClause = excludeBots ? humanTrafficExclusionClause() : "";
         String combinedFilter = Stream.of(additionalFilter, botClause)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(AND_SEPARATOR));
@@ -336,7 +390,7 @@ public class DashboardService {
         String selfExclusionClause = exclusionPatterns.stream()
                 .map(_ -> "referer NOT LIKE ?")
                 .collect(Collectors.joining(AND_SEPARATOR));
-        String botClause = excludeBots ? botExclusionClause() : "";
+        String botClause = excludeBots ? humanTrafficExclusionClause() : "";
         String sql = "SELECT referer as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
@@ -400,10 +454,16 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to) {
+        return uaRawUserAgents(uaName, from, to, false);
+    }
+
+    public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND ua_name = ?\n" +
+                exclusion +
                 "GROUP BY user_agent\n" +
                 "ORDER BY (hit + miss + function + error + redirect) DESC\n",
                 (rs, _) -> new NameResultTypeCount(
@@ -417,19 +477,28 @@ public class DashboardService {
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
-        return queryResultTypesByFilter("ua_name", uaName, from, to);
+        return uaResultTypes(uaName, from, to, false);
+    }
+
+    public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
+        return queryResultTypesByFilter("ua_name", uaName, from, to, exclusion);
     }
 
     public List<NameCount> uaCountries(String uaName, Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT country as name, COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND ua_name = ?
-                GROUP BY country
-                ORDER BY count DESC
-                LIMIT 10
-                """,
+        return uaCountries(uaName, from, to, false);
+    }
+
+    public List<NameCount> uaCountries(String uaName, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
+        return jdbc.query("SELECT country as name, COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND ua_name = ?\n" +
+                exclusion +
+                "GROUP BY country\n" +
+                "ORDER BY count DESC\n" +
+                "LIMIT 10\n",
                 (rs, _) -> {
                     String iso = rs.getString("name");
                     String display = (iso != null && !iso.isBlank())
@@ -441,11 +510,20 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
-        return urlsByResultType("ua_name = ?", List.of(from.toString(), to.toString(), uaName), limit);
+        return uaUrlsByResultType(uaName, from, to, limit, false);
+    }
+
+    public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit, boolean excludeBots) {
+        return urlsByResultType("ua_name = ?", List.of(from.toString(), to.toString(), uaName), limit, excludeBots);
     }
 
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + SQL_DAILY_GROUP_ORDER,
+        return uaRequestsPerDay(uaName, from, to, false);
+    }
+
+    public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString(), uaName);
     }
 
@@ -454,7 +532,7 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to, boolean excludeBots) {
-        String exclusion = excludeBots ? andClause(botExclusionClause()) : "";
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_DAILY_SELECT + exclusion + SQL_DAILY_GROUP_ORDER;
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -477,10 +555,15 @@ public class DashboardService {
 
     // filterColumn is always a trusted Java constant, never user input
     private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to) {
+        return queryResultTypesByFilter(filterColumn, value, from, to, "");
+    }
+
+    private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to, String extraClause) {
         String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
                 + "  AND " + filterColumn + " = ?\n"
+                + extraClause
                 + "GROUP BY edge_response_result_type\n"
                 + "ORDER BY count DESC\n";
         return jdbc.query(sql,

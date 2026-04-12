@@ -31,7 +31,7 @@ class CountryDetailControllerTest {
 
     @Test
     void uaSplitReturnsJson() {
-        when(dashboardService.countryTopUserAgentsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt()))
+        when(dashboardService.countryTopUserAgentsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
                 .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 50, 10, 0, 2, 0)));
 
         assertThat(mvc.get().uri("/api/country-detail/ua-split")
@@ -54,7 +54,7 @@ class CountryDetailControllerTest {
 
     @Test
     void resultTypesReturnsJson() {
-        when(dashboardService.countryResultTypes(eq("FR"), any(Instant.class), any(Instant.class)))
+        when(dashboardService.countryResultTypes(eq("FR"), any(Instant.class), any(Instant.class), anyBoolean()))
                 .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));
 
         assertThat(mvc.get().uri("/api/country-detail/result-types")
@@ -69,7 +69,7 @@ class CountryDetailControllerTest {
 
     @Test
     void urlSplitReturnsJson() {
-        when(dashboardService.countryUrlsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt()))
+        when(dashboardService.countryUrlsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 40, 10, 0, 2, 1)));
 
         assertThat(mvc.get().uri("/api/country-detail/url-split")
@@ -92,7 +92,7 @@ class CountryDetailControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.countryRequestsPerDay(eq("FR"), any(Instant.class), any(Instant.class)))
+        when(dashboardService.countryRequestsPerDay(eq("FR"), any(Instant.class), any(Instant.class), anyBoolean()))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 10, 2, 0, 0, 1)));
 
         assertThat(mvc.get().uri("/api/country-detail/requests-per-day")

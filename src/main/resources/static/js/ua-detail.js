@@ -4,13 +4,43 @@ const from = document.querySelector('meta[name="cf-from"]').content;
 const to   = document.querySelector('meta[name="cf-to"]').content;
 const ua   = document.querySelector('meta[name="cf-ua"]').content;
 
-const uaParams = new URLSearchParams({ ua, from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
-const p = uaParams.toString();
+const CHART_IDS = ['chartResultTypes', 'chartCountries', 'chartUriStems', 'chartRequestsPerDay'];
 
-Charts.loadChart(`ua-detail/result-types?${p}`,     d => Charts.pie('chartResultTypes',          d, Charts.RESULT_TYPE_COLORS));
-Charts.loadChart(`ua-detail/countries?${p}`,        d => Charts.pie('chartCountries',             d, null));
-Charts.loadChart(`ua-detail/uri-stems?${p}`,        d => Charts.horizontalStackedBar('chartUriStems', d));
-Charts.loadChart(`ua-detail/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
+function buildParams() {
+    const p = new URLSearchParams({ ua, from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
+    const toggleEl = document.getElementById('toggleBots');
+    if (toggleEl?.checked) p.set('excludeBots', 'true');
+    return p.toString();
+}
+
+async function loadAllCharts() {
+    CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
+    const p = buildParams();
+
+    Charts.loadChart(`ua-detail/result-types?${p}`,     d => Charts.pie('chartResultTypes',          d, Charts.RESULT_TYPE_COLORS));
+    Charts.loadChart(`ua-detail/countries?${p}`,        d => Charts.pie('chartCountries',             d, null));
+    Charts.loadChart(`ua-detail/uri-stems?${p}`,        d => Charts.horizontalStackedBar('chartUriStems', d));
+    Charts.loadChart(`ua-detail/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
+
+    const tbody = document.getElementById('tbodyUserAgents');
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Loading…</td></tr>';
+    document.getElementById('uaBarLegend').style.setProperty('display', 'none', 'important');
+
+    const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
+    if (data.length) {
+        const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
+        tbody.innerHTML = data.map((row, i) => `
+            <tr>
+                <td class="text-muted">${i + 1}</td>
+                <td class="font-monospace small text-break">${escapeHtml(row.name ?? '(none)')}</td>
+                <td class="text-end">${total(row).toLocaleString()}</td>
+                <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
+            </tr>`).join('');
+        document.getElementById('uaBarLegend').style.removeProperty('display');
+    } else {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
+    }
+}
 
 const BAR_COLORS = {
     hit:      'rgba(40,167,69,0.8)',
@@ -31,22 +61,17 @@ function stackedBar(row) {
         }).join('');
 }
 
-const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
-const tbody = document.getElementById('tbodyUserAgents');
-if (data.length) {
-    const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
-    tbody.innerHTML = data.map((row, i) => `
-            <tr>
-                <td class="text-muted">${i + 1}</td>
-                <td class="font-monospace small text-break">${escapeHtml(row.name ?? '(none)')}</td>
-                <td class="text-end">${total(row).toLocaleString()}</td>
-                <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
-            </tr>`).join('');
-    document.getElementById('uaBarLegend').style.removeProperty('display');
-} else {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
-}
-
 function escapeHtml(s) {
     return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 }
+
+const toggleEl = document.getElementById('toggleBots');
+if (toggleEl) {
+    toggleEl.checked = localStorage.getItem('excludeBots') === 'true';
+    toggleEl.addEventListener('change', () => {
+        localStorage.setItem('excludeBots', String(toggleEl.checked));
+        loadAllCharts();
+    });
+}
+
+loadAllCharts();
