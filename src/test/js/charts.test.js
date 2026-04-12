@@ -25,14 +25,14 @@ describe('Charts.toDateParam', () => {
 
 describe('Charts.resultTypeDatasets', () => {
     const data = [
-        { hit: 10, miss: 5, function: 2, redirect: 1, error: 3 },
-        { hit: 20, miss: 8, function: 0, redirect: 0, error: 1 },
+        { hit: 10, miss: 5, function: 2, error: 3 },
+        { hit: 20, miss: 8, function: 0, error: 1 },
     ];
 
-    it('returns 5 datasets in order Hit/Miss/Function/Redirect/Error', () => {
+    it('returns 4 datasets in order Hit/Miss/Function/Error', () => {
         const ds = Charts.resultTypeDatasets(data);
-        expect(ds).toHaveLength(5);
-        expect(ds.map(d => d.label)).toEqual(['Hit', 'Miss', 'Function', 'Redirect', 'Error']);
+        expect(ds).toHaveLength(4);
+        expect(ds.map(d => d.label)).toEqual(['Hit', 'Miss', 'Function', 'Error']);
     });
 
     it('maps each field correctly', () => {
@@ -40,8 +40,7 @@ describe('Charts.resultTypeDatasets', () => {
         expect(ds[0].data).toEqual([10, 20]); // hit
         expect(ds[1].data).toEqual([5, 8]);   // miss
         expect(ds[2].data).toEqual([2, 0]);   // function
-        expect(ds[3].data).toEqual([1, 0]);   // redirect
-        expect(ds[4].data).toEqual([3, 1]);   // error
+        expect(ds[3].data).toEqual([3, 1]);   // error
     });
 
     it('uses the correct background colors', () => {
@@ -49,8 +48,7 @@ describe('Charts.resultTypeDatasets', () => {
         expect(ds[0].backgroundColor).toBe(Charts.COLORS.green);   // Hit
         expect(ds[1].backgroundColor).toBe(Charts.COLORS.blue);    // Miss
         expect(ds[2].backgroundColor).toBe(Charts.COLORS.orange);  // Function
-        expect(ds[3].backgroundColor).toBe(Charts.COLORS.purple);  // Redirect
-        expect(ds[4].backgroundColor).toBe(Charts.COLORS.red);     // Error
+        expect(ds[3].backgroundColor).toBe(Charts.COLORS.red);     // Error
     });
 });
 
@@ -179,7 +177,7 @@ describe('Charts.horizontalStackedBar', () => {
 
     it('creates a stacked bar with resultType datasets', () => {
         document.body.innerHTML = '<canvas id="stackedBar"></canvas>';
-        const data = [{ name: '/feed.xml', hit: 40, miss: 10, function: 0, redirect: 1, error: 2 }];
+        const data = [{ name: '/feed.xml', hit: 40, miss: 10, function: 0, error: 2 }];
 
         Charts.horizontalStackedBar('stackedBar', data, null);
 
@@ -187,7 +185,7 @@ describe('Charts.horizontalStackedBar', () => {
         expect(config.type).toBe('bar');
         expect(config.options.scales.x.stacked).toBe(true);
         expect(config.options.scales.y.stacked).toBe(true);
-        expect(config.data.datasets).toHaveLength(5);
+        expect(config.data.datasets).toHaveLength(4);
         expect(config.options.onClick).toBeUndefined();
     });
 
@@ -195,7 +193,7 @@ describe('Charts.horizontalStackedBar', () => {
         document.body.innerHTML = '<canvas id="stackedBar2"></canvas>';
         const urlFn = vi.fn(item => `/url?name=${item.name}`);
 
-        Charts.horizontalStackedBar('stackedBar2', [{ name: '/index', hit: 1, miss: 0, function: 0, redirect: 0, error: 0 }], urlFn);
+        Charts.horizontalStackedBar('stackedBar2', [{ name: '/index', hit: 1, miss: 0, function: 0, error: 0 }], urlFn);
 
         const [, config] = globalThis.Chart.mock.calls[0];
         expect(config.options.onClick).toBeDefined();

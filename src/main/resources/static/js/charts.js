@@ -7,7 +7,6 @@ Charts.COLORS = {
     red:    'rgba(220, 53, 69, 0.8)',
     orange: 'rgba(253, 126, 20, 0.8)',
     green:  'rgba(40, 167, 69, 0.8)',
-    purple: 'rgba(111, 66, 193, 0.8)',
 };
 
 Charts.RESULT_TYPE_COLORS = {
@@ -17,7 +16,6 @@ Charts.RESULT_TYPE_COLORS = {
     'FunctionExecutionError':    Charts.COLORS.orange,
     'FunctionThrottledError':    Charts.COLORS.orange,
     'Error':                     Charts.COLORS.red,
-    'Redirect':                  Charts.COLORS.purple,
 };
 
 Charts.PALETTE = [
@@ -101,7 +99,6 @@ Charts.resultTypeDatasets = function (data) {
         { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: Charts.COLORS.green  },
         { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: Charts.COLORS.blue   },
         { label: 'Function', data: data.map(d => d.function), backgroundColor: Charts.COLORS.orange },
-        { label: 'Redirect', data: data.map(d => d.redirect), backgroundColor: Charts.COLORS.purple },
         { label: 'Error',    data: data.map(d => d.error),    backgroundColor: Charts.COLORS.red    },
     ];
 };

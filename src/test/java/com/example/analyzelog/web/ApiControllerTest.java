@@ -72,7 +72,7 @@ class ApiControllerTest {
     @Test
     void uaNamesReturnsJson() {
         when(dashboardService.topUserAgentsByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
-                .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 30, 10, 0, 1, 1)));
+                .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 30, 10, 0, 1)));
 
         assertThat(mvc.get().uri("/api/ua-names-split")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
@@ -93,7 +93,7 @@ class ApiControllerTest {
     @Test
     void countriesReturnsJson() {
         when(dashboardService.topCountriesByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
-                .thenReturn(List.of(new CountryResultTypeCount("CN", "China", 80, 15, 0, 3, 2)));
+                .thenReturn(List.of(new CountryResultTypeCount("CN", "China", 80, 15, 0, 3)));
 
         assertThat(mvc.get().uri("/api/countries")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
@@ -113,7 +113,7 @@ class ApiControllerTest {
     @Test
     void topUrlsSplitReturnsJson() {
         when(dashboardService.topUrlsByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
-                .thenReturn(List.of(new NameResultTypeCount("/feed.xml", 40, 10, 0, 2, 3)));
+                .thenReturn(List.of(new NameResultTypeCount("/feed.xml", 40, 10, 0, 2)));
 
         assertThat(mvc.get().uri("/api/top-urls-split")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
@@ -134,7 +134,7 @@ class ApiControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.requestsPerDay(any(Instant.class), any(Instant.class), eq(false)))
-                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 80, 20, 3, 5, 1)));
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 80, 20, 3, 5)));
 
         assertThat(mvc.get().uri("/api/requests-per-day")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

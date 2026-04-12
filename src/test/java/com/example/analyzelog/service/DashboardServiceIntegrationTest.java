@@ -98,7 +98,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUriAndResultType("/index.html", "Miss"),
                 entryWithUriAndResultType("/page.php",   "Hit"),
                 entryWithUriAndResultType("/other.php",  "Error"),
-                entryWithUriAndResultType("/wp-login.php", "Redirect"),
+                entryWithUriAndResultType("/wp-login.php", "Miss"),
                 entryWithUriAndResultType("/wp-content/themes/style", "Hit")
         ));
 
@@ -121,7 +121,7 @@ class DashboardServiceIntegrationTest {
 
         var wp = result.stream().filter(r -> "WordPress".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, wp.hit());
-        assertEquals(1, wp.redirect());
+        assertEquals(1, wp.miss());
     }
 
     @Test
@@ -148,7 +148,7 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, index.miss());
 
         // US entries must not appear
-        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
         assertEquals(4, total);
     }
 
@@ -216,7 +216,6 @@ class DashboardServiceIntegrationTest {
                 entryWithResultType("Hit"),
                 entryWithResultType("Miss"),
                 entryWithResultType("Error"),
-                entryWithResultType("Redirect"),
                 entryWithResultType("FunctionExecutionError")
         ));
 
@@ -228,7 +227,6 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, today.hit());
         assertEquals(1, today.miss());
         assertEquals(1, today.error());
-        assertEquals(1, today.redirect());
         assertEquals(1, today.function());
     }
 
@@ -550,10 +548,10 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("/wp-login.php"));
         assertFalse(names.contains("//wp-admin/"));
         var phpTotal = result.stream().filter(r -> "PHP".equals(r.name()))
-                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
         assertEquals(2, phpTotal);
         var wpTotal = result.stream().filter(r -> "WordPress".equals(r.name()))
-                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
         assertEquals(3, wpTotal);
     }
 
@@ -730,7 +728,7 @@ class DashboardServiceIntegrationTest {
         var us = result.stream().filter(r -> "US".equals(r.code())).findFirst().orElseThrow();
         assertEquals(1, us.miss());
         // /about.html entry must not inflate FR count
-        assertEquals(2, fr.hit() + fr.miss() + fr.function() + fr.error() + fr.redirect());
+        assertEquals(2, fr.hit() + fr.miss() + fr.function() + fr.error());
     }
 
     @Test
@@ -750,7 +748,7 @@ class DashboardServiceIntegrationTest {
         var firefox = result.stream().filter(r -> "Firefox / Linux".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, firefox.hit());
         // /index.html must not contribute
-        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error() + r.redirect()).sum();
+        long total = result.stream().mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
         assertEquals(3, total);
     }
 

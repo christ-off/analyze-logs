@@ -61,7 +61,7 @@ class UaDetailControllerTest {
     @Test
     void uriStemsReturnsJson() {
         when(dashboardService.uaUrlsByResultType(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
-                .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3, 2)));
+                .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3)));
 
         assertThat(mvc.get().uri("/api/ua-detail/uri-stems")
                 .param("ua", "Chrome / Windows")
@@ -75,7 +75,7 @@ class UaDetailControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.uaRequestsPerDay(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
-                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 10, 2, 0, 0, 1)));
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/ua-detail/requests-per-day")
                 .param("ua", "Chrome / Windows")
@@ -90,8 +90,8 @@ class UaDetailControllerTest {
     void userAgentsReturnsJson() {
         when(dashboardService.uaRawUserAgents(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
                 .thenReturn(List.of(
-                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0)", 80, 30, 5, 3, 2),
-                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 6.1)", 20, 8, 0, 1, 1)));
+                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0)", 80, 30, 5, 3),
+                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 6.1)", 20, 8, 0, 1)));
 
         assertThat(mvc.get().uri("/api/ua-detail/user-agents")
                 .param("ua", "Chrome / Windows")

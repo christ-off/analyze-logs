@@ -28,7 +28,7 @@ async function loadAllCharts() {
 
     const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
     if (data.length) {
-        const total = (row) => row.hit + row.miss + row.function + row.redirect + row.error;
+        const total = (row) => row.hit + row.miss + row.function + row.error;
         tbody.innerHTML = data.map((row, i) => `
             <tr>
                 <td class="text-muted">${i + 1}</td>
@@ -46,12 +46,11 @@ const BAR_COLORS = {
     hit:      'rgba(40,167,69,0.8)',
     miss:     'rgba(54,162,235,0.8)',
     function: 'rgba(253,126,20,0.8)',
-    redirect: 'rgba(111,66,193,0.8)',
     error:    'rgba(220,53,69,0.8)',
 };
 
 function stackedBar(row) {
-    const total = row.hit + row.miss + row.function + row.redirect + row.error;
+    const total = row.hit + row.miss + row.function + row.error;
     if (total === 0) return '';
     return Object.entries(BAR_COLORS)
         .filter(([k]) => row[k] > 0)

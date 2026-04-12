@@ -31,7 +31,6 @@ public class DashboardService {
     private static final String COUNT_FIELD = "count";
     private static final String FIELD_FUNCTION = "function";
     private static final String FIELD_ERROR = "error";
-    private static final String FIELD_REDIRECT = "redirect";
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
@@ -48,13 +47,12 @@ public class DashboardService {
                     'FunctionGeneratedResponse',
                     'FunctionExecutionError',
                     'FunctionThrottledError')                  THEN 1 ELSE 0 END) as function,
-            SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error,
-            SUM(CASE WHEN edge_response_result_type = 'Redirect' THEN 1 ELSE 0 END) as redirect\
+            SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error\
             """;
     private final String sqlUriByResultType;
     private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
             GROUP BY name
-            ORDER BY (hit + miss + function + error + redirect) DESC
+            ORDER BY (hit + miss + function + error) DESC
             LIMIT ?
             """;
     private static final String SQL_DAILY_SELECT = """
@@ -193,7 +191,7 @@ public class DashboardService {
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 exclusion +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -206,8 +204,7 @@ public class DashboardService {
                         rs.getLong("hit"),
                         rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 args.toArray());
     }
 
@@ -223,7 +220,7 @@ public class DashboardService {
                 "  AND country IS NOT NULL\n" +
                 exclusion +
                 "GROUP BY country\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -241,8 +238,7 @@ public class DashboardService {
                             rs.getLong("hit"),
                             rs.getLong("miss"),
                             rs.getLong(FIELD_FUNCTION),
-                            rs.getLong(FIELD_ERROR),
-                            rs.getLong(FIELD_REDIRECT));
+                            rs.getLong(FIELD_ERROR));
                 },
                 args.toArray());
     }
@@ -259,7 +255,7 @@ public class DashboardService {
                 "  AND country = ?\n" +
                 exclusion +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -273,8 +269,7 @@ public class DashboardService {
                         rs.getLong("hit"),
                         rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 args.toArray());
     }
 
@@ -358,8 +353,7 @@ public class DashboardService {
                         rs.getLong("hit"),
                         rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 args.toArray());
     }
 
@@ -465,14 +459,13 @@ public class DashboardService {
                 "  AND ua_name = ?\n" +
                 exclusion +
                 "GROUP BY user_agent\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n",
+                "ORDER BY (hit + miss + function + error) DESC\n",
                 (rs, _) -> new NameResultTypeCount(
                         rs.getString("name"),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 from.toString(), to.toString(), uaName);
     }
 
@@ -548,8 +541,7 @@ public class DashboardService {
                         rs.getLong("hit"),
                         rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR),
-                        rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 args);
     }
 
@@ -596,7 +588,7 @@ public class DashboardService {
                 "  AND country IS NOT NULL\n" +
                 "  AND " + entry.getKey() + "\n" +
                 "GROUP BY country\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -611,7 +603,7 @@ public class DashboardService {
                     String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
                     return new CountryResultTypeCount(iso, label,
                             rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
-                            rs.getLong(FIELD_ERROR), rs.getLong(FIELD_REDIRECT));
+                            rs.getLong(FIELD_ERROR));
                 },
                 args.toArray());
     }
@@ -623,7 +615,7 @@ public class DashboardService {
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error + redirect) DESC\n" +
+                "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -634,7 +626,7 @@ public class DashboardService {
                 (rs, _) -> new NameResultTypeCount(
                         rs.getString("name"),
                         rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR), rs.getLong(FIELD_REDIRECT)),
+                        rs.getLong(FIELD_ERROR)),
                 args.toArray());
     }
 
