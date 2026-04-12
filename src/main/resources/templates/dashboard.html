@@ -1,24 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-              xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>CloudFront Dashboard</title>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+      th:replace="~{layout :: page('CloudFront Dashboard', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<th:block class="extra-head">
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
-</head>
-<body>
-
-<nav class="navbar navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand" th:href="@{/}">CloudFront Logs</a>
-    </div>
-</nav>
-
-<main class="container-fluid px-4">
+</th:block>
+<th:block class="page-content">
 
     <!-- Flash messages -->
     <div th:replace="~{fragments/flash :: messages}"></div>
@@ -120,10 +107,8 @@
         </div>
     </div>
 
-</main>
-
-<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>
-<script type="module" th:src="@{/js/dashboard.js}"></script>
-</body>
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/dashboard.js}"></script>
+</th:block>
 </html>

@@ -50,7 +50,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")  // different country — must not appear
         ));
 
-        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10, false);
 
         assertFalse(result.isEmpty());
         var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
@@ -79,7 +79,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/icon.svg")
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/about.html"));
@@ -102,7 +102,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUriAndResultType("/wp-content/themes/style", "Hit")
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -136,7 +136,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndUriAndResultType("US", "/index.html", "Hit")   // different country
         ));
 
-        var result = dashboardService.countryUrlsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.countryUrlsByResultType("FR", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -162,7 +162,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndResultType("US", "Miss")
         ));
 
-        var result = dashboardService.topCountriesByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topCountriesByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
         assertFalse(result.isEmpty());
         var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
@@ -220,7 +220,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.requestsPerDay(
-                from, Instant.now().plusSeconds(5));
+                from, Instant.now().plusSeconds(5), false);
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();
@@ -358,7 +358,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.topUserAgentsByResultType(
-                from, Instant.now().plusSeconds(5), 10);
+                from, Instant.now().plusSeconds(5), 10, false);
 
         assertFalse(result.isEmpty());
         NameResultTypeCount chrome = result.stream()
@@ -386,7 +386,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameCount> result = dashboardService.uaResultTypes(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Error".equals(n.name())).findFirst().orElseThrow().count());
@@ -404,7 +404,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameCount> result = dashboardService.uaCountries(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
 
         assertEquals(2, result.stream().filter(n -> "France".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "United States".equals(n.name())).findFirst().orElseThrow().count());
@@ -422,7 +422,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/index.html"));
@@ -441,7 +441,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
@@ -464,7 +464,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
@@ -491,7 +491,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("WordPress"), "WordPress label must be present");
@@ -516,7 +516,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.uaRequestsPerDay(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5));
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();
@@ -538,7 +538,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("//wp-admin/")      // //wp-% also maps to WordPress
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -805,7 +805,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(null,              "Hit")   // excluded (ua_name = "(no user agent)")
         ));
 
-        var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
 
         assertFalse(result.isEmpty());
         var browsers = result.stream().filter(r -> "Browsers".equals(r.name())).findFirst().orElseThrow();
@@ -840,7 +840,7 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("https://external.com/page")
         ));
 
-        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10, false);
         var map = result.stream().collect(java.util.stream.Collectors.toMap(NameCount::name, NameCount::count));
 
         assertEquals(4L, map.get("Google"), "all google.* referers including schemeless must be grouped");
@@ -867,7 +867,7 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("post-tenebras-lire.net")                        // no-scheme self — excluded
         ));
 
-        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("https://external.com/page"));

@@ -136,8 +136,6 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
     });
 };
 
-export { Charts };
-
 Charts.stackedBarByDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
@@ -157,3 +155,4 @@ Charts.stackedBarByDay = function (canvasId, data) {
     });
 };
 
+export { Charts };

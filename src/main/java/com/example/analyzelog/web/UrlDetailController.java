@@ -17,8 +17,6 @@ import java.util.List;
 @RequestMapping("/api/url-detail")
 public class UrlDetailController {
 
-    private static final int TOP_COUNTRIES_LIMIT = 10;
-    private static final int TOP_UA_LIMIT = 10;
     private final DashboardService dashboardService;
 
     public UrlDetailController(DashboardService dashboardService) {
@@ -40,7 +38,7 @@ public class UrlDetailController {
             @RequestParam String from,
             @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), TOP_COUNTRIES_LIMIT);
+        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), ApiConstants.TOP_LIMIT);
     }
 
     @GetMapping("/user-agents")
@@ -49,7 +47,7 @@ public class UrlDetailController {
             @RequestParam String from,
             @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), TOP_UA_LIMIT);
+        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), ApiConstants.TOP_LIMIT);
     }
 
     @GetMapping("/requests-per-day")

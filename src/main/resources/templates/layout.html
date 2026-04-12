@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-      th:fragment="page(title, content)">
+      th:fragment="page(title, extraHead, content, pageScript)">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <th:block th:replace="${extraHead}"/>
 </head>
 <body>
 <nav class="navbar navbar-dark bg-dark mb-4">
@@ -20,5 +21,6 @@
 </main>
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/webjars/chart.js/dist/chart.umd.js}"></script>
+<th:block th:replace="${pageScript}"/>
 </body>
 </html>

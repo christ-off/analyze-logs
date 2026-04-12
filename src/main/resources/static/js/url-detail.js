@@ -1,18 +1,15 @@
 import { Charts } from './charts.js';
+import { readMeta, escapeHtml } from './utils.js';
 
-const from    = document.querySelector('meta[name="cf-from"]').content;
-const to      = document.querySelector('meta[name="cf-to"]').content;
-const urlName = document.querySelector('meta[name="cf-url"]').content;
+const from    = readMeta('cf-from');
+const to      = readMeta('cf-to');
+const urlName = readMeta('cf-url');
 
 const urlParams = new URLSearchParams({
     url:  urlName,
     from: Charts.toDateParam(from),
     to:   Charts.toDateParam(to),
 });
-
-function escapeHtml(s) {
-    return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-}
 
 const tbody = document.getElementById('tbodyUrls');
 try {

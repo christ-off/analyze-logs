@@ -6,7 +6,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class DashboardController {
@@ -20,16 +19,8 @@ public class DashboardController {
             @RequestParam(required = false) String range,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-
-        DateRange dateRange = resolveRange(range, from, to);
-        model.addAttribute("from", dateRange.fromIso());
-        model.addAttribute("to", dateRange.toIso());
-        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
-        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        String activeRange = resolveActiveRange(range, from, to);
-        model.addAttribute(ATTR_ACTIVE_RANGE, activeRange);
+            Model model) {
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
         return "dashboard";
     }
 
@@ -40,13 +31,8 @@ public class DashboardController {
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
-        DateRange dateRange = resolveRange(range, from, to);
         model.addAttribute("uaName", ua);
-        model.addAttribute("from", dateRange.fromIso());
-        model.addAttribute("to", dateRange.toIso());
-        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
-        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
         return "ua-detail";
     }
 
@@ -57,15 +43,10 @@ public class DashboardController {
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
-        DateRange dateRange = resolveRange(range, from, to);
         String displayName = Locale.of("", country).getDisplayCountry(Locale.ENGLISH);
         model.addAttribute("countryCode", country);
         model.addAttribute("countryName", displayName.isBlank() ? country : displayName);
-        model.addAttribute("from", dateRange.fromIso());
-        model.addAttribute("to", dateRange.toIso());
-        model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
-        model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
         return "country-detail";
     }
 
@@ -76,14 +57,17 @@ public class DashboardController {
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
-        DateRange dateRange = resolveRange(range, from, to);
         model.addAttribute("urlName", url);
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "url-detail";
+    }
+
+    private void addDateAttributes(Model model, DateRange dateRange, String activeRange) {
         model.addAttribute("from", dateRange.fromIso());
         model.addAttribute("to", dateRange.toIso());
         model.addAttribute(ATTR_FROM_DATE, dateRange.fromDate().toString());
         model.addAttribute(ATTR_TO_DATE, dateRange.toDate().toString());
-        model.addAttribute(ATTR_ACTIVE_RANGE, resolveActiveRange(range, from, to));
-        return "url-detail";
+        model.addAttribute(ATTR_ACTIVE_RANGE, activeRange);
     }
 
     private String resolveActiveRange(String range, String from, String to) {

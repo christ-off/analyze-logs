@@ -16,7 +16,6 @@ import java.util.List;
 @RequestMapping("/api/ua-detail")
 public class UaDetailController {
 
-    private static final int TOP_URLS_LIMIT = 20;
     private final DashboardService dashboardService;
 
     public UaDetailController(DashboardService dashboardService) {
@@ -60,7 +59,7 @@ public class UaDetailController {
             @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), TOP_URLS_LIMIT, excludeBots);
+        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), ApiConstants.TOP_URLS_LIMIT, excludeBots);
     }
 
     @GetMapping("/requests-per-day")

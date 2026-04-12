@@ -1,21 +1,15 @@
 import { Charts } from './charts.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots } from './utils.js';
 
-const from = document.querySelector('meta[name="cf-from"]').content;
-const to   = document.querySelector('meta[name="cf-to"]').content;
-const ua   = document.querySelector('meta[name="cf-ua"]').content;
+const from = readMeta('cf-from');
+const to   = readMeta('cf-to');
+const ua   = readMeta('cf-ua');
 
 const CHART_IDS = ['chartResultTypes', 'chartCountries', 'chartUriStems', 'chartRequestsPerDay'];
 
-function buildParams() {
-    const p = new URLSearchParams({ ua, from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
-    const toggleEl = document.getElementById('toggleBots');
-    if (toggleEl?.checked) p.set('excludeBots', 'true');
-    return p.toString();
-}
-
 async function loadAllCharts() {
     CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
-    const p = buildParams();
+    const p = buildBaseParams({ ua });
 
     Charts.loadChart(`ua-detail/result-types?${p}`,     d => Charts.pie('chartResultTypes',          d, Charts.RESULT_TYPE_COLORS));
     Charts.loadChart(`ua-detail/countries?${p}`,        d => Charts.pie('chartCountries',             d, null));
@@ -60,17 +54,4 @@ function stackedBar(row) {
         }).join('');
 }
 
-function escapeHtml(s) {
-    return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
-}
-
-const toggleEl = document.getElementById('toggleBots');
-if (toggleEl) {
-    toggleEl.checked = localStorage.getItem('excludeBots') === 'true';
-    toggleEl.addEventListener('change', () => {
-        localStorage.setItem('excludeBots', String(toggleEl.checked));
-        loadAllCharts();
-    });
-}
-
-await loadAllCharts();
+initToggleBots(loadAllCharts);

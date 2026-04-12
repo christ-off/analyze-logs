@@ -9,6 +9,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -36,9 +37,29 @@ public class DashboardService {
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final Set<String> BOT_GROUP_NAMES =
             Set.of("AI Bots", "Search Bots", "Other Bots", "Apps");
+    private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN (" +
             "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')";
+    private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
+            (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
+    private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
+            (rs, _) -> new NameResultTypeCount(
+                    rs.getString("name"),
+                    rs.getLong("hit"), rs.getLong("miss"),
+                    rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
+    private static final RowMapper<DailyResultTypeCount> DAILY_RESULT_TYPE_COUNT_MAPPER =
+            (rs, _) -> new DailyResultTypeCount(
+                    LocalDate.parse(rs.getString("day")),
+                    rs.getLong("hit"), rs.getLong("miss"),
+                    rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
+    private static final RowMapper<CountryResultTypeCount> COUNTRY_RESULT_TYPE_COUNT_MAPPER =
+            (rs, _) -> {
+                String iso = rs.getString("code");
+                return new CountryResultTypeCount(iso, resolveCountryLabel(iso),
+                        rs.getLong("hit"), rs.getLong("miss"),
+                        rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
+            };
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
     private static final String RESULT_TYPE_SUMS = """
             SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
@@ -134,6 +155,12 @@ public class DashboardService {
         return clause.isEmpty() ? "" : SQL_AND_INDENT + clause + "\n";
     }
 
+    private static String resolveCountryLabel(String iso) {
+        if (iso == null || iso.isBlank()) return iso;
+        String display = Locale.of("", iso).getDisplayCountry(Locale.ENGLISH);
+        return (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
+    }
+
     private String botExclusionClause() {
         String inClause = botUaLabels.isEmpty() ? "" :
                 "ua_name NOT IN (" +
@@ -158,10 +185,6 @@ public class DashboardService {
         botUaPrefixes.forEach(p -> args.add(p + "%"));
     }
 
-    public List<NameCount> uaGroupCounts(Instant from, Instant to) {
-        return uaGroupCounts(from, to, false);
-    }
-
     public List<NameCount> uaGroupCounts(Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = "SELECT ua_name as name, COUNT(*) as count\n" +
@@ -174,14 +197,8 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         if (excludeBots) addBotExclusionArgs(args);
-        List<NameCount> rawCounts = jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
+        List<NameCount> rawCounts = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
         return aggregateByLabel(rawCounts, uaGroupClassifier::classify);
-    }
-
-    public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {
-        return topUserAgentsByResultType(from, to, limit, false);
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -198,18 +215,7 @@ public class DashboardService {
         args.add(to.toString());
         if (excludeBots) addBotExclusionArgs(args);
         args.add(limit);
-        return jdbc.query(sql,
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
-                args.toArray());
-    }
-
-    public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit) {
-        return topCountriesByResultType(from, to, limit, false);
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -227,24 +233,7 @@ public class DashboardService {
         args.add(to.toString());
         if (excludeBots) addBotExclusionArgs(args);
         args.add(limit);
-        return jdbc.query(sql,
-                (rs, _) -> {
-                    String iso = rs.getString("code");
-                    String display = (iso != null && !iso.isBlank())
-                            ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
-                            : iso;
-                    String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
-                    return new CountryResultTypeCount(iso, label,
-                            rs.getLong("hit"),
-                            rs.getLong("miss"),
-                            rs.getLong(FIELD_FUNCTION),
-                            rs.getLong(FIELD_ERROR));
-                },
-                args.toArray());
-    }
-
-    public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        return countryTopUserAgentsByResultType(countryCode, from, to, limit, false);
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
@@ -263,18 +252,7 @@ public class DashboardService {
         args.add(countryCode);
         if (excludeBots) addBotExclusionArgs(args);
         args.add(limit);
-        return jdbc.query(sql,
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
-                args.toArray());
-    }
-
-    public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
-        return countryResultTypes(countryCode, from, to, false);
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
@@ -291,21 +269,11 @@ public class DashboardService {
                 + exclusion
                 + "GROUP BY edge_response_result_type\n"
                 + "ORDER BY count DESC\n";
-        return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
-    }
-
-    public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        return countryUrlsByResultType(countryCode, from, to, limit, false);
+        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
         return urlsByResultType("country = ?", List.of(from.toString(), to.toString(), countryCode), limit, excludeBots);
-    }
-
-    public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
-        return countryRequestsPerDay(countryCode, from, to, false);
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to, boolean excludeBots) {
@@ -317,10 +285,6 @@ public class DashboardService {
         if (excludeBots) addBotExclusionArgs(args);
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
                 args.toArray());
-    }
-
-    public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
-        return topUrlsByResultType(from, to, limit, false);
     }
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -343,14 +307,7 @@ public class DashboardService {
         excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
         args.add(limit);
 
-        return jdbc.query(sql,
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
-                args.toArray());
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameCount> topEdgeLocations(Instant from, Instant to, int limit) {
@@ -363,14 +320,8 @@ public class DashboardService {
                 ORDER BY count DESC
                 LIMIT ?
                 """,
-                (rs, _) -> new NameCount(
-                        edgeLocationResolver.resolveDisplay(rs.getString("iata")),
-                        rs.getLong(COUNT_FIELD)),
+                (rs, _) -> new NameCount(edgeLocationResolver.resolveDisplay(rs.getString("iata")), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), limit);
-    }
-
-    public List<NameCount> topReferers(Instant from, Instant to, int limit) {
-        return topReferers(from, to, limit, false);
     }
 
     public List<NameCount> topReferers(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -396,9 +347,7 @@ public class DashboardService {
         exclusionPatterns.forEach(args::add);
         if (excludeBots) addBotExclusionArgs(args);
 
-        List<NameCount> raw = jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
+        List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
 
         return aggregateByLabel(raw, this::normalizeReferer).stream()
                 .limit(limit)
@@ -443,10 +392,6 @@ public class DashboardService {
         return referer;
     }
 
-    public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to) {
-        return uaRawUserAgents(uaName, from, to, false);
-    }
-
     public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
@@ -456,26 +401,13 @@ public class DashboardService {
                 exclusion +
                 "GROUP BY user_agent\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n",
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
+                NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), uaName);
-    }
-
-    public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
-        return uaResultTypes(uaName, from, to, false);
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
         return queryResultTypesByFilter("ua_name", uaName, from, to, exclusion);
-    }
-
-    public List<NameCount> uaCountries(String uaName, Instant from, Instant to) {
-        return uaCountries(uaName, from, to, false);
     }
 
     public List<NameCount> uaCountries(String uaName, Instant from, Instant to, boolean excludeBots) {
@@ -487,37 +419,19 @@ public class DashboardService {
                 exclusion +
                 "GROUP BY country\n" +
                 "ORDER BY count DESC\n" +
-                "LIMIT 10\n",
-                (rs, _) -> {
-                    String iso = rs.getString("name");
-                    String display = (iso != null && !iso.isBlank())
-                            ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
-                            : null;
-                    return new NameCount(display != null ? display : iso, rs.getLong(COUNT_FIELD));
-                },
+                "LIMIT " + UA_COUNTRIES_LIMIT + "\n",
+                (rs, _) -> new NameCount(resolveCountryLabel(rs.getString("name")), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString(), uaName);
-    }
-
-    public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
-        return uaUrlsByResultType(uaName, from, to, limit, false);
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit, boolean excludeBots) {
         return urlsByResultType("ua_name = ?", List.of(from.toString(), to.toString(), uaName), limit, excludeBots);
     }
 
-    public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to) {
-        return uaRequestsPerDay(uaName, from, to, false);
-    }
-
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(RESULT_TYPE_EXCLUSION) : "";
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString(), uaName);
-    }
-
-    public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
-        return requestsPerDay(from, to, false);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to, boolean excludeBots) {
@@ -531,14 +445,7 @@ public class DashboardService {
     }
 
     private List<DailyResultTypeCount> queryDailyByResultType(String sql, Object... args) {
-        return jdbc.query(sql,
-                (rs, _) -> new DailyResultTypeCount(
-                        LocalDate.parse(rs.getString("day")),
-                        rs.getLong("hit"),
-                        rs.getLong("miss"),
-                        rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
-                args);
+        return jdbc.query(sql, DAILY_RESULT_TYPE_COUNT_MAPPER, args);
     }
 
     // filterColumn is always a trusted Java constant, never user input
@@ -550,9 +457,7 @@ public class DashboardService {
                 + extraClause
                 + "GROUP BY edge_response_result_type\n"
                 + "ORDER BY count DESC\n";
-        return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), value);
+        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), value);
     }
 
     public List<NameCount> urlMatchingUriStems(String urlName, Instant from, Instant to) {
@@ -567,9 +472,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        return jdbc.query(sql,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)),
-                args.toArray());
+        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
     public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit) {
@@ -587,17 +490,7 @@ public class DashboardService {
         args.add(to.toString());
         args.addAll(entry.getValue());
         args.add(limit);
-        return jdbc.query(sql,
-                (rs, _) -> {
-                    String iso = rs.getString("code");
-                    String display = (iso != null && !iso.isBlank())
-                            ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH) : iso;
-                    String label = (display != null && !display.isBlank() && !display.equals(iso)) ? display : iso;
-                    return new CountryResultTypeCount(iso, label,
-                            rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
-                            rs.getLong(FIELD_ERROR));
-                },
-                args.toArray());
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameResultTypeCount> urlTopUserAgentsByResultType(String urlName, Instant from, Instant to, int limit) {
@@ -614,12 +507,7 @@ public class DashboardService {
         args.add(to.toString());
         args.addAll(entry.getValue());
         args.add(limit);
-        return jdbc.query(sql,
-                (rs, _) -> new NameResultTypeCount(
-                        rs.getString("name"),
-                        rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION),
-                        rs.getLong(FIELD_ERROR)),
-                args.toArray());
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to) {

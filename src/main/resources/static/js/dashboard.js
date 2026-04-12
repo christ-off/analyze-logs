@@ -1,24 +1,17 @@
 import { Charts } from './charts.js';
+import { readMeta, buildBaseParams, initToggleBots } from './utils.js';
 
-const from = document.querySelector('meta[name="cf-from"]').content;
-const to   = document.querySelector('meta[name="cf-to"]').content;
+const from = readMeta('cf-from');
+const to   = readMeta('cf-to');
 
 const CHART_IDS = [
     'chartUaGroups', 'chartUaNames', 'chartCountries',
     'chartTopUrls', 'chartReferers', 'chartRequestsPerDay',
 ];
 
-
-function buildParams() {
-    const p = new URLSearchParams({ from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
-    const toggleEl = document.getElementById('toggleBots');
-    if (toggleEl?.checked) p.set('excludeBots', 'true');
-    return p.toString();
-}
-
 function loadAllCharts() {
     CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
-    const p = buildParams();
+    const p = buildBaseParams({});
     Charts.loadChart(`ua-groups?${p}`,        data => Charts.pie('chartUaGroups',     data, null));
     Charts.loadChart(`ua-names-split?${p}`,   data => Charts.horizontalStackedBar('chartUaNames', data,
         d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
@@ -30,13 +23,4 @@ function loadAllCharts() {
     Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
 }
 
-const toggleEl = document.getElementById('toggleBots');
-if (toggleEl) {
-    toggleEl.checked = localStorage.getItem('excludeBots') === 'true';
-    toggleEl.addEventListener('change', () => {
-        localStorage.setItem('excludeBots', String(toggleEl.checked));
-        loadAllCharts();
-    });
-}
-
-loadAllCharts();
+initToggleBots(loadAllCharts);
