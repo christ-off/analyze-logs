@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
@@ -17,9 +18,11 @@ import java.util.List;
 public class UaDetailController {
 
     private final DashboardService dashboardService;
+    private final AppProperties appProperties;
 
-    public UaDetailController(DashboardService dashboardService) {
+    public UaDetailController(DashboardService dashboardService, AppProperties appProperties) {
         this.dashboardService = dashboardService;
+        this.appProperties = appProperties;
     }
 
     @GetMapping("/user-agents")
@@ -59,7 +62,7 @@ public class UaDetailController {
             @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), ApiConstants.TOP_URLS_LIMIT, excludeBots);
+        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
     @GetMapping("/requests-per-day")

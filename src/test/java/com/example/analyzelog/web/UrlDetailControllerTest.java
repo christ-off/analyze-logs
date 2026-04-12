@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
@@ -8,6 +9,7 @@ import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -22,6 +24,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @WebMvcTest(UrlDetailController.class)
+@EnableConfigurationProperties(AppProperties.class)
 class UrlDetailControllerTest {
 
     @Autowired

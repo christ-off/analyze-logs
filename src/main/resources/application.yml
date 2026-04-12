@@ -26,6 +26,8 @@ app:
     prefix: ""
     profile: "default"
   db-path: logs.db
+  top-limit: 10
+  top-urls-limit: 20
 
 referer-filter:
   self-referers: []
@@ -63,6 +65,10 @@ uri-stem-groups:
       patterns:
         - "%.php"
         - "%.php7"
+    - name: "Feeds"
+      patterns:
+        - "/feed.xml"
+        - "/rss.xml"
 
 uri-stem-filter:
   excluded-extensions:

@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.NameCount;
@@ -17,9 +18,11 @@ import java.util.List;
 public class CountryDetailController {
 
     private final DashboardService dashboardService;
+    private final AppProperties appProperties;
 
-    public CountryDetailController(DashboardService dashboardService) {
+    public CountryDetailController(DashboardService dashboardService, AppProperties appProperties) {
         this.dashboardService = dashboardService;
+        this.appProperties = appProperties;
     }
 
     @GetMapping("/ua-split")
@@ -29,7 +32,7 @@ public class CountryDetailController {
             @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.countryTopUserAgentsByResultType(country, range.from(), range.to(), ApiConstants.TOP_LIMIT, excludeBots);
+        return dashboardService.countryTopUserAgentsByResultType(country, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
     @GetMapping("/result-types")
@@ -49,7 +52,7 @@ public class CountryDetailController {
             @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.countryUrlsByResultType(country, range.from(), range.to(), ApiConstants.TOP_URLS_LIMIT, excludeBots);
+        return dashboardService.countryUrlsByResultType(country, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
     @GetMapping("/requests-per-day")

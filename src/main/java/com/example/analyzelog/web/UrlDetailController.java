@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
@@ -18,9 +19,11 @@ import java.util.List;
 public class UrlDetailController {
 
     private final DashboardService dashboardService;
+    private final AppProperties appProperties;
 
-    public UrlDetailController(DashboardService dashboardService) {
+    public UrlDetailController(DashboardService dashboardService, AppProperties appProperties) {
         this.dashboardService = dashboardService;
+        this.appProperties = appProperties;
     }
 
     @GetMapping("/urls")
@@ -38,7 +41,7 @@ public class UrlDetailController {
             @RequestParam String from,
             @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), ApiConstants.TOP_LIMIT);
+        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/user-agents")
@@ -47,7 +50,7 @@ public class UrlDetailController {
             @RequestParam String from,
             @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), ApiConstants.TOP_LIMIT);
+        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/requests-per-day")
