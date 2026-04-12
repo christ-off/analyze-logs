@@ -13,9 +13,6 @@ Charts.RESULT_TYPE_COLORS = {
     'Hit':                       Charts.COLORS.green,
     'Miss':                      Charts.COLORS.blue,
     'Function':                  Charts.COLORS.orange,
-    'FunctionGeneratedResponse': Charts.COLORS.orange,
-    'FunctionExecutionError':    Charts.COLORS.orange,
-    'FunctionThrottledError':    Charts.COLORS.orange,
     'Error':                     Charts.COLORS.red,
 };
 
