@@ -882,4 +882,51 @@ class DashboardServiceIntegrationTest {
                 .mapToLong(NameCount::count).sum();
         assertEquals(2, extCount);
     }
+
+    @Test
+    void countryResultTypes_countsPerType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-rt-test2.gz", List.of(
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")
+        ));
+        var result = dashboardService.countryResultTypes("FR", from, Instant.now().plusSeconds(5), false);
+        assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
+    }
+
+    @Test
+    void countryRequestsPerDay_countsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-rpd-test2.gz", List.of(
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")
+        ));
+        var result = dashboardService.countryRequestsPerDay("FR", from, Instant.now().plusSeconds(5), false);
+        assertFalse(result.isEmpty());
+        var today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+        assertEquals(0, today.error());
+    }
+
+    @Test
+    void uaRawUserAgents_groupsByRawUaString() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-raw-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Miss"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
+        ));
+        var result = dashboardService.uaRawUserAgents("Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+        assertFalse(result.isEmpty());
+        var chrome = result.stream().filter(r -> UA_CHROME_WINDOWS.equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, chrome.hit());
+        assertEquals(1, chrome.miss());
+        assertTrue(result.stream().noneMatch(r -> UA_FIREFOX_LINUX.equals(r.name())));
+    }
 }

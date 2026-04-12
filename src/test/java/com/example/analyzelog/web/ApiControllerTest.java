@@ -210,4 +210,12 @@ class ApiControllerTest {
                 .exchange())
                 .hasStatus(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @Test
+    void missingRequiredParamReturns400() {
+        // 'from' is required — omitting it triggers MissingServletRequestParameterException
+        // which GlobalExceptionHandler.handleMissingParam converts to 400
+        assertThat(mvc.get().uri("/api/ua-groups").param("to", "2026-01-31").exchange())
+                .hasStatus(HttpStatus.BAD_REQUEST);
+    }
 }

@@ -103,4 +103,31 @@ class DashboardControllerTest {
                 .exchange())
                 .model().containsEntry("activeRange", "custom");
     }
+
+    @Test
+    void urlDetailDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/url-detail").param("url", "/index.html").exchange())
+                .hasStatusOk()
+                .hasViewName("url-detail")
+                .model()
+                .containsEntry("activeRange", "7d")
+                .containsEntry("urlName", "/index.html");
+    }
+
+    @Test
+    void urlDetailRangeParamSetsActiveRange() {
+        assertThat(mvc.get().uri("/url-detail").param("url", "/index.html").param("range", "3m").exchange())
+                .model()
+                .containsEntry("activeRange", "3m")
+                .containsKey("from")
+                .containsKey("to");
+    }
+
+    @Test
+    void urlDetailCustomDateSetsCustomRange() {
+        assertThat(mvc.get().uri("/url-detail")
+                .param("url", "/index.html").param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .model().containsEntry("activeRange", "custom");
+    }
 }
