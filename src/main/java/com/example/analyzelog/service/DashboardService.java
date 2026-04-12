@@ -327,10 +327,6 @@ public class DashboardService {
         return urlsByResultType("", List.of(from.toString(), to.toString()), limit, excludeBots);
     }
 
-    private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit) {
-        return urlsByResultType(additionalFilter, baseArgs, limit, false);
-    }
-
     private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit, boolean excludeBots) {
         String exclusionClause = uriStemExclusionClause();
         String botClause = excludeBots ? humanTrafficExclusionClause() : "";
@@ -546,10 +542,6 @@ public class DashboardService {
     }
 
     // filterColumn is always a trusted Java constant, never user input
-    private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to) {
-        return queryResultTypesByFilter(filterColumn, value, from, to, "");
-    }
-
     private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to, String extraClause) {
         String sql = "SELECT edge_response_result_type as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"

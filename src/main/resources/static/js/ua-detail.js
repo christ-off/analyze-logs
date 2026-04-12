@@ -73,4 +73,4 @@ if (toggleEl) {
     });
 }
 
-loadAllCharts();
+await loadAllCharts();

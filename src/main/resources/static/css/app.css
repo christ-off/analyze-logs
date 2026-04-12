@@ -141,7 +141,7 @@ body {
 .btn-warning {
   background-color: #f59e0b;
   border-color: #f59e0b;
-  color: #fff;
+  color: #000;
   border-radius: .375rem;
   font-size: .82rem;
   transition: background-color .15s ease, border-color .15s ease;
@@ -151,7 +151,7 @@ body {
 .btn-warning:focus {
   background-color: #d97706;
   border-color: #d97706;
-  color: #fff;
+  color: #000;
 }
 
 .btn-warning:focus {
