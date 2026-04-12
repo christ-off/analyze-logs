@@ -106,6 +106,9 @@ Charts.resultTypeDatasets = function (data) {
 Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    const container = ctx.parentElement;
+    container.style.position = 'relative';
+    container.style.height = Math.max(200, data.length * 32) + 'px';
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -115,6 +118,7 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
         options: {
             indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: false,
             ...(urlFn ? {
                 onClick: (event, elements) => {
                     if (!elements.length) return;
