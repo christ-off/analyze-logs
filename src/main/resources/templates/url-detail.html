@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout :: page('URL Detail – ' + ${urlName}, ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title th:text="'URL Detail – ' + ${urlName}">URL Detail</title></head>
 <th:block class="extra-head">
     <meta name="cf-from"  th:content="${from}"/>
     <meta name="cf-to"    th:content="${to}"/>
