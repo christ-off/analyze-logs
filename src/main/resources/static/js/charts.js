@@ -88,7 +88,38 @@ Charts.pie = function (canvasId, data, colorMap) {
                 ),
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        generateLabels: function (chart) {
+                            const dataset = chart.data.datasets[0];
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            return chart.data.labels.map((label, i) => {
+                                const pct = total > 0 ? ((dataset.data[i] / total) * 100).toFixed(1) : '0.0';
+                                return {
+                                    text: `${label} (${pct}%)`,
+                                    fillStyle: dataset.backgroundColor[i],
+                                    strokeStyle: dataset.backgroundColor[i],
+                                    hidden: false,
+                                    index: i,
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
+                            return ` ${context.parsed.toLocaleString()} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
 };
 

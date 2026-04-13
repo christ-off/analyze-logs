@@ -52,6 +52,10 @@ referer-normalizer:
       domain-ends-with: "brave.com"
     - label: "InoReader"
       domain: "inoreader.com"
+    - label: "Ecosia"
+      domain: "ecosia.org"
+    - label: "Kagi"
+      domain: "kagi.com"
 
 uri-stem-groups:
   groups:
