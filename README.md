@@ -1,3 +1,5 @@
+![CodeQL](https://github.com/christ-off/analyze-logs/actions/workflows/github-code-scanning/codeql/badge.svg) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=christ-off_analyze-logs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=christ-off_analyze-logs)
+
 # analyze-logs
 
 Spring Boot web dashboard for [Amazon CloudFront standard logs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html) (JSON format).
