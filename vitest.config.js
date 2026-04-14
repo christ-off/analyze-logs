@@ -7,7 +7,10 @@ export default defineConfig({
         include: ['src/test/js/**/*.test.js'],
         coverage: {
             provider: 'v8',
-            include: ['src/main/resources/static/js/charts.js'],
+            include: [
+                'src/main/resources/static/js/charts.js',
+                'src/main/resources/static/js/utils.js',
+            ],
             reporter: ['text', 'lcov'],
         },
     },

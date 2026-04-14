@@ -200,3 +200,189 @@ describe('Charts.horizontalStackedBar', () => {
         expect(config.options.onHover).toBeDefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Charts.stackedBarByDay
+// ---------------------------------------------------------------------------
+
+describe('Charts.stackedBarByDay', () => {
+    it('does nothing when canvasId is not found', () => {
+        Charts.stackedBarByDay('missing', []);
+        expect(globalThis.Chart).not.toHaveBeenCalled();
+    });
+
+    it('creates a stacked bar-by-day chart with correct config', () => {
+        document.body.innerHTML = '<canvas id="dayChart"></canvas>';
+        const data = [
+            { day: '2026-01-01', hit: 100, miss: 20, function: 5, error: 1 },
+            { day: '2026-01-02', hit: 80,  miss: 15, function: 3, error: 0 },
+        ];
+
+        Charts.stackedBarByDay('dayChart', data);
+
+        expect(globalThis.Chart).toHaveBeenCalledOnce();
+        const [, config] = globalThis.Chart.mock.calls[0];
+        expect(config.type).toBe('bar');
+        expect(config.data.labels).toEqual(['2026-01-01', '2026-01-02']);
+        expect(config.data.datasets).toHaveLength(4);
+        expect(config.options.scales.x.stacked).toBe(true);
+        expect(config.options.scales.y.stacked).toBe(true);
+        expect(config.options.scales.y.beginAtZero).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Pie chart plugin callbacks
+// ---------------------------------------------------------------------------
+
+describe('Charts.pie — generateLabels callback', () => {
+    it('computes percentage labels correctly', () => {
+        document.body.innerHTML = '<canvas id="pieLabels"></canvas>';
+        Charts.pie('pieLabels', [{ name: 'Hit', count: 300 }, { name: 'Miss', count: 100 }], null);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const labels = config.options.plugins.legend.labels.generateLabels({ data: config.data });
+
+        expect(labels).toHaveLength(2);
+        expect(labels[0].text).toBe('Hit (75.0%)');
+        expect(labels[1].text).toBe('Miss (25.0%)');
+        expect(labels[0].hidden).toBe(false);
+    });
+
+    it('shows 0.0% when total is zero', () => {
+        document.body.innerHTML = '<canvas id="pieLabelsZero"></canvas>';
+        Charts.pie('pieLabelsZero', [{ name: 'X', count: 0 }], null);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const labels = config.options.plugins.legend.labels.generateLabels({ data: config.data });
+
+        expect(labels[0].text).toBe('X (0.0%)');
+    });
+});
+
+describe('Charts.pie — tooltip label callback', () => {
+    it('returns formatted count and percentage', () => {
+        document.body.innerHTML = '<canvas id="pieTooltip"></canvas>';
+        Charts.pie('pieTooltip', [{ name: 'Hit', count: 300 }, { name: 'Miss', count: 100 }], null);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const labelCb = config.options.plugins.tooltip.callbacks.label;
+        const result = labelCb({ dataset: { data: [300, 100] }, parsed: 300 });
+
+        expect(result).toContain('75.0%');
+    });
+
+    it('returns 0.0% when total is zero', () => {
+        document.body.innerHTML = '<canvas id="pieTooltipZero"></canvas>';
+        Charts.pie('pieTooltipZero', [{ name: 'X', count: 0 }], null);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const labelCb = config.options.plugins.tooltip.callbacks.label;
+        const result = labelCb({ dataset: { data: [0] }, parsed: 0 });
+
+        expect(result).toContain('0.0%');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// horizontalBar onClick / onHover
+// ---------------------------------------------------------------------------
+
+describe('Charts.horizontalBar — onClick / onHover', () => {
+    it('onClick navigates when an element is clicked', () => {
+        document.body.innerHTML = '<canvas id="navBar"></canvas>';
+        const locationMock = { href: '' };
+        vi.stubGlobal('location', locationMock);
+        Charts.horizontalBar('navBar', [{ name: 'example.com', count: 5 }], item => `/ref?name=${item.name}`);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        config.options.onClick({}, [{ index: 0 }]);
+
+        expect(locationMock.href).toBe('/ref?name=example.com');
+    });
+
+    it('onClick does nothing when elements array is empty', () => {
+        document.body.innerHTML = '<canvas id="navBar2"></canvas>';
+        const urlFn = vi.fn();
+        Charts.horizontalBar('navBar2', [{ name: 'example.com', count: 5 }], urlFn);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        config.options.onClick({}, []);
+
+        expect(urlFn).not.toHaveBeenCalled();
+    });
+
+    it('onHover sets pointer cursor when elements present', () => {
+        document.body.innerHTML = '<canvas id="hoverBar"></canvas>';
+        Charts.horizontalBar('hoverBar', [{ name: 'example.com', count: 5 }], () => '/foo');
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const target = { style: { cursor: '' } };
+        config.options.onHover({ native: { target } }, [{ index: 0 }]);
+
+        expect(target.style.cursor).toBe('pointer');
+    });
+
+    it('onHover sets default cursor when no elements', () => {
+        document.body.innerHTML = '<canvas id="hoverBar2"></canvas>';
+        Charts.horizontalBar('hoverBar2', [{ name: 'example.com', count: 5 }], () => '/foo');
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const target = { style: { cursor: 'pointer' } };
+        config.options.onHover({ native: { target } }, []);
+
+        expect(target.style.cursor).toBe('default');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// horizontalStackedBar onClick / onHover
+// ---------------------------------------------------------------------------
+
+describe('Charts.horizontalStackedBar — onClick / onHover', () => {
+    it('onClick navigates when an element is clicked', () => {
+        document.body.innerHTML = '<div><canvas id="stackedNavBar"></canvas></div>';
+        const locationMock = { href: '' };
+        vi.stubGlobal('location', locationMock);
+        const data = [{ name: '/index', hit: 1, miss: 0, function: 0, error: 0 }];
+        Charts.horizontalStackedBar('stackedNavBar', data, item => `/url?name=${item.name}`);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        config.options.onClick({}, [{ index: 0 }]);
+
+        expect(locationMock.href).toBe('/url?name=/index');
+    });
+
+    it('onClick does nothing when elements array is empty', () => {
+        document.body.innerHTML = '<div><canvas id="stackedNavBar2"></canvas></div>';
+        const urlFn = vi.fn();
+        Charts.horizontalStackedBar('stackedNavBar2', [{ name: '/x', hit: 1, miss: 0, function: 0, error: 0 }], urlFn);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        config.options.onClick({}, []);
+
+        expect(urlFn).not.toHaveBeenCalled();
+    });
+
+    it('onHover sets pointer cursor when elements present', () => {
+        document.body.innerHTML = '<div><canvas id="stackedHoverBar"></canvas></div>';
+        Charts.horizontalStackedBar('stackedHoverBar', [{ name: '/x', hit: 1, miss: 0, function: 0, error: 0 }], () => '/foo');
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const target = { style: { cursor: '' } };
+        config.options.onHover({ native: { target } }, [{ index: 0 }]);
+
+        expect(target.style.cursor).toBe('pointer');
+    });
+
+    it('onHover sets default cursor when no elements', () => {
+        document.body.innerHTML = '<div><canvas id="stackedHoverBar2"></canvas></div>';
+        Charts.horizontalStackedBar('stackedHoverBar2', [{ name: '/x', hit: 1, miss: 0, function: 0, error: 0 }], () => '/foo');
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const target = { style: { cursor: 'pointer' } };
+        config.options.onHover({ native: { target } }, []);
+
+        expect(target.style.cursor).toBe('default');
+    });
+});
