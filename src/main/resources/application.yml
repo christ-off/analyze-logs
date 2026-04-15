@@ -262,3 +262,7 @@ ua-classifier:
     # Headless/suspicious — must come before generic browser rules
     - pattern: "HeadlessChrome"
       label: "HeadlessChrome"
+noise-filter:
+  rules:
+    - ua-name: "Mastodon"
+      uri-stem: "/"

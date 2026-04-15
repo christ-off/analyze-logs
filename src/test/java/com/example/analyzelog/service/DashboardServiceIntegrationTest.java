@@ -340,7 +340,33 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, functionWithout, "Function rows must remain when filter is inactive");
     }
 
+    @Test
+    void topUserAgentsByResultType_excludeBots_excludesMastodonRootRequests() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/mastodon-noise-test.gz", List.of(
+                entryWithUaAndUri(UA_MASTODON,       "/"),           // noise — excluded
+                entryWithUaAndUri(UA_MASTODON,       "/blog/post"),  // real content — kept
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/")            // human visit — kept
+        ));
+
+        var withFilter    = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
+        var withoutFilter = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, false);
+
+        // Without filter: Mastodon appears (2 requests)
+        assertTrue(withoutFilter.stream().anyMatch(r -> "Mastodon".equals(r.name())));
+
+        // With filter: Mastodon "/" excluded, Mastodon "/blog/post" kept → count = 1
+        var mastodon = withFilter.stream().filter(r -> "Mastodon".equals(r.name())).findFirst();
+        assertTrue(mastodon.isPresent(), "Mastodon to /blog/post must survive noise filter");
+        assertEquals(1, mastodon.get().hit(), "only /blog/post hit must remain");
+
+        // Chrome "/" is not noise — kept
+        assertTrue(withFilter.stream().anyMatch(r -> "Chrome / Windows".equals(r.name())));
+    }
+
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
+    private static final String UA_MASTODON =
+            "http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)";
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private static final String UA_FIREFOX_LINUX =
