@@ -159,6 +159,26 @@ No credentials are stored by this application. Authentication is delegated to th
 }
 ```
 
+## Findings
+
+Investigation queries are in `etc/queries/`. Run them with:
+
+```bash
+sqlite3 logs.db < etc/queries/suspicious_user_agents.sql
+```
+
+### Suspicious user agents (PHP / WordPress scanners)
+
+Agents hitting `.php` or `/wp*` URLs 10+ times per day, with no legitimate traffic on the site:
+
+| User Agent | Date | Hits |
+|---|---|---|
+| `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/71.0.3542.0 Safari/537.36` | 2026-04-07 | 15 |
+
+> Requests with an empty `user_agent` are excluded upfront — they are always suspicious by definition.
+
+---
+
 ## Database
 
 Logs are stored in a SQLite file (`logs.db` by default, relative to the working directory).
