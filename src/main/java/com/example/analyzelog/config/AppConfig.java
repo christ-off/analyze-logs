@@ -34,7 +34,7 @@ public class AppConfig {
     @DependsOn("liquibase")
     public UserAgentClassifier userAgentClassifier(JdbcTemplate jdbc) {
         List<UaClassifierRule> rules = jdbc.query(
-                "SELECT pattern, ua_name FROM static_ua_classifier ORDER BY sort_order",
+                "SELECT pattern, ua_name FROM static_ua WHERE pattern IS NOT NULL ORDER BY sort_order",
                 (rs, _) -> new UaClassifierRule(rs.getString("pattern"), rs.getString("ua_name")));
         return new UserAgentClassifier(rules);
     }
