@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="008-add-feed-reader-patterns" author="analyze-logs">
+
+        <!-- Fix Inoreader: already in static_ua since 005, just missing pattern/sort_order -->
+        <sql>
+            UPDATE static_ua
+            SET pattern = 'Inoreader', sort_order = 48
+            WHERE ua_name = 'Inoreader'
+        </sql>
+
+        <!-- Insert four new Feed Reader entries (sort_orders 49-52) -->
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('KrISS feed', 'Feed Readers', 'KrISS feed', 'KrISS feed', 49),
+            ('newsboat',   'Feed Readers', 'newsboat',   'newsboat/',   50),
+            ('RSS Guard',  'Feed Readers', 'RSS Guard',  'rssguard',    51),
+            ('Gofeed',     'Feed Readers', 'Gofeed',     'Gofeed/',     52)
+        </sql>
+
+        <!-- Back-fill existing cloudfront_logs rows so dashboard reflects correct groups now -->
+        <sql>UPDATE cloudfront_logs SET ua_name = 'Inoreader'  WHERE ua_name = 'Unknown' AND user_agent LIKE '%Inoreader%'</sql>
+        <sql>UPDATE cloudfront_logs SET ua_name = 'Inoreader'  WHERE ua_name = 'Unknown' AND user_agent LIKE '%inoreader.com%'</sql>
+        <sql>UPDATE cloudfront_logs SET ua_name = 'KrISS feed' WHERE ua_name = 'Unknown' AND user_agent LIKE '%KrISS feed%'</sql>
+        <sql>UPDATE cloudfront_logs SET ua_name = 'newsboat'   WHERE ua_name = 'Unknown' AND user_agent LIKE '%newsboat/%'</sql>
+        <sql>UPDATE cloudfront_logs SET ua_name = 'RSS Guard'  WHERE ua_name = 'Unknown' AND user_agent LIKE '%rssguard%'</sql>
+        <sql>UPDATE cloudfront_logs SET ua_name = 'Gofeed'     WHERE ua_name = 'Unknown' AND user_agent LIKE '%Gofeed/%'</sql>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -12,5 +12,6 @@
     <include file="db/changelog/changes/005-static-ua.xml"/>
     <include file="db/changelog/changes/006-static-ua-classifier.xml"/>
     <include file="db/changelog/changes/007-merge-static-ua-classifier.xml"/>
+    <include file="db/changelog/changes/008-add-feed-reader-patterns.xml"/>
 
 </databaseChangeLog>
