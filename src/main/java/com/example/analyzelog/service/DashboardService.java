@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,8 +35,6 @@ public class DashboardService {
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
-    private static final Set<String> BOT_GROUP_NAMES =
-            Set.of("AI Bots", "Search Bots", "Other Bots", "Apps");
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN (" +
@@ -94,17 +91,13 @@ public class DashboardService {
             """;
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
-    private final UaGroupClassifier uaGroupClassifier;
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
     private final List<RefererNormalizerProperties.Rule> normalizerRules;
-    private final List<String> botUaLabels;
-    private final List<String> botUaPrefixes;
     private final List<NoiseFilterProperties.Rule> noiseRules;
     private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
-                            UaGroupClassifier uaGroupClassifier,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
                             RefererNormalizerProperties refererNormalizerProperties,
@@ -112,12 +105,9 @@ public class DashboardService {
                             NoiseFilterProperties noiseFilterProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
-        this.uaGroupClassifier = uaGroupClassifier;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
         this.normalizerRules = refererNormalizerProperties.rules();
-        this.botUaLabels   = uaGroupClassifier.labelsForGroups(BOT_GROUP_NAMES);
-        this.botUaPrefixes = uaGroupClassifier.prefixesForGroups(BOT_GROUP_NAMES);
         this.noiseRules    = noiseFilterProperties.rules();
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
@@ -170,27 +160,16 @@ public class DashboardService {
     }
 
     private String botExclusionClause() {
-        String inClause = botUaLabels.isEmpty() ? "" :
-                "ua_name NOT IN (" +
-                botUaLabels.stream().map(_ -> "?").collect(Collectors.joining(",")) +
-                ")";
-        String likeClause = botUaPrefixes.stream()
-                .map(_ -> "ua_name NOT LIKE ?")
-                .collect(Collectors.joining(AND_SEPARATOR));
-        return Stream.of("ua_name != '(no user agent)'", inClause, likeClause)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.joining(AND_SEPARATOR));
+        return "ua_name != '(no user agent)'" +
+               " AND ua_name NOT IN (" +
+               "SELECT ua_name FROM static_ua" +
+               " WHERE ua_group IN ('AI Bots','Search Bots','Other Bots','Apps'))";
     }
 
     private String humanTrafficExclusionClause() {
         return Stream.of(botExclusionClause(), noiseExclusionClause(), RESULT_TYPE_EXCLUSION)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(AND_SEPARATOR));
-    }
-
-    private void addBotExclusionArgs(List<Object> args) {
-        args.addAll(botUaLabels);
-        botUaPrefixes.forEach(p -> args.add(p + "%"));
     }
 
     private String noiseExclusionClause() {
@@ -204,19 +183,30 @@ public class DashboardService {
     }
 
     public List<NameCount> uaGroupCounts(Instant from, Instant to, boolean excludeBots) {
-        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
-        String sql = "SELECT ua_name as name, COUNT(*) as count\n" +
-                "FROM cloudfront_logs\n" +
-                "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND ua_name != '(no user agent)'\n" +
-                exclusion +
-                "GROUP BY ua_name\n";
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
-        List<NameCount> rawCounts = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
-        return aggregateByLabel(rawCounts, uaGroupClassifier::classify);
+
+        String botFilter = "";
+        if (excludeBots) {
+            String noiseFilter = noiseRules.stream()
+                    .map(_ -> "  AND NOT (c.ua_name = ? AND c.uri_stem = ?)\n")
+                    .collect(Collectors.joining());
+            botFilter = "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
+                        "  AND c.edge_response_result_type NOT IN (" +
+                        "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
+                        noiseFilter;
+            addNoiseExclusionArgs(args);
+        }
+
+        String sql = "SELECT s.ua_group AS name, COUNT(*) AS count\n" +
+                     "FROM cloudfront_logs c\n" +
+                     "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
+                     "WHERE c.timestamp BETWEEN ? AND ?\n" +
+                     botFilter +
+                     "GROUP BY s.ua_group\n" +
+                     "ORDER BY count DESC";
+        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -231,7 +221,7 @@ public class DashboardService {
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -249,7 +239,7 @@ public class DashboardService {
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -268,7 +258,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.add(countryCode);
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -279,7 +269,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.add(countryCode);
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
@@ -300,7 +290,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.add(countryCode);
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
                 args.toArray());
     }
@@ -321,7 +311,7 @@ public class DashboardService {
                 + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
         var args = new ArrayList<>(baseArgs);
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
         args.add(limit);
 
@@ -363,7 +353,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         exclusionPatterns.forEach(args::add);
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
 
         List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
 
@@ -458,7 +448,7 @@ public class DashboardService {
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
-        if (excludeBots) { addBotExclusionArgs(args); addNoiseExclusionArgs(args); }
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         return queryDailyByResultType(sql, args.toArray());
     }
 
@@ -478,28 +468,33 @@ public class DashboardService {
         return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), value);
     }
 
-    public List<NameCount> urlMatchingUriStems(String urlName, Instant from, Instant to) {
+    public List<NameCount> urlMatchingUriStems(String urlName, Instant from, Instant to, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = "SELECT uri_stem as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
+                exclusion +
                 "GROUP BY uri_stem\n" +
                 "ORDER BY count DESC\n";
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
-    public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit) {
+    public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
                 "  AND " + entry.getKey() + "\n" +
+                exclusion +
                 "GROUP BY country\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
@@ -507,16 +502,19 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
-    public List<NameResultTypeCount> urlTopUserAgentsByResultType(String urlName, Instant from, Instant to, int limit) {
+    public List<NameResultTypeCount> urlTopUserAgentsByResultType(String urlName, Instant from, Instant to, int limit, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
+                exclusion +
                 "GROUP BY ua_name\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
@@ -524,17 +522,20 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
-    public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to) {
+    public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
-        String sql = SQL_DAILY_SELECT + SQL_AND_INDENT + entry.getKey() + "\n" + SQL_DAILY_GROUP_ORDER;
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        String sql = SQL_DAILY_SELECT + SQL_AND_INDENT + entry.getKey() + "\n" + exclusion + SQL_DAILY_GROUP_ORDER;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
+        if (excludeBots) { addNoiseExclusionArgs(args); }
         return queryDailyByResultType(sql, args.toArray());
     }
 

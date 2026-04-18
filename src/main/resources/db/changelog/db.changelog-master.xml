@@ -9,5 +9,7 @@
     <include file="db/changelog/changes/002-add-ua-name.xml"/>
     <include file="db/changelog/changes/003-add-edge-location-iata.xml"/>
     <include file="db/changelog/changes/004-drop-protocol.xml"/>
+    <include file="db/changelog/changes/005-static-ua.xml"/>
+    <include file="db/changelog/changes/006-static-ua-classifier.xml"/>
 
 </databaseChangeLog>

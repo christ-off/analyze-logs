@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="006-static-ua-classifier-create" author="analyze-logs">
+        <sql>
+            CREATE TABLE static_ua_classifier (
+                sort_order INTEGER NOT NULL PRIMARY KEY,
+                pattern    TEXT NOT NULL,
+                ua_name    TEXT NOT NULL REFERENCES static_ua(ua_name)
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet id="006-static-ua-classifier-seed" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua_classifier (sort_order, pattern, ua_name) VALUES
+            -- AI crawlers
+            (1,  'ClaudeBot',              'ClaudeBot'),
+            (2,  'Claude-SearchBot',       'Claude-SearchBot'),
+            (3,  'OAI-SearchBot',          'OAI-SearchBot'),
+            (4,  'PerplexityBot',          'PerplexityBot'),
+            -- SEO crawlers
+            (5,  'AhrefsBot',              'AhrefsBot'),
+            (6,  'SemrushBot',             'SemrushBot'),
+            (7,  'SERankingBacklinksBot',  'SERankingBot'),
+            (8,  'Barkrowler',             'Barkrowler'),
+            (9,  'DotBot',                 'DotBot'),
+            (10, 'MJ12bot',                'MJ12bot'),
+            (11, 'ev-crawler',             'HeadlineBot'),
+            (12, 'PetalBot',               'PetalBot'),
+            (13, 'coccocbot',              'CocCocBot'),
+            (14, 'SeznamBot',              'SeznamBot'),
+            -- Search bots
+            (15, 'Googlebot',              'Googlebot'),
+            (16, 'GoogleImageProxy',       'Google ImageProxy'),
+            (17, 'FeedFetcher-Google',     'Google FeedFetcher'),
+            (18, 'bingbot',                'Bingbot'),
+            (19, 'YandexBot',              'YandexBot'),
+            (20, 'Baiduspider',            'Baiduspider'),
+            (21, 'DuckDuckBot',            'DuckDuckBot'),
+            (22, 'Qwantbot',               'Qwantbot'),
+            -- Security scanners
+            (23, 'WellKnownBot',           'WellKnownBot'),
+            (24, 'CensysInspect',          'Censys Scanner'),
+            (25, 'Palo Alto Networks',     'Palo Alto Scanner'),
+            (26, 'visionheight.com/scan',  'VisionHeight Scanner'),
+            (27, '2ip bot',                '2ip Scanner'),
+            -- Feed readers
+            (28, 'Feedly',                 'Feedly'),
+            (29, 'Feedbin',                'Feedbin'),
+            (30, 'Reeder/',                'Reeder'),
+            (31, 'FreshRSS',               'FreshRSS'),
+            (32, 'NewsBlur',               'NewsBlur'),
+            (33, 'rss-parser',             'rss-parser'),
+            (34, 'sfFeedReader',           'sfFeedReader'),
+            (35, 'feeder.co',              'Feeder'),
+            (36, 'flus/',                  'Flus'),
+            (37, 'wp.com feedbot',         'WP.com FeedBot'),
+            -- Fediverse
+            (38, 'Mastodon',               'Mastodon'),
+            (39, 'Misskey/',               'Misskey'),
+            (40, 'SummalyBot',             'SummalyBot'),
+            (41, 'Yumechi',                'Yumechi Proxy'),
+            -- Social
+            (42, 'facebookexternalhit',    'Facebook'),
+            -- Apps
+            (43, 'obsidian/',              'Obsidian'),
+            (44, 'GSA/',                   'Google Search App'),
+            (45, 'okhttp/',                'okhttp'),
+            (46, 'Go-http-client/',        'Go HTTP client'),
+            -- Headless/suspicious
+            (47, 'HeadlessChrome',         'HeadlessChrome')
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -36,6 +36,13 @@
                     <input type="date" name="to" class="form-control form-control-sm" th:value="${toDate}" style="width:150px"/>
                     <button type="submit" class="btn btn-sm btn-primary">Apply</button>
                 </form>
+
+                <!-- Bot filter toggle -->
+                <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" aria-checked="false"
+                           id="toggleBots" style="width:2.5em; height:1.5em"/>
+                    <label class="form-check-label fw-semibold" for="toggleBots">Hide bots, apps &amp; noise</label>
+                </div>
             </div>
         </div>
     </div>

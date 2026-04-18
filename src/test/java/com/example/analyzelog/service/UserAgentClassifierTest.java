@@ -1,35 +1,33 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.config.UaClassifierProperties;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
-import org.yaml.snakeyaml.Yaml;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class UserAgentClassifierTest {
 
-    private static UserAgentClassifier classifier;
+    @TempDir
+    static Path tempDir;
 
-    @BeforeAll
-    @SuppressWarnings("unchecked")
-    static void loadClassifier() throws Exception {
-        var yaml = new Yaml();
-        try (var is = UserAgentClassifierTest.class.getResourceAsStream("/application.yml")) {
-            Map<String, Object> root = yaml.load(is);
-            var uaSection = (Map<String, Object>) root.get("ua-classifier");
-            var rawRules = (List<Map<String, String>>) uaSection.get("rules");
-            var rules = rawRules.stream()
-                    .map(r -> new UaClassifierProperties.Rule(r.get("pattern"), r.get("label")))
-                    .toList();
-            classifier = new UserAgentClassifier(new UaClassifierProperties(rules));
-        }
+    @DynamicPropertySource
+    static void overrideDataSource(DynamicPropertyRegistry registry) {
+        String dbPath = tempDir.resolve("ua-classifier-test.db").toString();
+        registry.add("spring.datasource.url", () -> "jdbc:sqlite:" + dbPath);
+        registry.add("app.db-path", () -> dbPath);
     }
+
+    @Autowired
+    private UserAgentClassifier classifier;
 
     @ParameterizedTest
     @CsvSource({

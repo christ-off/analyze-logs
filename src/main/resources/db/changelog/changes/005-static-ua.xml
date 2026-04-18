@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-static-ua-create" author="analyze-logs">
+        <sql>
+            CREATE TABLE static_ua (
+                ua_name  TEXT NOT NULL PRIMARY KEY,
+                ua_group TEXT NOT NULL,
+                ua_label TEXT NOT NULL
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-ai-bots" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('ClaudeBot',        'AI Bots', 'ClaudeBot'),
+            ('Claude-SearchBot', 'AI Bots', 'Claude-SearchBot'),
+            ('OAI-SearchBot',    'AI Bots', 'OAI-SearchBot'),
+            ('PerplexityBot',    'AI Bots', 'PerplexityBot')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-browsers" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Unknown',              'Browsers', 'Unknown'),
+            ('Chrome / iPhone',      'Browsers', 'Chrome / iPhone'),
+            ('Chrome / iPad',        'Browsers', 'Chrome / iPad'),
+            ('Chrome / Android',     'Browsers', 'Chrome / Android'),
+            ('Chrome / Windows',     'Browsers', 'Chrome / Windows'),
+            ('Chrome / macOS',       'Browsers', 'Chrome / macOS'),
+            ('Chrome / Linux',       'Browsers', 'Chrome / Linux'),
+            ('Chrome / Unknown OS',  'Browsers', 'Chrome / Unknown OS'),
+            ('Firefox / iPhone',     'Browsers', 'Firefox / iPhone'),
+            ('Firefox / iPad',       'Browsers', 'Firefox / iPad'),
+            ('Firefox / Android',    'Browsers', 'Firefox / Android'),
+            ('Firefox / Windows',    'Browsers', 'Firefox / Windows'),
+            ('Firefox / macOS',      'Browsers', 'Firefox / macOS'),
+            ('Firefox / Linux',      'Browsers', 'Firefox / Linux'),
+            ('Firefox / Unknown OS', 'Browsers', 'Firefox / Unknown OS'),
+            ('Safari / iPhone',      'Browsers', 'Safari / iPhone'),
+            ('Safari / iPad',        'Browsers', 'Safari / iPad'),
+            ('Safari / Android',     'Browsers', 'Safari / Android'),
+            ('Safari / Windows',     'Browsers', 'Safari / Windows'),
+            ('Safari / macOS',       'Browsers', 'Safari / macOS'),
+            ('Safari / Linux',       'Browsers', 'Safari / Linux'),
+            ('Safari / Unknown OS',  'Browsers', 'Safari / Unknown OS'),
+            ('Edge / iPhone',        'Browsers', 'Edge / iPhone'),
+            ('Edge / iPad',          'Browsers', 'Edge / iPad'),
+            ('Edge / Android',       'Browsers', 'Edge / Android'),
+            ('Edge / Windows',       'Browsers', 'Edge / Windows'),
+            ('Edge / macOS',         'Browsers', 'Edge / macOS'),
+            ('Edge / Linux',         'Browsers', 'Edge / Linux'),
+            ('Edge / Unknown OS',    'Browsers', 'Edge / Unknown OS')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-fediverse" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Mastodon', 'Fediverse', 'Mastodon'),
+            ('Misskey',  'Fediverse', 'Misskey')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-feed-readers" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Feedly',        'Feed Readers', 'Feedly'),
+            ('Feedbin',       'Feed Readers', 'Feedbin'),
+            ('Reeder',        'Feed Readers', 'Reeder'),
+            ('FreshRSS',      'Feed Readers', 'FreshRSS'),
+            ('NewsBlur',      'Feed Readers', 'NewsBlur'),
+            ('rss-parser',    'Feed Readers', 'rss-parser'),
+            ('sfFeedReader',  'Feed Readers', 'sfFeedReader'),
+            ('Feeder',        'Feed Readers', 'Feeder'),
+            ('Flus',          'Feed Readers', 'Flus'),
+            ('WP.com FeedBot','Feed Readers', 'WP.com FeedBot'),
+            ('Inoreader',     'Feed Readers', 'Inoreader')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-search-bots" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Googlebot',           'Search Bots', 'Googlebot'),
+            ('Google ImageProxy',   'Search Bots', 'Google ImageProxy'),
+            ('Google FeedFetcher',  'Search Bots', 'Google FeedFetcher'),
+            ('Bingbot',             'Search Bots', 'Bingbot'),
+            ('YandexBot',           'Search Bots', 'YandexBot'),
+            ('Baiduspider',         'Search Bots', 'Baiduspider'),
+            ('DuckDuckBot',         'Search Bots', 'DuckDuckBot'),
+            ('Qwantbot',            'Search Bots', 'Qwantbot')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-other-bots" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('AhrefsBot',             'Other Bots', 'AhrefsBot'),
+            ('SemrushBot',            'Other Bots', 'SemrushBot'),
+            ('SERankingBot',          'Other Bots', 'SERankingBot'),
+            ('Barkrowler',            'Other Bots', 'Barkrowler'),
+            ('DotBot',                'Other Bots', 'DotBot'),
+            ('MJ12bot',               'Other Bots', 'MJ12bot'),
+            ('HeadlineBot',           'Other Bots', 'HeadlineBot'),
+            ('PetalBot',              'Other Bots', 'PetalBot'),
+            ('CocCocBot',             'Other Bots', 'CocCocBot'),
+            ('SeznamBot',             'Other Bots', 'SeznamBot'),
+            ('SummalyBot',            'Other Bots', 'SummalyBot'),
+            ('Yumechi Proxy',         'Other Bots', 'Yumechi Proxy'),
+            ('WellKnownBot',          'Other Bots', 'WellKnownBot'),
+            ('Censys Scanner',        'Other Bots', 'Censys Scanner'),
+            ('Palo Alto Scanner',     'Other Bots', 'Palo Alto Scanner'),
+            ('VisionHeight Scanner',  'Other Bots', 'VisionHeight Scanner'),
+            ('2ip Scanner',           'Other Bots', '2ip Scanner'),
+            ('HeadlessChrome',        'Other Bots', 'HeadlessChrome')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-apps" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Obsidian',          'Apps', 'Obsidian'),
+            ('Google Search App', 'Apps', 'Google Search App'),
+            ('okhttp',            'Apps', 'okhttp'),
+            ('Go HTTP client',    'Apps', 'Go HTTP client')
+        </sql>
+    </changeSet>
+
+    <changeSet id="005-static-ua-seed-other" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Facebook', 'Other', 'Facebook')
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

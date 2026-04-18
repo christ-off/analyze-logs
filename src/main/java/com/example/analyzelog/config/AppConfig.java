@@ -1,13 +1,17 @@
 package com.example.analyzelog.config;
 
-import com.example.analyzelog.service.UaGroupClassifier;
+import com.example.analyzelog.service.UaClassifierRule;
 import com.example.analyzelog.service.UserAgentClassifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.jdbc.core.JdbcTemplate;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.List;
 
 @Configuration
 public class AppConfig {
@@ -27,12 +31,11 @@ public class AppConfig {
     }
 
     @Bean
-    public UserAgentClassifier userAgentClassifier(UaClassifierProperties props) {
-        return new UserAgentClassifier(props);
-    }
-
-    @Bean
-    public UaGroupClassifier uaGroupClassifier(UaGroupProperties props) {
-        return new UaGroupClassifier(props);
+    @DependsOn("liquibase")
+    public UserAgentClassifier userAgentClassifier(JdbcTemplate jdbc) {
+        List<UaClassifierRule> rules = jdbc.query(
+                "SELECT pattern, ua_name FROM static_ua_classifier ORDER BY sort_order",
+                (rs, _) -> new UaClassifierRule(rs.getString("pattern"), rs.getString("ua_name")));
+        return new UserAgentClassifier(rules);
     }
 }

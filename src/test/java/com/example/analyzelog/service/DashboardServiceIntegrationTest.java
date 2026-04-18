@@ -696,7 +696,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/about.html")   // different stem — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5));
+        List<NameCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5), false);
 
         assertEquals(1, result.size());
         assertEquals("/index.html", result.getFirst().name());
@@ -713,7 +713,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not PHP — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP", from, Instant.now().plusSeconds(5));
+        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP", from, Instant.now().plusSeconds(5), false);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("/page.php"));
@@ -733,7 +733,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not WordPress — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("WordPress", from, Instant.now().plusSeconds(5));
+        List<NameCount> result = dashboardService.urlMatchingUriStems("WordPress", from, Instant.now().plusSeconds(5), false);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("/wp-login.php"));
@@ -752,7 +752,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndUriAndResultType("FR", "/about.html", "Hit")  // different stem
         ));
 
-        var result = dashboardService.urlTopCountriesByResultType("/index.html", from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.urlTopCountriesByResultType("/index.html", from, Instant.now().plusSeconds(5), 10, false);
 
         var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
         assertEquals(2, fr.hit());
@@ -772,7 +772,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")  // not PHP
         ));
 
-        var result = dashboardService.urlTopUserAgentsByResultType("PHP", from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.urlTopUserAgentsByResultType("PHP", from, Instant.now().plusSeconds(5), 10, false);
 
         var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, chrome.hit());
@@ -794,7 +794,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.urlRequestsPerDay(
-                "/index.html", from, Instant.now().plusSeconds(5));
+                "/index.html", from, Instant.now().plusSeconds(5), false);
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();

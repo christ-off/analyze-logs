@@ -1,19 +1,17 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.config.UaClassifierProperties;
-
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class UserAgentClassifier {
 
-    private record Rule(Pattern pattern, String label) {}
+    private record CompiledRule(Pattern pattern, String label) {}
 
-    private final List<Rule> rules;
+    private final List<CompiledRule> rules;
 
-    public UserAgentClassifier(UaClassifierProperties properties) {
-        this.rules = properties.rules().stream()
-                .map(r -> new Rule(
+    public UserAgentClassifier(List<UaClassifierRule> rules) {
+        this.rules = rules.stream()
+                .map(r -> new CompiledRule(
                         Pattern.compile(Pattern.quote(r.pattern()), Pattern.CASE_INSENSITIVE),
                         r.label()))
                 .toList();
@@ -22,7 +20,7 @@ public class UserAgentClassifier {
     public String classify(String ua) {
         if (ua == null || ua.isBlank()) return "(no user agent)";
 
-        for (Rule r : rules) {
+        for (CompiledRule r : rules) {
             if (r.pattern().matcher(ua).find()) return r.label();
         }
 

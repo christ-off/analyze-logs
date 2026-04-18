@@ -30,35 +30,39 @@ public class UrlDetailController {
     public List<NameCount> urls(
             @RequestParam String url,
             @RequestParam String from,
-            @RequestParam String to) {
+            @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlMatchingUriStems(url, range.from(), range.to());
+        return dashboardService.urlMatchingUriStems(url, range.from(), range.to(), excludeBots);
     }
 
     @GetMapping("/countries")
     public List<CountryResultTypeCount> countries(
             @RequestParam String url,
             @RequestParam String from,
-            @RequestParam String to) {
+            @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit());
+        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(
             @RequestParam String url,
             @RequestParam String from,
-            @RequestParam String to) {
+            @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit());
+        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
             @RequestParam String url,
             @RequestParam String from,
-            @RequestParam String to) {
+            @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.urlRequestsPerDay(url, range.from(), range.to());
+        return dashboardService.urlRequestsPerDay(url, range.from(), range.to(), excludeBots);
     }
 }
