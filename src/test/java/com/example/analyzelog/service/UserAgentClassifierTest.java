@@ -27,7 +27,7 @@ class UserAgentClassifierTest {
     }
 
     @Autowired
-    private UserAgentClassifier classifier;
+    private ReloadableClassifierService classifier;
 
     @ParameterizedTest
     @CsvSource({

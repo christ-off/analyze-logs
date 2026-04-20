@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Admin', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Admin</title></head>
+<th:block class="extra-head"></th:block>
+
+<!-- Hidden edit forms for User Agent labels (outside the table) -->
+<th:block class="page-content">
+
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Admin</h4>
+        <form th:action="@{/admin/reload}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-warning btn-sm">Reload Configuration</button>
+        </form>
+    </div>
+
+    <!-- Edit forms for User Agent labels (defined outside table for HTML5 form association) -->
+    <div aria-hidden="true">
+        <form th:each="ua, stat : ${userAgents}"
+              th:id="'ua-lbl-form-' + ${stat.index}"
+              th:action="@{/admin/ua/update-labels}"
+              method="post">
+            <input type="hidden" name="uaName" th:value="${ua.uaName()}">
+        </form>
+        <form th:each="ua, stat : ${userAgents}"
+              th:id="'ua-cls-form-' + ${stat.index}"
+              th:action="@{/admin/ua/update-classifier}"
+              method="post">
+            <input type="hidden" name="uaName" th:value="${ua.uaName()}">
+        </form>
+        <form th:each="ref, stat : ${refererRules}"
+              th:id="'ref-form-' + ${stat.index}"
+              th:action="@{/admin/referer/update}"
+              method="post">
+            <input type="hidden" name="id" th:value="${ref.id()}">
+        </form>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ua-tab" type="button">User Agents</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cls-tab" type="button">Classifiers</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ref-tab" type="button">Referer Rules</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ===== User Agents Tab ===== -->
+        <div class="tab-pane fade show active" id="ua-tab">
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ua_name</th>
+                                <th>ua_group</th>
+                                <th>ua_label</th>
+                                <th style="width:160px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="ua, stat : ${userAgents}" th:id="'ua-row-' + ${stat.index}">
+                                <td>
+                                    <span class="view-field" th:text="${ua.uaName()}"></span>
+                                    <!-- ua_name is PK — not editable after creation -->
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ua.uaGroup()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="uaGroup" th:value="${ua.uaGroup()}"
+                                           th:attr="form=${'ua-lbl-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ua.uaLabel()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="uaLabel" th:value="${ua.uaLabel()}"
+                                           th:attr="form=${'ua-lbl-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <div class="view-actions d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                th:onclick="'startEdit(''ua-row-' + ${stat.index} + '')'">Edit</button>
+                                        <form th:action="@{/admin/ua/delete}" method="post" class="m-0">
+                                            <input type="hidden" name="uaName" th:value="${ua.uaName()}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Delete this user agent?')">Del</button>
+                                        </form>
+                                    </div>
+                                    <div class="edit-actions d-none d-flex gap-1">
+                                        <button type="submit" class="btn btn-sm btn-primary"
+                                                th:attr="form=${'ua-lbl-form-' + stat.index}">Save</button>
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                                th:onclick="'cancelEdit(''ua-row-' + ${stat.index} + '')'">Cancel</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add form -->
+            <div class="card mt-3">
+                <div class="card-header fw-semibold">Add User Agent</div>
+                <div class="card-body">
+                    <form th:action="@{/admin/ua/add}" method="post" class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm">ua_name</label>
+                            <input type="text" name="uaName" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm">ua_group</label>
+                            <input type="text" name="uaGroup" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm">ua_label</label>
+                            <input type="text" name="uaLabel" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm">pattern (optional)</label>
+                            <input type="text" name="pattern" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label form-label-sm">sort_order</label>
+                            <input type="number" name="sortOrder" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Classifiers Tab ===== -->
+        <div class="tab-pane fade" id="cls-tab">
+            <div class="d-flex justify-content-end mb-2">
+                <form th:action="@{/admin/reclassify}" method="post">
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('This will re-classify all entries in cloudfront_logs. Continue?')">
+                        Re-classify Logs
+                    </button>
+                </form>
+            </div>
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ua_name</th>
+                                <th>pattern</th>
+                                <th>sort_order</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="ua, stat : ${userAgents}" th:id="'cls-row-' + ${stat.index}">
+                                <td th:text="${ua.uaName()}"></td>
+                                <td>
+                                    <span class="view-field" th:text="${ua.pattern()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="pattern" th:value="${ua.pattern()}"
+                                           th:attr="form=${'ua-cls-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ua.sortOrder()}"></span>
+                                    <input type="number" class="edit-field d-none form-control form-control-sm"
+                                           name="sortOrder" th:value="${ua.sortOrder()}"
+                                           th:attr="form=${'ua-cls-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <div class="view-actions d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                th:onclick="'startEdit(''cls-row-' + ${stat.index} + '')'">Edit</button>
+                                    </div>
+                                    <div class="edit-actions d-none d-flex gap-1">
+                                        <button type="submit" class="btn btn-sm btn-primary"
+                                                th:attr="form=${'ua-cls-form-' + stat.index}">Save</button>
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                                th:onclick="'cancelEdit(''cls-row-' + ${stat.index} + '')'">Cancel</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Referer Rules Tab ===== -->
+        <div class="tab-pane fade" id="ref-tab">
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>label</th>
+                                <th>domain</th>
+                                <th>domain_starts_with</th>
+                                <th>domain_ends_with</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="ref, stat : ${refererRules}" th:id="'ref-row-' + ${stat.index}">
+                                <td>
+                                    <span class="view-field" th:text="${ref.label()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="label" th:value="${ref.label()}" required
+                                           th:attr="form=${'ref-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ref.domain()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="domain" th:value="${ref.domain()}"
+                                           th:attr="form=${'ref-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ref.domainStartsWith()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="domainStartsWith" th:value="${ref.domainStartsWith()}"
+                                           th:attr="form=${'ref-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <span class="view-field" th:text="${ref.domainEndsWith()}"></span>
+                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                           name="domainEndsWith" th:value="${ref.domainEndsWith()}"
+                                           th:attr="form=${'ref-form-' + stat.index}">
+                                </td>
+                                <td>
+                                    <div class="view-actions d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                th:onclick="'startEdit(''ref-row-' + ${stat.index} + '')'">Edit</button>
+                                        <form th:action="@{/admin/referer/delete}" method="post" class="m-0">
+                                            <input type="hidden" name="id" th:value="${ref.id()}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Delete this referer rule?')">Del</button>
+                                        </form>
+                                    </div>
+                                    <div class="edit-actions d-none d-flex gap-1">
+                                        <button type="submit" class="btn btn-sm btn-primary"
+                                                th:attr="form=${'ref-form-' + stat.index}">Save</button>
+                                        <button type="button" class="btn btn-sm btn-secondary"
+                                                th:onclick="'cancelEdit(''ref-row-' + ${stat.index} + '')'">Cancel</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add form -->
+            <div class="card mt-3">
+                <div class="card-header fw-semibold">Add Referer Rule</div>
+                <div class="card-body">
+                    <form th:action="@{/admin/referer/add}" method="post" class="row g-2 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm">label</label>
+                            <input type="text" name="label" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm">domain (exact)</label>
+                            <input type="text" name="domain" class="form-control form-control-sm" placeholder="example.com">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label form-label-sm">domain_starts_with</label>
+                            <input type="text" name="domainStartsWith" class="form-control form-control-sm" placeholder="google.">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label form-label-sm">domain_ends_with</label>
+                            <input type="text" name="domainEndsWith" class="form-control form-control-sm" placeholder=".yahoo.com">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</th:block>
+
+<th:block class="page-script">
+<script>
+    function startEdit(rowId) {
+        const row = document.getElementById(rowId);
+        row.querySelectorAll('.view-field').forEach(el => el.classList.add('d-none'));
+        row.querySelectorAll('.edit-field').forEach(el => el.classList.remove('d-none'));
+        row.querySelector('.edit-actions').classList.remove('d-none');
+        row.querySelector('.view-actions').classList.add('d-none');
+    }
+
+    function cancelEdit(rowId) {
+        const row = document.getElementById(rowId);
+        row.querySelectorAll('.edit-field').forEach(el => el.classList.add('d-none'));
+        row.querySelectorAll('.view-field').forEach(el => el.classList.remove('d-none'));
+        row.querySelector('.edit-actions').classList.add('d-none');
+        row.querySelector('.view-actions').classList.remove('d-none');
+    }
+</script>
+</th:block>
+</html>

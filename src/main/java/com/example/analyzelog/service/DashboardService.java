@@ -93,21 +93,21 @@ public class DashboardService {
     private final EdgeLocationResolver edgeLocationResolver;
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
-    private final List<RefererRule> normalizerRules;
+    private final ReloadableRefererService refererService;
     private final List<NoiseFilterProperties.Rule> noiseRules;
     private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
-                            List<RefererRule> normalizerRules,
+                            ReloadableRefererService refererService,
                             UriStemGroupProperties uriStemGroupProperties,
                             NoiseFilterProperties noiseFilterProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
-        this.normalizerRules = normalizerRules;
+        this.refererService = refererService;
         this.noiseRules    = noiseFilterProperties.rules();
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
@@ -387,7 +387,7 @@ public class DashboardService {
             }
             if (host == null) return referer;
             String h = host.startsWith("www.") ? host.substring(4) : host;
-            for (RefererRule rule : normalizerRules) {
+            for (RefererRule rule : refererService.getRules()) {
                 if ((rule.domain() != null && h.equals(rule.domain()))
                         || (rule.domainStartsWith() != null && h.startsWith(rule.domainStartsWith()))
                         || (rule.domainEndsWith() != null && h.endsWith(rule.domainEndsWith()))) {

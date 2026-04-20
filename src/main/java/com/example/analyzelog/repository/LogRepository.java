@@ -2,7 +2,7 @@ package com.example.analyzelog.repository;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.service.EdgeLocationResolver;
-import com.example.analyzelog.service.UserAgentClassifier;
+import com.example.analyzelog.service.ReloadableClassifierService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +15,10 @@ import java.util.List;
 public class LogRepository {
 
     private final JdbcTemplate jdbc;
-    private final UserAgentClassifier classifier;
+    private final ReloadableClassifierService classifier;
     private final EdgeLocationResolver edgeLocationResolver;
 
-    public LogRepository(JdbcTemplate jdbc, UserAgentClassifier classifier, EdgeLocationResolver edgeLocationResolver) {
+    public LogRepository(JdbcTemplate jdbc, ReloadableClassifierService classifier, EdgeLocationResolver edgeLocationResolver) {
         this.jdbc = jdbc;
         this.classifier = classifier;
         this.edgeLocationResolver = edgeLocationResolver;

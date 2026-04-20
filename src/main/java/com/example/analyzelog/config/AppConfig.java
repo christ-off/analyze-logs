@@ -1,18 +1,11 @@
 package com.example.analyzelog.config;
 
-import com.example.analyzelog.service.RefererRule;
-import com.example.analyzelog.service.UaClassifierRule;
-import com.example.analyzelog.service.UserAgentClassifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.jdbc.core.JdbcTemplate;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import java.util.List;
 
 @Configuration
 public class AppConfig {
@@ -29,26 +22,5 @@ public class AppConfig {
                 .region(Region.of(region))
                 .credentialsProvider(credProv)
                 .build();
-    }
-
-    @Bean
-    @DependsOn("liquibase")
-    public UserAgentClassifier userAgentClassifier(JdbcTemplate jdbc) {
-        List<UaClassifierRule> rules = jdbc.query(
-                "SELECT pattern, ua_name FROM static_ua WHERE pattern IS NOT NULL ORDER BY sort_order",
-                (rs, _) -> new UaClassifierRule(rs.getString("pattern"), rs.getString("ua_name")));
-        return new UserAgentClassifier(rules);
-    }
-
-    @Bean
-    @DependsOn("liquibase")
-    public List<RefererRule> refererRules(JdbcTemplate jdbc) {
-        return jdbc.query(
-                "SELECT label, domain, domain_starts_with, domain_ends_with FROM static_referer",
-                (rs, _) -> new RefererRule(
-                        rs.getString("label"),
-                        rs.getString("domain"),
-                        rs.getString("domain_starts_with"),
-                        rs.getString("domain_ends_with")));
     }
 }
