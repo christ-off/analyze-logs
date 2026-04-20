@@ -1,5 +1,6 @@
 package com.example.analyzelog.config;
 
+import com.example.analyzelog.service.RefererRule;
 import com.example.analyzelog.service.UaClassifierRule;
 import com.example.analyzelog.service.UserAgentClassifier;
 import org.springframework.context.annotation.Bean;
@@ -37,5 +38,17 @@ public class AppConfig {
                 "SELECT pattern, ua_name FROM static_ua WHERE pattern IS NOT NULL ORDER BY sort_order",
                 (rs, _) -> new UaClassifierRule(rs.getString("pattern"), rs.getString("ua_name")));
         return new UserAgentClassifier(rules);
+    }
+
+    @Bean
+    @DependsOn("liquibase")
+    public List<RefererRule> refererRules(JdbcTemplate jdbc) {
+        return jdbc.query(
+                "SELECT label, domain, domain_starts_with, domain_ends_with FROM static_referer",
+                (rs, _) -> new RefererRule(
+                        rs.getString("label"),
+                        rs.getString("domain"),
+                        rs.getString("domain_starts_with"),
+                        rs.getString("domain_ends_with")));
     }
 }

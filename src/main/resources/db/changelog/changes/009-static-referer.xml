@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="009-static-referer-create" author="analyze-logs">
+        <sql>
+            CREATE TABLE static_referer (
+                label              TEXT NOT NULL,
+                domain             TEXT,
+                domain_starts_with TEXT,
+                domain_ends_with   TEXT
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet id="009-static-referer-seed" author="analyze-logs">
+        <sql>
+            INSERT INTO static_referer (label, domain, domain_starts_with, domain_ends_with) VALUES
+            ('Google',     NULL,             'google.',  NULL),
+            ('Facebook',   'facebook.com',   NULL,       NULL),
+            ('Babelio',    'babelio.com',    NULL,       NULL),
+            ('Qwant',      'qwant.com',      NULL,       NULL),
+            ('DuckDuckGo', 'duckduckgo.com', NULL,       NULL),
+            ('Bing',       'bing.com',       NULL,       NULL),
+            ('Yahoo',      NULL,             NULL,       'yahoo.com'),
+            ('Brave',      NULL,             NULL,       'brave.com'),
+            ('InoReader',  'inoreader.com',  NULL,       NULL),
+            ('Ecosia',     'ecosia.org',     NULL,       NULL),
+            ('Kagi',       'kagi.com',       NULL,       NULL)
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -10,11 +10,9 @@ WITH non_legit_agents AS (
          date(timestamp) AS day,
          count(1)        AS nb_requests
   FROM cloudfront_logs
-  WHERE user_agent != ''
-    AND (   uri_stem LIKE '%.php%'
-         OR uri_stem LIKE '/wp%')
+  WHERE edge_result_type not IN ('Hit', 'Miss')
   GROUP BY user_agent, date(timestamp)
-  HAVING count(1) >= 2
+  HAVING count(1) >= 5
 ),
 legit_agents AS (
   -- Agents with at least 10 legitimate requests (empty UA excluded: never legitimate)
@@ -22,9 +20,6 @@ legit_agents AS (
   FROM cloudfront_logs
   WHERE user_agent != ''
     AND edge_result_type IN ('Hit', 'Miss')
-    AND status NOT IN (400, 403, 404, 503)
-    AND uri_stem NOT LIKE '%.php%'
-    AND uri_stem NOT LIKE '/wp%'
   GROUP BY user_agent
   HAVING count(1) >= 2
 )
