@@ -86,7 +86,7 @@
                                 <td>
                                     <div class="view-actions d-flex gap-1">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                                th:onclick="'startEdit(''ua-row-' + ${stat.index} + '')'">Edit</button>
+                                                onclick="startEdit(this.closest('tr').id)">Edit</button>
                                         <form th:action="@{/admin/ua/delete}" method="post" class="m-0">
                                             <input type="hidden" name="uaName" th:value="${ua.uaName()}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -97,7 +97,7 @@
                                         <button type="submit" class="btn btn-sm btn-primary"
                                                 th:attr="form=${'ua-lbl-form-' + stat.index}">Save</button>
                                         <button type="button" class="btn btn-sm btn-secondary"
-                                                th:onclick="'cancelEdit(''ua-row-' + ${stat.index} + '')'">Cancel</button>
+                                                onclick="cancelEdit(this.closest('tr').id)">Cancel</button>
                                     </div>
                                 </td>
                             </tr>
@@ -178,13 +178,13 @@
                                 <td>
                                     <div class="view-actions d-flex gap-1">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                                th:onclick="'startEdit(''cls-row-' + ${stat.index} + '')'">Edit</button>
+                                                onclick="startEdit(this.closest('tr').id)">Edit</button>
                                     </div>
                                     <div class="edit-actions d-none d-flex gap-1">
                                         <button type="submit" class="btn btn-sm btn-primary"
                                                 th:attr="form=${'ua-cls-form-' + stat.index}">Save</button>
                                         <button type="button" class="btn btn-sm btn-secondary"
-                                                th:onclick="'cancelEdit(''cls-row-' + ${stat.index} + '')'">Cancel</button>
+                                                onclick="cancelEdit(this.closest('tr').id)">Cancel</button>
                                     </div>
                                 </td>
                             </tr>
@@ -237,7 +237,7 @@
                                 <td>
                                     <div class="view-actions d-flex gap-1">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                                th:onclick="'startEdit(''ref-row-' + ${stat.index} + '')'">Edit</button>
+                                                onclick="startEdit(this.closest('tr').id)">Edit</button>
                                         <form th:action="@{/admin/referer/delete}" method="post" class="m-0">
                                             <input type="hidden" name="id" th:value="${ref.id()}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -248,7 +248,7 @@
                                         <button type="submit" class="btn btn-sm btn-primary"
                                                 th:attr="form=${'ref-form-' + stat.index}">Save</button>
                                         <button type="button" class="btn btn-sm btn-secondary"
-                                                th:onclick="'cancelEdit(''ref-row-' + ${stat.index} + '')'">Cancel</button>
+                                                onclick="cancelEdit(this.closest('tr').id)">Cancel</button>
                                     </div>
                                 </td>
                             </tr>
