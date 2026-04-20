@@ -2,7 +2,6 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.config.NoiseFilterProperties;
 import com.example.analyzelog.config.RefererFilterProperties;
-import com.example.analyzelog.config.RefererNormalizerProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
@@ -26,6 +25,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("java:S2077") // dynamic SQL parts are static constants or parameterized — no user input is concatenated
 @Service
 public class DashboardService {
 
@@ -93,21 +93,21 @@ public class DashboardService {
     private final EdgeLocationResolver edgeLocationResolver;
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
-    private final List<RefererNormalizerProperties.Rule> normalizerRules;
+    private final List<RefererRule> normalizerRules;
     private final List<NoiseFilterProperties.Rule> noiseRules;
     private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
-                            RefererNormalizerProperties refererNormalizerProperties,
+                            List<RefererRule> normalizerRules,
                             UriStemGroupProperties uriStemGroupProperties,
                             NoiseFilterProperties noiseFilterProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
-        this.normalizerRules = refererNormalizerProperties.rules();
+        this.normalizerRules = normalizerRules;
         this.noiseRules    = noiseFilterProperties.rules();
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
@@ -387,7 +387,7 @@ public class DashboardService {
             }
             if (host == null) return referer;
             String h = host.startsWith("www.") ? host.substring(4) : host;
-            for (RefererNormalizerProperties.Rule rule : normalizerRules) {
+            for (RefererRule rule : normalizerRules) {
                 if ((rule.domain() != null && h.equals(rule.domain()))
                         || (rule.domainStartsWith() != null && h.startsWith(rule.domainStartsWith()))
                         || (rule.domainEndsWith() != null && h.endsWith(rule.domainEndsWith()))) {
