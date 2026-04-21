@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
+import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.service.AdminService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +26,7 @@ public class AdminController {
     public String admin(Model model) {
         model.addAttribute("userAgents", adminService.allUa());
         model.addAttribute("refererRules", adminService.allReferers());
+        model.addAttribute("noiseRules", adminService.allNoiseRules());
         return "admin";
     }
 
@@ -120,6 +122,32 @@ public class AdminController {
         try {
             adminService.deleteReferer(id);
             ra.addFlashAttribute("flashMessage", "Referer rule deleted.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("flashError", "Failed to delete: " + e.getMessage());
+        }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/noise/add")
+    public String addNoiseRule(@RequestParam String uaName,
+                               @RequestParam String uriStem,
+                               RedirectAttributes ra) {
+        try {
+            adminService.addNoiseRule(new NoiseFilterEntry(uaName, uriStem));
+            ra.addFlashAttribute("flashMessage", "Noise rule '%s %s' added.".formatted(uaName, uriStem));
+        } catch (Exception e) {
+            ra.addFlashAttribute("flashError", "Failed to add: " + e.getMessage());
+        }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/noise/delete")
+    public String deleteNoiseRule(@RequestParam String uaName,
+                                  @RequestParam String uriStem,
+                                  RedirectAttributes ra) {
+        try {
+            adminService.deleteNoiseRule(uaName, uriStem);
+            ra.addFlashAttribute("flashMessage", "Noise rule '%s %s' deleted.".formatted(uaName, uriStem));
         } catch (Exception e) {
             ra.addFlashAttribute("flashError", "Failed to delete: " + e.getMessage());
         }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="010-noise-filter" author="analyze-logs">
+        <sql>
+            CREATE TABLE IF NOT EXISTS noise_filter (
+                ua_name  TEXT NOT NULL,
+                uri_stem TEXT NOT NULL,
+                PRIMARY KEY (ua_name, uri_stem)
+            )
+        </sql>
+        <sql>INSERT OR IGNORE INTO noise_filter (ua_name, uri_stem) VALUES ('Mastodon', '/')</sql>
+        <sql>INSERT OR IGNORE INTO noise_filter (ua_name, uri_stem) VALUES ('Misskey', '/')</sql>
+        <sql>INSERT OR IGNORE INTO noise_filter (ua_name, uri_stem) VALUES ('Feedbin', '/feed.xml')</sql>
+        <sql>INSERT OR IGNORE INTO noise_filter (ua_name, uri_stem) VALUES ('Feedly', '/feed.xml')</sql>
+        <sql>INSERT OR IGNORE INTO noise_filter (ua_name, uri_stem) VALUES ('Reeder', '/feed.xml')</sql>
+    </changeSet>
+
+</databaseChangeLog>

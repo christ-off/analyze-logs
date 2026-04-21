@@ -62,7 +62,3 @@ uri-stem-filter:
     - .webp
     - .gif
 
-noise-filter:
-  rules:
-    - ua-name: "Mastodon"
-      uri-stem: "/"

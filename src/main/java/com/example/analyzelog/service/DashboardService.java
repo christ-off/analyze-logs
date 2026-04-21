@@ -1,6 +1,5 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.config.NoiseFilterProperties;
 import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
@@ -72,6 +71,12 @@ public class DashboardService {
                     'FunctionThrottledError')                  THEN 1 ELSE 0 END) as function,
             SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error\
             """;
+    private static final String NOISE_EXCLUSION_CLAUSE =
+            "NOT EXISTS (SELECT 1 FROM noise_filter nf" +
+            " WHERE nf.ua_name = cloudfront_logs.ua_name AND nf.uri_stem = cloudfront_logs.uri_stem)";
+    private static final String NOISE_EXCLUSION_CLAUSE_ALIASED =
+            "  AND NOT EXISTS (SELECT 1 FROM noise_filter nf" +
+            " WHERE nf.ua_name = c.ua_name AND nf.uri_stem = c.uri_stem)\n";
     private final String sqlUriByResultType;
     private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
             GROUP BY name
@@ -94,21 +99,18 @@ public class DashboardService {
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
     private final ReloadableRefererService refererService;
-    private final List<NoiseFilterProperties.Rule> noiseRules;
     private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
                             ReloadableRefererService refererService,
-                            UriStemGroupProperties uriStemGroupProperties,
-                            NoiseFilterProperties noiseFilterProperties) {
+                            UriStemGroupProperties uriStemGroupProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
         this.refererService = refererService;
-        this.noiseRules    = noiseFilterProperties.rules();
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
                         UriStemGroupProperties.Group::name,
@@ -167,19 +169,9 @@ public class DashboardService {
     }
 
     private String humanTrafficExclusionClause() {
-        return Stream.of(botExclusionClause(), noiseExclusionClause(), RESULT_TYPE_EXCLUSION)
+        return Stream.of(botExclusionClause(), NOISE_EXCLUSION_CLAUSE, RESULT_TYPE_EXCLUSION)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(AND_SEPARATOR));
-    }
-
-    private String noiseExclusionClause() {
-        return noiseRules.stream()
-                .map(_ -> "NOT (ua_name = ? AND uri_stem = ?)")
-                .collect(Collectors.joining(AND_SEPARATOR));
-    }
-
-    private void addNoiseExclusionArgs(List<Object> args) {
-        noiseRules.forEach(r -> { args.add(r.uaName()); args.add(r.uriStem()); });
     }
 
     public List<NameCount> uaGroupCounts(Instant from, Instant to, boolean excludeBots) {
@@ -189,14 +181,10 @@ public class DashboardService {
 
         String botFilter = "";
         if (excludeBots) {
-            String noiseFilter = noiseRules.stream()
-                    .map(_ -> "  AND NOT (c.ua_name = ? AND c.uri_stem = ?)\n")
-                    .collect(Collectors.joining());
             botFilter = "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
                         "  AND c.edge_response_result_type NOT IN (" +
                         "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
-                        noiseFilter;
-            addNoiseExclusionArgs(args);
+                        NOISE_EXCLUSION_CLAUSE_ALIASED;
         }
 
         String sql = "SELECT s.ua_group AS name, COUNT(*) AS count\n" +
@@ -218,12 +206,7 @@ public class DashboardService {
                 "GROUP BY ua_name\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
-        args.add(limit);
-        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -236,12 +219,7 @@ public class DashboardService {
                 "GROUP BY country\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
-        args.add(limit);
-        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
@@ -254,22 +232,12 @@ public class DashboardService {
                 "GROUP BY ua_name\n" +
                 "ORDER BY (hit + miss + function + error) DESC\n" +
                 "LIMIT ?\n";
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.add(countryCode);
-        if (excludeBots) { addNoiseExclusionArgs(args); }
-        args.add(limit);
-        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
+                from.toString(), to.toString(), countryCode, limit);
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.add(countryCode);
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
@@ -277,7 +245,7 @@ public class DashboardService {
                 + exclusion
                 + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";
-        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), countryCode);
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
@@ -286,13 +254,8 @@ public class DashboardService {
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.add(countryCode);
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
-                args.toArray());
+                from.toString(), to.toString(), countryCode);
     }
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
@@ -311,7 +274,6 @@ public class DashboardService {
                 + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
         var args = new ArrayList<>(baseArgs);
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         excludedExtensions.forEach(ext -> args.add("%." + ext.replaceFirst("^\\.", "")));
         args.add(limit);
 
@@ -353,7 +315,6 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         exclusionPatterns.forEach(args::add);
-        if (excludeBots) { addNoiseExclusionArgs(args); }
 
         List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
 
@@ -445,11 +406,7 @@ public class DashboardService {
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_DAILY_SELECT + exclusion + SQL_DAILY_GROUP_ORDER;
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
-        return queryDailyByResultType(sql, args.toArray());
+        return queryDailyByResultType(sql, from.toString(), to.toString());
     }
 
     private List<DailyResultTypeCount> queryDailyByResultType(String sql, Object... args) {
@@ -482,7 +439,6 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
@@ -502,7 +458,6 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -522,7 +477,6 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         args.add(limit);
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -535,7 +489,6 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        if (excludeBots) { addNoiseExclusionArgs(args); }
         return queryDailyByResultType(sql, args.toArray());
     }
 

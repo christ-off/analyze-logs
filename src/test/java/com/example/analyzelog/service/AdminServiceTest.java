@@ -1,5 +1,6 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,6 +90,20 @@ class AdminServiceTest {
     void deleteReferer_deletesByRowid() {
         service.deleteReferer(7L);
         verify(jdbc).update("DELETE FROM static_referer WHERE rowid = ?", 7L);
+    }
+
+    @Test
+    void addNoiseRule_insertsRow() {
+        service.addNoiseRule(new NoiseFilterEntry("Mastodon", "/"));
+        verify(jdbc).update("INSERT INTO noise_filter (ua_name, uri_stem) VALUES (?, ?)",
+                "Mastodon", "/");
+    }
+
+    @Test
+    void deleteNoiseRule_deletesByPrimaryKey() {
+        service.deleteNoiseRule("Feedly", "/feed.xml");
+        verify(jdbc).update("DELETE FROM noise_filter WHERE ua_name = ? AND uri_stem = ?",
+                "Feedly", "/feed.xml");
     }
 
     @Test
