@@ -12,15 +12,24 @@ class CloudFrontLogParserTest {
 
     private final CloudFrontLogParser parser = new CloudFrontLogParser();
 
-    // All 33 standard fields present, most optional fields set to "-"
+    // ── JSON format (legacy) ──────────────────────────────────────────────────
+
     private static final String SAMPLE_LINE = """
         {"date":"2026-04-04","time":"12:57:53","x-edge-location":"SFO53-P7","sc-bytes":"1068","c-ip":"8.29.198.27","cs-method":"GET","cs(Host)":"d3bkd4xdlxgkfz.cloudfront.net","cs-uri-stem":"/feed.xml","sc-status":"304","cs(Referer)":"-","cs(User-Agent)":"Feedly/1.0","cs-uri-query":"-","cs(Cookie)":"-","x-edge-result-type":"Hit","x-edge-request-id":"VqkomJQiWUvU0bQu33T0","x-host-header":"post-tenebras-lire.net","cs-protocol":"https","cs-bytes":"336","time-taken":"0.001","x-forwarded-for":"-","ssl-protocol":"TLSv1.3","ssl-cipher":"TLS_AES_128_GCM_SHA256","x-edge-response-result-type":"Hit","cs-protocol-version":"HTTP/1.1","fle-status":"-","fle-encrypted-fields":"-","c-port":"19103","time-to-first-byte":"0.001","x-edge-detailed-result-type":"Hit","sc-content-type":"-","sc-content-len":"-","sc-range-start":"-","sc-range-end":"-","c-country":"US"}
         """.strip();
 
-    // Line with cookie, fle fields, range headers, large byte counts
     private static final String FULL_LINE = """
         {"date":"2026-01-01","time":"00:00:00","x-edge-location":"IAD89","sc-bytes":"5368709120","c-ip":"1.2.3.4","cs-method":"GET","cs(Host)":"abc.cloudfront.net","cs-uri-stem":"/video.mp4","sc-status":"206","cs(Referer)":"https://example.com","cs(User-Agent)":"curl/7.0","cs-uri-query":"q=test","cs(Cookie)":"session=abc123","x-edge-result-type":"Hit","x-edge-request-id":"REQ123","x-host-header":"example.com","cs-protocol":"https","cs-bytes":"256","time-taken":"2.500","x-forwarded-for":"203.0.113.5","ssl-protocol":"TLSv1.3","ssl-cipher":"TLS_AES_256_GCM_SHA384","x-edge-response-result-type":"Hit","cs-protocol-version":"HTTP/2.0","fle-status":"Processed","fle-encrypted-fields":"3","c-port":"443","time-to-first-byte":"0.050","x-edge-detailed-result-type":"Hit","sc-content-type":"video/mp4","sc-content-len":"1048576","sc-range-start":"0","sc-range-end":"1048575","c-country":"FR"}
         """.strip();
+
+    private static final String TSV_FIELDS =
+        "#Fields: date\ttime\tx-edge-location\tsc-bytes\tc-ip\tcs-method\tcs(Host)\tcs-uri-stem\tsc-status\tcs(Referer)\tcs(User-Agent)\tcs-uri-query\tcs(Cookie)\tx-edge-result-type\tx-edge-request-id\tx-host-header\tcs-protocol\tcs-bytes\ttime-taken\tx-forwarded-for\tssl-protocol\tssl-cipher\tx-edge-response-result-type\tcs-protocol-version\tfle-status\tfle-encrypted-fields\tc-port\ttime-to-first-byte\tx-edge-detailed-result-type\tsc-content-type\tsc-content-len\tsc-range-start\tsc-range-end\tc-country";
+
+    private static final String TSV_SAMPLE_DATA =
+        "2026-04-04\t12:57:53\tSFO53-P7\t1068\t8.29.198.27\tGET\td3bkd4xdlxgkfz.cloudfront.net\t/feed.xml\t304\t-\tFeedly/1.0\t-\t-\tHit\tVqkomJQiWUvU0bQu33T0\tpost-tenebras-lire.net\thttps\t336\t0.001\t-\tTLSv1.3\tTLS_AES_128_GCM_SHA256\tHit\tHTTP/1.1\t-\t-\t19103\t0.001\tHit\t-\t-\t-\t-\tUS";
+
+    private static final String TSV_FULL_DATA =
+        "2026-01-01\t00:00:00\tIAD89\t5368709120\t1.2.3.4\tGET\tabc.cloudfront.net\t/video.mp4\t206\thttps://example.com\tcurl/7.0\tq=test\tsession=abc123\tHit\tREQ123\texample.com\thttps\t256\t2.500\t203.0.113.5\tTLSv1.3\tTLS_AES_256_GCM_SHA384\tHit\tHTTP/2.0\tProcessed\t3\t443\t0.050\tHit\tvideo/mp4\t1048576\t0\t1048575\tFR";
 
     @Test
     void parsesSampleLine() {
@@ -62,7 +71,7 @@ class CloudFrontLogParserTest {
         assertTrue(result.isPresent());
         CloudFrontLogEntry e = result.get();
 
-        assertEquals(5_368_709_120L, e.scBytes()); // >2GB, verifies long
+        assertEquals(5_368_709_120L, e.scBytes());
         assertEquals("https://example.com", e.referer());
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
@@ -101,7 +110,6 @@ class CloudFrontLogParserTest {
 
     @Test
     void dashValuesProduceZeroOrNull() {
-        // Replace numeric/optional fields with "-" to exercise dash-branch in intVal/longVal/doubleVal/nullableLong
         String line = SAMPLE_LINE
                 .replace("\"sc-bytes\":\"1068\"",       "\"sc-bytes\":\"-\"")
                 .replace("\"cs-bytes\":\"336\"",         "\"cs-bytes\":\"-\"")
@@ -115,12 +123,11 @@ class CloudFrontLogParserTest {
         assertEquals(0L,  e.csBytes());
         assertEquals(0.0, e.timeTaken(),       1e-9);
         assertEquals(0.0, e.timeToFirstByte(), 1e-9);
-        assertNull(e.contentLength()); // sc-content-len was already "-" in SAMPLE_LINE
+        assertNull(e.contentLength());
     }
 
     @Test
     void invalidNumericValuesProduceZeroOrNull() {
-        // Non-numeric strings trigger the NumberFormatException catch branches
         String line = SAMPLE_LINE
                 .replace("\"sc-status\":\"304\"",        "\"sc-status\":\"INVALID\"")
                 .replace("\"sc-bytes\":\"1068\"",        "\"sc-bytes\":\"INVALID\"")
@@ -146,10 +153,84 @@ class CloudFrontLogParserTest {
 
     @Test
     void invalidPercentEncodingInUserAgentFallsBack() {
-        // URLDecoder throws IllegalArgumentException for a trailing lone '%'
         String line = SAMPLE_LINE.replace("\"Feedly/1.0\"", "\"Bad%UA%\"");
         Optional<CloudFrontLogEntry> result = parser.parseLine(line);
         assertTrue(result.isPresent());
         assertEquals("Bad%UA%", result.get().userAgent());
+    }
+
+    // ── TSV format (current CloudFront standard logs) ─────────────────────────
+
+    @Test
+    void parsesTsvSampleEntry() {
+        String content = "#Version: 1.0\n" + TSV_FIELDS + "\n" + TSV_SAMPLE_DATA;
+        List<CloudFrontLogEntry> entries = parser.parse(content);
+
+        assertEquals(1, entries.size());
+        CloudFrontLogEntry e = entries.getFirst();
+
+        assertEquals(2026, e.timestamp().atZone(java.time.ZoneOffset.UTC).getYear());
+        assertEquals(4, e.timestamp().atZone(java.time.ZoneOffset.UTC).getMonthValue());
+        assertEquals(4, e.timestamp().atZone(java.time.ZoneOffset.UTC).getDayOfMonth());
+        assertEquals(12, e.timestamp().atZone(java.time.ZoneOffset.UTC).getHour());
+        assertEquals(57, e.timestamp().atZone(java.time.ZoneOffset.UTC).getMinute());
+
+        assertEquals("SFO53-P7", e.edgeLocation());
+        assertEquals(1068L, e.scBytes());
+        assertEquals("8.29.198.27", e.clientIp());
+        assertEquals("GET", e.method());
+        assertEquals("/feed.xml", e.uriStem());
+        assertEquals(304, e.status());
+        assertNull(e.referer());
+        assertEquals("Feedly/1.0", e.userAgent());
+        assertEquals("Hit", e.edgeResultType());
+        assertEquals(336L, e.csBytes());
+        assertEquals(0.001, e.timeTaken(), 1e-6);
+        assertEquals("Hit", e.edgeResponseResultType());
+        assertEquals("HTTP/1.1", e.protocolVersion());
+        assertEquals(0.001, e.timeToFirstByte(), 1e-6);
+        assertEquals("Hit", e.edgeDetailedResultType());
+        assertNull(e.contentType());
+        assertNull(e.contentLength());
+        assertEquals("US", e.country());
+    }
+
+    @Test
+    void parsesTsvFullEntry() {
+        String content = "#Version: 1.0\n" + TSV_FIELDS + "\n" + TSV_FULL_DATA;
+        List<CloudFrontLogEntry> entries = parser.parse(content);
+
+        assertEquals(1, entries.size());
+        CloudFrontLogEntry e = entries.getFirst();
+
+        assertEquals(5_368_709_120L, e.scBytes());
+        assertEquals("https://example.com", e.referer());
+        assertEquals(206, e.status());
+        assertEquals("video/mp4", e.contentType());
+        assertEquals(1_048_576L, e.contentLength());
+        assertEquals("HTTP/2.0", e.protocolVersion());
+        assertEquals("FR", e.country());
+    }
+
+    @Test
+    void parsesTsvMultipleEntries() {
+        String content = "#Version: 1.0\n" + TSV_FIELDS + "\n" + TSV_SAMPLE_DATA + "\n" + TSV_FULL_DATA;
+        List<CloudFrontLogEntry> entries = parser.parse(content);
+        assertEquals(2, entries.size());
+    }
+
+    @Test
+    void skipsTsvHttpEntries() {
+        String httpLine = TSV_SAMPLE_DATA.replace("\thttps\t", "\thttp\t");
+        String content = "#Version: 1.0\n" + TSV_FIELDS + "\n" + httpLine;
+        List<CloudFrontLogEntry> entries = parser.parse(content);
+        assertTrue(entries.isEmpty());
+    }
+
+    @Test
+    void ignoresVersionLineInTsv() {
+        // #Version: line before #Fields: must not cause failures
+        String content = "#Version: 1.0\n" + TSV_FIELDS + "\n" + TSV_SAMPLE_DATA;
+        assertEquals(1, parser.parse(content).size());
     }
 }

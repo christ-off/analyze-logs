@@ -14,7 +14,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -24,10 +26,35 @@ public class CloudFrontLogParser {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public List<CloudFrontLogEntry> parse(String content) {
+        List<String> lines = content.lines().toList();
+        boolean isTsv = lines.stream().anyMatch(l -> l.startsWith("#Fields:"));
+        if (isTsv) {
+            return parseTsvContent(lines);
+        }
         var entries = new ArrayList<CloudFrontLogEntry>();
-        for (String line : content.lines().toList()) {
+        for (String line : lines) {
             if (line.isBlank()) continue;
             parseLine(line).ifPresent(entries::add);
+        }
+        return entries;
+    }
+
+    private List<CloudFrontLogEntry> parseTsvContent(List<String> lines) {
+        var entries = new ArrayList<CloudFrontLogEntry>();
+        String[] fields = null;
+        for (String line : lines) {
+            if (line.isBlank() || line.startsWith("#Version:")) continue;
+            if (line.startsWith("#Fields:")) {
+                fields = line.substring(8).trim().split("\t");
+                continue;
+            }
+            if (fields == null) continue;
+            String[] values = line.split("\t", -1);
+            var row = new HashMap<String, String>();
+            for (int i = 0; i < fields.length && i < values.length; i++) {
+                row.put(fields[i], values[i]);
+            }
+            parseRow(row).ifPresent(entries::add);
         }
         return entries;
     }
@@ -35,44 +62,56 @@ public class CloudFrontLogParser {
     public Optional<CloudFrontLogEntry> parseLine(String line) {
         try {
             JsonNode n = mapper.readTree(line);
-            Instant timestamp = LocalDateTime
-                .parse(n.get("date").asString() + "T" + n.get("time").asString())
-                .toInstant(ZoneOffset.UTC);
-
-            if ("http".equals(text(n, "cs-protocol"))) {
-                return Optional.empty();
+            var row = new HashMap<String, String>();
+            for (var entry : n.properties()) {
+                row.put(entry.getKey(), entry.getValue().asString());
             }
-
-            return Optional.of(new CloudFrontLogEntry(
-                timestamp,
-                text(n, "x-edge-location"),
-                longVal(n, "sc-bytes"),
-                text(n, "c-ip"),
-                text(n, "cs-method"),
-                text(n, "cs-uri-stem"),
-                intVal(n, "sc-status"),
-                nullIfDash(n, "cs(Referer)"),
-                decodeUA(nullIfDash(n, "cs(User-Agent)")),
-                text(n, "x-edge-result-type"),
-                longVal(n, "cs-bytes"),
-                doubleVal(n, "time-taken"),
-                text(n, "x-edge-response-result-type"),
-                text(n, "cs-protocol-version"),
-                doubleVal(n, "time-to-first-byte"),
-                text(n, "x-edge-detailed-result-type"),
-                nullIfDash(n, "sc-content-type"),
-                nullableLong(n, "sc-content-len"),
-                text(n, "c-country")
-            ));
+            return parseRow(row);
         } catch (Exception e) {
             log.warn("Failed to parse line: {}", e.getMessage());
             return Optional.empty();
         }
     }
 
-    private static String text(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        return v != null ? v.asString() : null;
+    private Optional<CloudFrontLogEntry> parseRow(Map<String, String> row) {
+        try {
+            Instant timestamp = LocalDateTime
+                .parse(row.get("date") + "T" + row.get("time"))
+                .toInstant(ZoneOffset.UTC);
+
+            if ("http".equals(row.get("cs-protocol"))) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new CloudFrontLogEntry(
+                timestamp,
+                text(row, "x-edge-location"),
+                longVal(row, "sc-bytes"),
+                text(row, "c-ip"),
+                text(row, "cs-method"),
+                text(row, "cs-uri-stem"),
+                intVal(row, "sc-status"),
+                nullIfDash(row, "cs(Referer)"),
+                decodeUA(nullIfDash(row, "cs(User-Agent)")),
+                text(row, "x-edge-result-type"),
+                longVal(row, "cs-bytes"),
+                doubleVal(row, "time-taken"),
+                text(row, "x-edge-response-result-type"),
+                text(row, "cs-protocol-version"),
+                doubleVal(row, "time-to-first-byte"),
+                text(row, "x-edge-detailed-result-type"),
+                nullIfDash(row, "sc-content-type"),
+                nullableLong(row, "sc-content-len"),
+                text(row, "c-country")
+            ));
+        } catch (Exception e) {
+            log.warn("Failed to parse row: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static String text(Map<String, String> row, String field) {
+        return row.get(field);
     }
 
     private static String decodeUA(String ua) {
@@ -84,36 +123,36 @@ public class CloudFrontLogParser {
         }
     }
 
-    private static String nullIfDash(JsonNode n, String field) {
-        String v = text(n, field);
+    private static String nullIfDash(Map<String, String> row, String field) {
+        String v = text(row, field);
         return "-".equals(v) ? null : v;
     }
 
-    private static int intVal(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asString())) return 0;
-        try { return Integer.parseInt(v.asString()); }
+    private static int intVal(Map<String, String> row, String field) {
+        String v = row.get(field);
+        if (v == null || "-".equals(v)) return 0;
+        try { return Integer.parseInt(v); }
         catch (NumberFormatException _) { return 0; }
     }
 
-    private static long longVal(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asString())) return 0L;
-        try { return Long.parseLong(v.asString()); }
+    private static long longVal(Map<String, String> row, String field) {
+        String v = row.get(field);
+        if (v == null || "-".equals(v)) return 0L;
+        try { return Long.parseLong(v); }
         catch (NumberFormatException _) { return 0L; }
     }
 
-    private static Long nullableLong(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asString())) return null;
-        try { return Long.parseLong(v.asString()); }
+    private static Long nullableLong(Map<String, String> row, String field) {
+        String v = row.get(field);
+        if (v == null || "-".equals(v)) return null;
+        try { return Long.parseLong(v); }
         catch (NumberFormatException _) { return null; }
     }
 
-    private static double doubleVal(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        if (v == null || "-".equals(v.asString())) return 0.0;
-        try { return Double.parseDouble(v.asString()); }
+    private static double doubleVal(Map<String, String> row, String field) {
+        String v = row.get(field);
+        if (v == null || "-".equals(v)) return 0.0;
+        try { return Double.parseDouble(v); }
         catch (NumberFormatException _) { return 0.0; }
     }
 }
