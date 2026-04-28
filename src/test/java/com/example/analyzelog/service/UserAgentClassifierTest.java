@@ -60,6 +60,7 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 (compatible; YandexBot/3.0)', YandexBot",
         "'Mozilla/5.0 (compatible; Baiduspider/2.0)', Baiduspider",
         "'DuckDuckBot/1.1', DuckDuckBot",
+        "'Mozilla/5.0 (compatible; xAI-SearchBot/1.0; https://x.ai)', xAI-SearchBot",
         "'Mozilla/5.0 (compatible; Qwantbot/1.0)', Qwantbot",
         // Security scanners
         "'Mozilla/5.0 (compatible; WellKnownBot/0.1)', WellKnownBot",
@@ -81,6 +82,7 @@ class UserAgentClassifierTest {
         // Fediverse
         "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
+        "'Iceshrimp/2023.12.14 (https://peculiar.florist)', Iceshrimp",
         "'SummalyBot/5.2.5', SummalyBot",
         "'Yumechi-no-Kuni-Proxy-Worker (+https://forge.yumechi.jp)', Yumechi Proxy",
         // Social

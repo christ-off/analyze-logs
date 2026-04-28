@@ -19,5 +19,6 @@
     <include file="db/changelog/changes/012-more-bots.xml"/>
     <include file="db/changelog/changes/013-meta-externalagent.xml"/>
     <include file="db/changelog/changes/014-applebot.xml"/>
+    <include file="db/changelog/changes/015-iceshrimp-xai.xml"/>
 
 </databaseChangeLog>
