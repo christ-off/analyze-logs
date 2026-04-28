@@ -35,20 +35,25 @@
                 <label class="form-check-label fw-semibold" for="toggleBots">Hide bots, apps &amp; noise</label>
             </div>
 
-            <form th:action="@{/refresh}" method="post" class="ms-auto d-inline" id="refreshForm">
-                <button type="submit" id="refreshBtn" class="btn btn-sm btn-warning">
-                    <span id="refreshSpinner" class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+            <div class="ms-auto d-inline-flex flex-column align-items-end gap-1">
+                <!-- Hidden form: th:action triggers Thymeleaf to inject the CSRF hidden input -->
+                <form id="refreshForm" th:action="@{/refresh}" method="post" class="d-none"></form>
+
+                <button type="button" id="refreshBtn" class="btn btn-sm btn-warning">
                     Refresh from S3
                 </button>
-            </form>
-            <script>
-                document.getElementById('refreshForm').addEventListener('submit', function () {
-                    const btn = document.getElementById('refreshBtn');
-                    const spinner = document.getElementById('refreshSpinner');
-                    btn.disabled = true;
-                    spinner.classList.remove('d-none');
-                });
-            </script>
+
+                <div id="refreshProgress" class="d-none" style="min-width:220px">
+                    <div class="progress mb-1" style="height:8px">
+                        <div id="refreshBar"
+                             class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width:0%"
+                             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div id="refreshStatus" class="cf-refresh-status"></div>
+                </div>
+            </div>
         </div>
     </div>
 

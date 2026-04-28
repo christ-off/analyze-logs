@@ -240,3 +240,9 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Refresh progress bar */
+#refreshProgress .progress-bar { transition: width .3s ease; }
+#refreshProgress .bg-success    { background-color: #16a34a !important; }
+#refreshProgress .bg-danger     { background-color: #dc2626 !important; }
+.cf-refresh-status { font-size: .75rem; color: var(--cf-muted); white-space: nowrap; }
