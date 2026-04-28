@@ -44,6 +44,7 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 (compatible; DotBot/1.2)', DotBot",
         "'Mozilla/5.0 (compatible; MJ12bot/v2.0.5)', MJ12bot",
         // Search bots
+        "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amazonbot/0.1; https://developer.amazon.com/support/amazonbot) Chrome/119.0.6045.214 Safari/537.36', Amazonbot",
         "'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', Googlebot",
         "'Mozilla/5.0 (Windows NT 5.1; rv:11.0) Gecko Firefox/11.0 (via ggpht.com GoogleImageProxy)', Google ImageProxy",
         "'FeedFetcher-Google; (+http://www.google.com/feedfetcher.html)', Google FeedFetcher",
