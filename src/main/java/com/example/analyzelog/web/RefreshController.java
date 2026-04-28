@@ -2,14 +2,13 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.service.FetchService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@Controller
+@RestController
 public class RefreshController {
 
     private final FetchService fetchService;
@@ -19,7 +18,6 @@ public class RefreshController {
     }
 
     @PostMapping("/refresh")
-    @ResponseBody
     public ResponseEntity<Map<String, String>> refresh() {
         FetchService.FetchProgress p = fetchService.getProgress();
         if (!p.done() && p.total() > 0) {
@@ -30,7 +28,6 @@ public class RefreshController {
     }
 
     @GetMapping("/refresh/progress")
-    @ResponseBody
     public FetchService.FetchProgress progress() {
         return fetchService.getProgress();
     }
