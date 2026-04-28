@@ -12,9 +12,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import org.springframework.jdbc.core.RowMapper;
+
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -32,6 +35,42 @@ class AdminServiceTest {
     @BeforeEach
     void setUp() {
         service = new AdminService(jdbc, classifierService, refererService);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void allUa_returnsListFromDb() {
+        StaticUaEntry entry = new StaticUaEntry("TestBot", "AI Bots", "Test Bot", "TestBot/", 5);
+        when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(entry));
+
+        List<StaticUaEntry> result = service.allUa();
+
+        assertEquals(1, result.size());
+        assertEquals("TestBot", result.getFirst().uaName());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void allReferers_returnsListFromDb() {
+        StaticRefererEntry entry = new StaticRefererEntry(1L, "Google", "google.com", null, null);
+        when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(entry));
+
+        List<StaticRefererEntry> result = service.allReferers();
+
+        assertEquals(1, result.size());
+        assertEquals("Google", result.getFirst().label());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void allNoiseRules_returnsListFromDb() {
+        NoiseFilterEntry entry = new NoiseFilterEntry("Feedly", "/feed");
+        when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(entry));
+
+        List<NoiseFilterEntry> result = service.allNoiseRules();
+
+        assertEquals(1, result.size());
+        assertEquals("Feedly", result.getFirst().uaName());
     }
 
     @Test
@@ -87,6 +126,14 @@ class AdminServiceTest {
     }
 
     @Test
+    void updateReferer_convertsBlankStringsToNull() {
+        service.updateReferer(new StaticRefererEntry(3L, "Test", "", "  ", ""));
+        verify(jdbc).update(
+                "UPDATE static_referer SET label = ?, domain = ?, domain_starts_with = ?, domain_ends_with = ? WHERE rowid = ?",
+                "Test", null, null, null, 3L);
+    }
+
+    @Test
     void deleteReferer_deletesByRowid() {
         service.deleteReferer(7L);
         verify(jdbc).update("DELETE FROM static_referer WHERE rowid = ?", 7L);
@@ -111,6 +158,18 @@ class AdminServiceTest {
         service.reloadConfiguration();
         verify(classifierService).reload();
         verify(refererService).reload();
+    }
+
+    @Test
+    void reclassifyLogs_withNoLogs_returnsZero() {
+        when(jdbc.queryForList("SELECT DISTINCT user_agent FROM cloudfront_logs", String.class))
+                .thenReturn(List.of());
+
+        int count = service.reclassifyLogs();
+
+        assertEquals(0, count);
+        verify(jdbc, never()).update(eq("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ?"),
+                anyString(), anyString());
     }
 
     @Test
