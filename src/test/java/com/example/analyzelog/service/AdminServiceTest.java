@@ -169,7 +169,6 @@ class AdminServiceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void reclassifyLogs_classifiesDistinctUserAgents() {
         when(jdbc.queryForList("SELECT DISTINCT user_agent FROM cloudfront_logs", String.class))
                 .thenReturn(List.of("Mozilla/5.0", "ClaudeBot/1.0"));
