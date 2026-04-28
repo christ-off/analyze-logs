@@ -45,6 +45,7 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 (compatible; MJ12bot/v2.0.5)', MJ12bot",
         "'Mozilla/5.0 (Linux; Android 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; Bytespider; https://zhanzhang.toutiao.com/)', Bytespider",
         "'meta-webindexer/1.1 ( https://developers.facebook.com/docs/sharing/webmasters/crawler)', meta-webindexer",
+        "'meta-externalagent/1.1 ( https://developers.facebook.com/docs/sharing/webmasters/crawler)', meta-externalagent",
         // AI crawlers (OpenAI)
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.3; https://openai.com/gptbot)', GPTBot",
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ChatGPT-User/1.0; https://openai.com/bot)', ChatGPT-User",
