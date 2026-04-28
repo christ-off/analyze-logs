@@ -43,6 +43,11 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 (compatible; Barkrowler/0.9)', Barkrowler",
         "'Mozilla/5.0 (compatible; DotBot/1.2)', DotBot",
         "'Mozilla/5.0 (compatible; MJ12bot/v2.0.5)', MJ12bot",
+        "'Mozilla/5.0 (Linux; Android 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; Bytespider; https://zhanzhang.toutiao.com/)', Bytespider",
+        "'meta-webindexer/1.1 ( https://developers.facebook.com/docs/sharing/webmasters/crawler)', meta-webindexer",
+        // AI crawlers (OpenAI)
+        "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.3; https://openai.com/gptbot)', GPTBot",
+        "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ChatGPT-User/1.0; https://openai.com/bot)', ChatGPT-User",
         // Search bots
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amazonbot/0.1; https://developer.amazon.com/support/amazonbot) Chrome/119.0.6045.214 Safari/537.36', Amazonbot",
         "'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', Googlebot",

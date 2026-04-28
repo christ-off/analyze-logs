@@ -16,5 +16,6 @@
     <include file="db/changelog/changes/009-static-referer.xml"/>
     <include file="db/changelog/changes/010-noise-filter.xml"/>
     <include file="db/changelog/changes/011-amazonbot.xml"/>
+    <include file="db/changelog/changes/012-more-bots.xml"/>
 
 </databaseChangeLog>
