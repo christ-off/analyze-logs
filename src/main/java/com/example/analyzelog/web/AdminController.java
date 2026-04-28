@@ -16,6 +16,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/admin")
 public class AdminController {
 
+    private static final String FLASH_MESSAGE   = "flashMessage";
+    private static final String FLASH_ERROR     = "flashError";
+    private static final String REDIRECT_ADMIN  = "redirect:/admin";
+    private static final String ERR_ADD         = "Failed to add: ";
+    private static final String ERR_UPDATE      = "Failed to update: ";
+    private static final String ERR_DELETE      = "Failed to delete: ";
+
     private final AdminService adminService;
 
     public AdminController(AdminService adminService) {
@@ -40,11 +47,11 @@ public class AdminController {
         try {
             adminService.addUa(new StaticUaEntry(uaName, uaGroup, uaLabel,
                     nullIfBlank(pattern), sortOrder));
-            ra.addFlashAttribute("flashMessage", "User agent '%s' added.".formatted(uaName));
+            ra.addFlashAttribute(FLASH_MESSAGE, "User agent '%s' added.".formatted(uaName));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to add: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_ADD + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/ua/update-labels")
@@ -54,11 +61,11 @@ public class AdminController {
                                  RedirectAttributes ra) {
         try {
             adminService.updateUaLabels(uaName, uaGroup, uaLabel);
-            ra.addFlashAttribute("flashMessage", "User agent '%s' updated.".formatted(uaName));
+            ra.addFlashAttribute(FLASH_MESSAGE, "User agent '%s' updated.".formatted(uaName));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to update: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_UPDATE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/ua/update-classifier")
@@ -68,22 +75,22 @@ public class AdminController {
                                      RedirectAttributes ra) {
         try {
             adminService.updateUaClassifier(uaName, nullIfBlank(pattern), sortOrder);
-            ra.addFlashAttribute("flashMessage", "Classifier for '%s' updated.".formatted(uaName));
+            ra.addFlashAttribute(FLASH_MESSAGE, "Classifier for '%s' updated.".formatted(uaName));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to update: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_UPDATE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/ua/delete")
     public String deleteUa(@RequestParam String uaName, RedirectAttributes ra) {
         try {
             adminService.deleteUa(uaName);
-            ra.addFlashAttribute("flashMessage", "User agent '%s' deleted.".formatted(uaName));
+            ra.addFlashAttribute(FLASH_MESSAGE, "User agent '%s' deleted.".formatted(uaName));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to delete: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_DELETE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/referer/add")
@@ -94,11 +101,11 @@ public class AdminController {
                              RedirectAttributes ra) {
         try {
             adminService.addReferer(new StaticRefererEntry(0, label, domain, domainStartsWith, domainEndsWith));
-            ra.addFlashAttribute("flashMessage", "Referer rule '%s' added.".formatted(label));
+            ra.addFlashAttribute(FLASH_MESSAGE, "Referer rule '%s' added.".formatted(label));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to add: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_ADD + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/referer/update")
@@ -110,22 +117,22 @@ public class AdminController {
                                 RedirectAttributes ra) {
         try {
             adminService.updateReferer(new StaticRefererEntry(id, label, domain, domainStartsWith, domainEndsWith));
-            ra.addFlashAttribute("flashMessage", "Referer rule '%s' updated.".formatted(label));
+            ra.addFlashAttribute(FLASH_MESSAGE, "Referer rule '%s' updated.".formatted(label));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to update: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_UPDATE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/referer/delete")
     public String deleteReferer(@RequestParam long id, RedirectAttributes ra) {
         try {
             adminService.deleteReferer(id);
-            ra.addFlashAttribute("flashMessage", "Referer rule deleted.");
+            ra.addFlashAttribute(FLASH_MESSAGE, "Referer rule deleted.");
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to delete: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_DELETE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/noise/add")
@@ -134,11 +141,11 @@ public class AdminController {
                                RedirectAttributes ra) {
         try {
             adminService.addNoiseRule(new NoiseFilterEntry(uaName, uriStem));
-            ra.addFlashAttribute("flashMessage", "Noise rule '%s %s' added.".formatted(uaName, uriStem));
+            ra.addFlashAttribute(FLASH_MESSAGE, "Noise rule '%s %s' added.".formatted(uaName, uriStem));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to add: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_ADD + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/noise/delete")
@@ -147,30 +154,30 @@ public class AdminController {
                                   RedirectAttributes ra) {
         try {
             adminService.deleteNoiseRule(uaName, uriStem);
-            ra.addFlashAttribute("flashMessage", "Noise rule '%s %s' deleted.".formatted(uaName, uriStem));
+            ra.addFlashAttribute(FLASH_MESSAGE, "Noise rule '%s %s' deleted.".formatted(uaName, uriStem));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Failed to delete: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, ERR_DELETE + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/reload")
     public String reload(RedirectAttributes ra) {
         adminService.reloadConfiguration();
-        ra.addFlashAttribute("flashMessage", "Configuration reloaded from database.");
-        return "redirect:/admin";
+        ra.addFlashAttribute(FLASH_MESSAGE, "Configuration reloaded from database.");
+        return REDIRECT_ADMIN;
     }
 
     @PostMapping("/reclassify")
     public String reclassify(RedirectAttributes ra) {
         try {
             int count = adminService.reclassifyLogs();
-            ra.addFlashAttribute("flashMessage",
+            ra.addFlashAttribute(FLASH_MESSAGE,
                     "Re-classified %d distinct user agents in cloudfront_logs.".formatted(count));
         } catch (Exception e) {
-            ra.addFlashAttribute("flashError", "Re-classification failed: " + e.getMessage());
+            ra.addFlashAttribute(FLASH_ERROR, "Re-classification failed: " + e.getMessage());
         }
-        return "redirect:/admin";
+        return REDIRECT_ADMIN;
     }
 
     private static String nullIfBlank(String s) {
