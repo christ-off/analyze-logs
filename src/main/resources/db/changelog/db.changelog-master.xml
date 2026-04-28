@@ -18,5 +18,6 @@
     <include file="db/changelog/changes/011-amazonbot.xml"/>
     <include file="db/changelog/changes/012-more-bots.xml"/>
     <include file="db/changelog/changes/013-meta-externalagent.xml"/>
+    <include file="db/changelog/changes/014-applebot.xml"/>
 
 </databaseChangeLog>
