@@ -10,6 +10,7 @@ export default defineConfig({
             include: [
                 'src/main/resources/static/js/charts.js',
                 'src/main/resources/static/js/utils.js',
+                'src/main/resources/static/js/dashboard.js',
             ],
             reporter: ['text', 'lcov'],
         },

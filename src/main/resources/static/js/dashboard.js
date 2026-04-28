@@ -9,7 +9,7 @@ const CHART_IDS = [
     'chartTopUrls', 'chartReferers', 'chartRequestsPerDay',
 ];
 
-function loadAllCharts() {
+export function loadAllCharts() {
     CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
     const p = buildBaseParams({});
     Charts.loadChart(`ua-groups?${p}`,        data => Charts.pie('chartUaGroups',     data, null));
@@ -26,7 +26,7 @@ function loadAllCharts() {
 initToggleBots(loadAllCharts);
 
 // ── Refresh from S3 with progress bar ──────────────────────────────────────
-function initRefresh() {
+export function initRefresh() {
     const btn        = document.getElementById('refreshBtn');
     const progressEl = document.getElementById('refreshProgress');
     const bar        = document.getElementById('refreshBar');
