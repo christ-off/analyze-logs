@@ -1,4 +1,6 @@
 spring:
+  banner:
+    enabled: false
   datasource:
     url: jdbc:sqlite:${app.db-path:logs.db}
     driver-class-name: org.sqlite.JDBC
