@@ -130,4 +130,31 @@ class DashboardControllerTest {
                 .exchange())
                 .model().containsEntry("activeRange", "custom");
     }
+
+    @Test
+    void probableBotsReturns200() {
+        assertThat(mvc.get().uri("/probable-bots").exchange())
+                .hasStatusOk()
+                .hasViewName("probable-bots");
+    }
+
+    @Test
+    void probableBotsDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/probable-bots").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
+    @Test
+    void probableBotsRangeParamSetsActiveRange() {
+        assertThat(mvc.get().uri("/probable-bots").param("range", "30d").exchange())
+                .model().containsEntry("activeRange", "30d");
+    }
+
+    @Test
+    void probableBotsCustomDateSetsCustomRange() {
+        assertThat(mvc.get().uri("/probable-bots")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .model().containsEntry("activeRange", "custom");
+    }
 }

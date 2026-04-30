@@ -502,4 +502,43 @@ public class DashboardService {
                 .sorted(Comparator.comparingLong(NameCount::count).reversed())
                 .toList();
     }
+
+    public List<NameCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
+        String botFilter = "";
+        if (excludeBots) {
+            botFilter = "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
+                        "  AND c.edge_response_result_type NOT IN (" +
+                        "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
+                        NOISE_EXCLUSION_CLAUSE_ALIASED;
+        }
+
+        return jdbc.query("""
+                SELECT c.user_agent as name, COUNT(*) as count
+                FROM cloudfront_logs c
+                INNER JOIN static_ua s ON c.ua_name = s.ua_name
+                WHERE c.user_agent != ''
+                  AND c.client_ip IN (
+                    SELECT DISTINCT c1.client_ip
+                    FROM cloudfront_logs c1
+                    JOIN cloudfront_logs c2
+                      ON c1.client_ip = c2.client_ip
+                      AND c1.user_agent = c2.user_agent
+                      AND c1.uri_stem = '/robots.txt'
+                      AND c2.uri_stem != '/robots.txt'
+                      AND datetime(c2.timestamp) > datetime(c1.timestamp)
+                      AND datetime(c2.timestamp) <= datetime(c1.timestamp, '+1 hour')
+                    WHERE c1.user_agent != ''
+                      AND c1.timestamp BETWEEN ? AND ?
+                      AND c2.timestamp BETWEEN ? AND ?
+                  )
+                  AND c.timestamp BETWEEN ? AND ?
+                """ + botFilter + """
+                GROUP BY c.user_agent
+                ORDER BY count DESC
+                LIMIT ?
+                """,
+                NAME_COUNT_MAPPER,
+                from.toString(), to.toString(), from.toString(), to.toString(),
+                from.toString(), to.toString(), limit);
+    }
 }

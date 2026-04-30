@@ -221,4 +221,42 @@ class ApiControllerTest {
         assertThat(mvc.get().uri("/api/ua-groups").param("to", "2026-01-31").exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    void probableBotsReturnsJson() {
+        when(dashboardService.probableBots(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
+                .thenReturn(List.of(
+                        new NameCount("Googlebot/2.1", 150),
+                        new NameCount("Bingbot/2.0",  120),
+                        new NameCount("YandexBot/3.0",  90)));
+
+        assertThat(mvc.get().uri("/api/probable-bots")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Googlebot/2.1");
+
+        assertThat(mvc.get().uri("/api/probable-bots")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].count").isEqualTo(150);
+    }
+
+    @Test
+    void probableBotsExcludeBotsPassesFlag() {
+        when(dashboardService.probableBots(any(Instant.class), any(Instant.class), anyInt(), eq(true)))
+                .thenReturn(List.of(new NameCount("Crawler", 100)));
+
+        assertThat(mvc.get().uri("/api/probable-bots")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .param("excludeBots", "true")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Crawler");
+    }
 }
