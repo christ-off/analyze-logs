@@ -38,7 +38,7 @@
         </form>
     </div>
 
-    <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
+    <ul class="nav nav-tabs mb-3" id="adminTabs">
         <li class="nav-item">
             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ua-tab" type="button">User Agents</button>
         </li>
@@ -76,13 +76,13 @@
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.uaGroup()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" id="editUaGroup" class="edit-field d-none form-control form-control-sm"
                                            name="uaGroup" th:value="${ua.uaGroup()}"
                                            th:attr="form=${'ua-lbl-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.uaLabel()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" id="editUaLabel" class="edit-field d-none form-control form-control-sm"
                                            name="uaLabel" th:value="${ua.uaLabel()}"
                                            th:attr="form=${'ua-lbl-form-' + stat.index}">
                                 </td>
@@ -115,24 +115,24 @@
                 <div class="card-body">
                     <form th:action="@{/admin/ua/add}" method="post" class="row g-2 align-items-end">
                         <div class="col-md-3">
-                            <label class="form-label form-label-sm">ua_name</label>
-                            <input type="text" name="uaName" class="form-control form-control-sm" required>
+                            <label for="addUaName" class="form-label form-label-sm">ua_name</label>
+                            <input type="text" id="addUaName" name="uaName" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label form-label-sm">ua_group</label>
-                            <input type="text" name="uaGroup" class="form-control form-control-sm" required>
+                            <label for="addUaGroup" class="form-label form-label-sm">ua_group</label>
+                            <input type="text" id="addUaGroup" name="uaGroup" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label form-label-sm">ua_label</label>
-                            <input type="text" name="uaLabel" class="form-control form-control-sm" required>
+                            <label for="addUaLabel" class="form-label form-label-sm">ua_label</label>
+                            <input type="text" id="addUaLabel" name="uaLabel" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label form-label-sm">pattern (optional)</label>
-                            <input type="text" name="pattern" class="form-control form-control-sm">
+                            <label for="addPattern" class="form-label form-label-sm">pattern (optional)</label>
+                            <input type="text" id="addPattern" name="pattern" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-1">
-                            <label class="form-label form-label-sm">sort_order</label>
-                            <input type="number" name="sortOrder" class="form-control form-control-sm">
+                            <label for="addSortOrder" class="form-label form-label-sm">sort_order</label>
+                            <input type="number" id="addSortOrder" name="sortOrder" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-1">
                             <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
@@ -170,12 +170,14 @@
                                     <span class="view-field" th:text="${ua.pattern()}"></span>
                                     <input type="text" class="edit-field d-none form-control form-control-sm"
                                            name="pattern" th:value="${ua.pattern()}"
+                                           th:id="'editUaPattern-' + ${stat.index}"
                                            th:attr="form=${'ua-cls-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.sortOrder()}"></span>
                                     <input type="number" class="edit-field d-none form-control form-control-sm"
                                            name="sortOrder" th:value="${ua.sortOrder()}"
+                                           th:id="'editUaSortOrder-' + ${stat.index}"
                                            th:attr="form=${'ua-cls-form-' + stat.index}">
                                 </td>
                                 <td>
@@ -217,24 +219,28 @@
                                     <span class="view-field" th:text="${ref.label()}"></span>
                                     <input type="text" class="edit-field d-none form-control form-control-sm"
                                            name="label" th:value="${ref.label()}" required
+                                           th:id="'editRefLabel-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domain()}"></span>
                                     <input type="text" class="edit-field d-none form-control form-control-sm"
                                            name="domain" th:value="${ref.domain()}"
+                                           th:id="'editRefDomain-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domainStartsWith()}"></span>
                                     <input type="text" class="edit-field d-none form-control form-control-sm"
                                            name="domainStartsWith" th:value="${ref.domainStartsWith()}"
+                                           th:id="'editRefDomainStartsWith-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domainEndsWith()}"></span>
                                     <input type="text" class="edit-field d-none form-control form-control-sm"
                                            name="domainEndsWith" th:value="${ref.domainEndsWith()}"
+                                           th:id="'editRefDomainEndsWith-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
@@ -266,20 +272,20 @@
                 <div class="card-body">
                     <form th:action="@{/admin/referer/add}" method="post" class="row g-2 align-items-end">
                         <div class="col-md-2">
-                            <label class="form-label form-label-sm">label</label>
-                            <input type="text" name="label" class="form-control form-control-sm" required>
+                            <label for="addRefLabel" class="form-label form-label-sm">label</label>
+                            <input type="text" id="addRefLabel" name="label" class="form-control form-control-sm" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label form-label-sm">domain (exact)</label>
-                            <input type="text" name="domain" class="form-control form-control-sm" placeholder="example.com">
+                            <label for="addRefDomain" class="form-label form-label-sm">domain (exact)</label>
+                            <input type="text" id="addRefDomain" name="domain" class="form-control form-control-sm" placeholder="example.com">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label form-label-sm">domain_starts_with</label>
-                            <input type="text" name="domainStartsWith" class="form-control form-control-sm" placeholder="google.">
+                            <label for="addRefDomainStartsWith" class="form-label form-label-sm">domain_starts_with</label>
+                            <input type="text" id="addRefDomainStartsWith" name="domainStartsWith" class="form-control form-control-sm" placeholder="google.">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label form-label-sm">domain_ends_with</label>
-                            <input type="text" name="domainEndsWith" class="form-control form-control-sm" placeholder=".yahoo.com">
+                            <label for="addRefDomainEndsWith" class="form-label form-label-sm">domain_ends_with</label>
+                            <input type="text" id="addRefDomainEndsWith" name="domainEndsWith" class="form-control form-control-sm" placeholder=".yahoo.com">
                         </div>
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
@@ -325,12 +331,12 @@
                 <div class="card-body">
                     <form th:action="@{/admin/noise/add}" method="post" class="row g-2 align-items-end">
                         <div class="col-md-4">
-                            <label class="form-label form-label-sm">ua_name</label>
-                            <input type="text" name="uaName" class="form-control form-control-sm" required placeholder="Mastodon">
+                            <label for="addNoiseUaName" class="form-label form-label-sm">ua_name</label>
+                            <input type="text" id="addNoiseUaName" name="uaName" class="form-control form-control-sm" required placeholder="Mastodon">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label form-label-sm">uri_stem</label>
-                            <input type="text" name="uriStem" class="form-control form-control-sm" required placeholder="/">
+                            <label for="addNoiseUriStem" class="form-label form-label-sm">uri_stem</label>
+                            <input type="text" id="addNoiseUriStem" name="uriStem" class="form-control form-control-sm" required placeholder="/">
                         </div>
                         <div class="col-md-4">
                             <button type="submit" class="btn btn-sm btn-success w-100">Add</button>
