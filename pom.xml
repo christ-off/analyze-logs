@@ -147,6 +147,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>@{argLine} --enable-native-access=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <spring.liquibase.change-log>classpath:db/changelog/db.changelog-master.xml</spring.liquibase.change-log>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
