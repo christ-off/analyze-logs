@@ -3,7 +3,6 @@ package com.example.analyzelog.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -15,12 +14,9 @@ public class AppConfig {
         var aws = props.aws();
         String region = (aws.region() != null && !aws.region().isBlank())
                 ? aws.region() : "us-east-1";
-        var credProv = (aws.profile() != null && !aws.profile().isBlank())
-                ? ProfileCredentialsProvider.create(aws.profile())
-                : DefaultCredentialsProvider.builder().build();
         return S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(credProv)
+                .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
     }
 }

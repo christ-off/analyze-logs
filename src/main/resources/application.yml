@@ -26,7 +26,6 @@ app:
     region: eu-west-3
     bucket: ""
     prefix: ""
-    profile: "default"
   db-path: logs.db
   top-limit: 10
   top-urls-limit: 20
