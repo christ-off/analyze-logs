@@ -26,7 +26,7 @@ function loadProbableBots() {
 
             tbody.innerHTML = data.map(bot => `
                 <tr>
-                    <td><code class="text-truncate d-inline-block" style="max-width: 500px;" title="${bot.name}">${bot.name}</code></td>
+                    <td><code>${bot.name}</code></td>
                     <td class="text-end">${bot.count.toLocaleString()}</td>
                 </tr>
             `).join('');
