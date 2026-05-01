@@ -16,7 +16,7 @@ function loadProbableBots() {
             return r.json();
         })
         .then(data => {
-            const tbody = document.querySelector('#probableBotsTable tbody');
+            const tbody = document.querySelector('#probableBotsTable');
             if (!tbody) return;
 
             if (data.length === 0) {
