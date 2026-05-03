@@ -1,0 +1,27 @@
+# Top 10 Cross-Page Navigation Paths from CloudFront Logs
+
+A navigation = sequence of 2+ requests by the same IP + user agent to different content pages.
+Filtered to human browsers (Chrome/Firefox/Safari), excludes static assets, WP scanners, bots.
+URIs normalized: trailing slashes and case folded, hyphens normalized.
+
+## 2-hop paths
+
+Rank | Navigation Path                                      | Count
+-----|------------------------------------------------------|------
+1    | avant-poste-dmitry-glukhovsky → vie-portee-main-christophe-galfard | 3
+2    | journal-sous-dictature-dmitry-glukhovsky → y2kgen-exe-geoffrey-dorne | 3
+3    | avant-poste-dmitry-glukhovsky → gardien-camphrier-keigo-higashino | 2
+4    | etiquettes-coup-de-coeur → etiquettes-ebook-sans-drm | 2
+5    | gardien-camphrier-keigo-higashino → auteurs-higashino-keigo | 2
+6    | gardien-camphrier-keigo-higashino → journal-sous-dictature-dmitry-glukhovsky | 2
+7    | journal-sous-dictature-dmitry-glukhovsky → avant-poste-dmitry-glukhovsky | 2
+8    | vie-portee-main-christophe-galfard → y2kgen-exe-geoffrey-dorne | 2
+9    | y2kgen-exe-geoffrey-dorne → avant-poste-dmitry-glukhovsky | 2
+10   | journal-sous-dictature-dmitry-glukhovsky → y2kgen-exe-geoffrey-dorne → avant-poste-dmitry-glukhovsky (3-hop) | 2
+
+## Notes
+
+- **Dmitry Glukhovsky** dominates navigation paths — his works appear in 8 of 10 paths.
+- **Keigo Higashino** shows reader loyalty: after `gardien-camphrier`, readers visit the author page or Glukhovsky works.
+- Only one 3-hop path found with ≥2 occurrences.
+- Queried against 78,560 CloudFront log rows.
