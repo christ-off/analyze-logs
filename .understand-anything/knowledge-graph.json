@@ -1,0 +1,3941 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "analyze-logs",
+    "languages": [
+      "java",
+      "javascript",
+      "yaml",
+      "xml",
+      "html",
+      "css",
+      "sql",
+      "json",
+      "markdown"
+    ],
+    "frameworks": [
+      "Spring Boot",
+      "Spring Security",
+      "Thymeleaf",
+      "Liquibase",
+      "AWS SDK v2",
+      "JUnit",
+      "Vitest",
+      "GitHub Actions"
+    ],
+    "description": "Spring Boot web dashboard for Amazon CloudFront standard logs. Fetches log files from S3, stores them in SQLite, and displays interactive charts with drill-down detail pages.",
+    "analyzedAt": "2026-05-10T09:20:52.183187+00:00",
+    "gitCommitHash": "13a38986c20458dab4c51131651d61068b91e670"
+  },
+  "nodes": [
+    {
+      "id": "document:.claude/agents/test-runner.md",
+      "type": "document",
+      "name": "test-runner.md",
+      "filePath": ".claude/agents/test-runner.md",
+      "summary": "Claude agent definition for a test-runner sub-agent, providing instructions on persistent memory management including what to save, when to access, and how memory integrates with the project's MEMORY.md file.",
+      "tags": [
+        "documentation",
+        "configuration",
+        "development",
+        "ci-cd"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.claude/settings.json",
+      "type": "config",
+      "name": "settings.json",
+      "filePath": ".claude/settings.json",
+      "summary": "Claude Code settings file enabling the understand-anything plugin for this project.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:.github/dependabot.yml",
+      "type": "resource",
+      "name": "dependabot.yml",
+      "filePath": ".github/dependabot.yml",
+      "summary": "GitHub Dependabot configuration defining automated dependency update schedules for Maven and npm ecosystems.",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "security",
+        "ci-cd"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "pipeline:.github/workflows/build.yml",
+      "type": "pipeline",
+      "name": "build.yml",
+      "filePath": ".github/workflows/build.yml",
+      "summary": "GitHub Actions CI/CD workflow that runs JavaScript tests with coverage, builds and tests with Maven on Java 25, and submits code analysis to SonarCloud on every push or PR to master.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "build-system",
+        "infrastructure"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "pipeline:.github/workflows/playwright.yml",
+      "type": "pipeline",
+      "name": "playwright.yml",
+      "filePath": ".github/workflows/playwright.yml",
+      "summary": "Empty GitHub Actions workflow file for Playwright end-to-end tests (currently inactive/empty).",
+      "tags": [
+        "ci-cd",
+        "infrastructure"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "pipeline:.github/workflows/playwright.yml.disabled",
+      "type": "pipeline",
+      "name": "playwright.yml.disabled",
+      "filePath": ".github/workflows/playwright.yml.disabled",
+      "summary": "Disabled GitHub Actions workflow for Playwright end-to-end browser tests, deactivated to reduce GitHub Actions costs; contains the full test job definition.",
+      "tags": [
+        "ci-cd",
+        "infrastructure",
+        "deployment"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.sonarlint/connectedMode.json",
+      "type": "config",
+      "name": "connectedMode.json",
+      "filePath": ".sonarlint/connectedMode.json",
+      "summary": "SonarLint connected mode configuration linking the local project to the SonarCloud organization and project key for inline code quality feedback.",
+      "tags": [
+        "configuration",
+        "security",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:CLAUDE.md",
+      "type": "document",
+      "name": "CLAUDE.md",
+      "filePath": "CLAUDE.md",
+      "summary": "Minimal project-level Claude Code instructions noting that the project uses Spring Boot with a SQLite database located in logs.db.",
+      "tags": [
+        "documentation",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Comprehensive project README covering the analyze-logs Spring Boot dashboard: security setup, build and run instructions, S3/AWS configuration, dashboard feature descriptions, database schema, and findings from log analysis.",
+      "tags": [
+        "documentation",
+        "entry-point",
+        "overview"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:analyze-logs",
+      "type": "file",
+      "name": "analyze-logs",
+      "filePath": "analyze-logs",
+      "summary": "Shell launcher script that invokes the packaged Spring Boot JAR with the --enable-native-access JVM flag.",
+      "tags": [
+        "entry-point",
+        "script"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:e2e/country-detail.spec.js",
+      "type": "file",
+      "name": "country-detail.spec.js",
+      "filePath": "e2e/country-detail.spec.js",
+      "summary": "Playwright end-to-end test suite for the country detail page, verifying page navigation, chart rendering, and table content for country-specific CloudFront log data.",
+      "tags": [
+        "test",
+        "e2e",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:e2e/dashboard.spec.js",
+      "type": "file",
+      "name": "dashboard.spec.js",
+      "filePath": "e2e/dashboard.spec.js",
+      "summary": "Playwright end-to-end test suite for the main dashboard page, verifying page load, chart visibility, and interactive elements like the date range picker and refresh button.",
+      "tags": [
+        "test",
+        "e2e",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:etc/changes_documentation/add_spring_security/plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "etc/changes_documentation/add_spring_security/plan.md",
+      "summary": "Step-by-step implementation plan for adding Spring Security to the project, covering pom.xml changes, SecurityConfig creation, RefreshController POST migration, dashboard.html updates, and corresponding test classes.",
+      "tags": [
+        "documentation",
+        "security",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/add_spring_security/research.md",
+      "type": "document",
+      "name": "research.md",
+      "filePath": "etc/changes_documentation/add_spring_security/research.md",
+      "summary": "Research document analyzing how Spring Security should be integrated, covering CSRF protection decisions, endpoint inventory, and implementation plan with code examples for SecurityConfig and test setup.",
+      "tags": [
+        "documentation",
+        "security",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/avoid_duplicate_javascript_code/conversation.md",
+      "type": "document",
+      "name": "conversation.md",
+      "filePath": "etc/changes_documentation/avoid_duplicate_javascript_code/conversation.md",
+      "summary": "Recorded conversation documenting the decision process for extracting shared JavaScript chart code into a reusable charts.js module across dashboard, UA detail, and country detail pages.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:etc/changes_documentation/avoid_duplicate_javascript_code/plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "etc/changes_documentation/avoid_duplicate_javascript_code/plan.md",
+      "summary": "Implementation plan for extracting shared JavaScript chart utilities into charts.js, with detailed steps for updating dashboard.js, ua-detail.js, and country-detail.js to use the shared module.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/deploy_to_aws/research.md",
+      "type": "document",
+      "name": "research.md",
+      "filePath": "etc/changes_documentation/deploy_to_aws/research.md",
+      "summary": "Comprehensive AWS deployment research comparing seven hosting options (EC2, Elastic Beanstalk, ECS Fargate, App Runner, Lightsail, Lambda, EC2+RDS) with cost estimates and an IAM permissions section.",
+      "tags": [
+        "documentation",
+        "deployment",
+        "infrastructure"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/migrate_to_spring_boot_4/plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "etc/changes_documentation/migrate_to_spring_boot_4/plan.md",
+      "summary": "Detailed 6-step migration plan from Spring Boot 3.5 to Spring Boot 4, covering POM upgrades, GlobalExceptionHandler fixes, application.yml property renames, test migration to MockMvcTester, virtual threads enablement, and end-to-end verification.",
+      "tags": [
+        "documentation",
+        "development",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/migrate_to_spring_boot_4/research.md",
+      "type": "document",
+      "name": "research.md",
+      "filePath": "etc/changes_documentation/migrate_to_spring_boot_4/research.md",
+      "summary": "Research document inventorying the full technology stack and analyzing Spring Boot 4 breaking changes including Jakarta EE namespace, removed deprecated APIs, Spring Security updates, Liquibase/AWS SDK version requirements, and virtual threads.",
+      "tags": [
+        "documentation",
+        "development",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/research_issue_2.md",
+      "type": "document",
+      "name": "research_issue_2.md",
+      "filePath": "etc/changes_documentation/research_issue_2.md",
+      "summary": "Research for GitHub Issue #2 \u2014 adding a user-agent groups pie chart, covering data analysis, UaGroupProperties config model design, service method, API endpoint, and frontend implementation approach.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:etc/changes_documentation/simplier_edge_location/plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "etc/changes_documentation/simplier_edge_location/plan.md",
+      "summary": "Implementation plan for resolving CloudFront edge location codes to human-readable city names via an EdgeLocationResolver bean and a Liquibase migration adding an edge_location_iata column.",
+      "tags": [
+        "documentation",
+        "development",
+        "database"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/simplier_edge_location/research.md",
+      "type": "document",
+      "name": "research.md",
+      "filePath": "etc/changes_documentation/simplier_edge_location/research.md",
+      "summary": "Research on simplifying CloudFront edge location display by extracting IATA codes and mapping them to city/country names using an airport lookup dataset.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:etc/changes_documentation/top_agents_split/research_and_plan.md",
+      "type": "document",
+      "name": "research_and_plan.md",
+      "filePath": "etc/changes_documentation/top_agents_split/research_and_plan.md",
+      "summary": "Combined research and implementation plan for splitting the top user agents chart into a stacked bar showing result types (Hit/Miss/Error/Redirect/LimitExceeded), including new model, service method, API endpoint, and JavaScript renderer.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/use_edge_response_result_type/research_and_plan.md",
+      "type": "document",
+      "name": "research_and_plan.md",
+      "filePath": "etc/changes_documentation/use_edge_response_result_type/research_and_plan.md",
+      "summary": "Research and plan for replacing HTTP status grouping with CloudFront's edge_response_result_type field in the daily requests chart, defining a new DailyResultTypeCount model and updated SQL query.",
+      "tags": [
+        "documentation",
+        "development",
+        "database"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:etc/changes_documentation/user_agent_detail_view/plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "etc/changes_documentation/user_agent_detail_view/plan.md",
+      "summary": "Comprehensive 7-phase implementation plan for the user agent detail view, covering new DashboardService queries, UaDetailController API, MVC route, ua-detail.html template, ua-detail.js frontend, dashboard click navigation, and test classes.",
+      "tags": [
+        "documentation",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:etc/changes_documentation/user_agent_detail_view/research.md",
+      "type": "document",
+      "name": "research.md",
+      "filePath": "etc/changes_documentation/user_agent_detail_view/research.md",
+      "summary": "Design research document for implementing a user-agent detail drill-down view, covering Chart.js click handling, URL scheme, new Thymeleaf page, API endpoints, service methods, and JavaScript for the ua-detail feature.",
+      "tags": [
+        "documentation",
+        "design",
+        "feature-planning",
+        "development"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:etc/navigation_paths/query.sql",
+      "type": "file",
+      "name": "query.sql",
+      "filePath": "etc/navigation_paths/query.sql",
+      "summary": "Ad-hoc SQL query that extracts the top 10 cross-page navigation paths (2-hop sequences) from CloudFront logs, filtering for human browser user agents and excluding static assets, WordPress scanner, and bot traffic.",
+      "tags": [
+        "database",
+        "analytics",
+        "navigation",
+        "data-pipeline"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Uses CTEs and window functions (ROW_NUMBER OVER PARTITION BY) for session sequencing; includes commented-out 3-hop variant."
+    },
+    {
+      "id": "document:etc/navigation_paths/results.txt",
+      "type": "document",
+      "name": "results.txt",
+      "filePath": "etc/navigation_paths/results.txt",
+      "summary": "Sample query output showing the top navigation path pairs extracted from CloudFront logs, used as a reference for validating the navigation path analysis query.",
+      "tags": [
+        "documentation",
+        "data",
+        "analytics"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:etc/queries/probable_bots.sql",
+      "type": "file",
+      "name": "probable_bots.sql",
+      "filePath": "etc/queries/probable_bots.sql",
+      "summary": "Ad-hoc SQL query identifying probable bots by finding user agents that fetched /robots.txt and then made other requests from the same IP within one hour, grouped by user agent and sorted by request count.",
+      "tags": [
+        "database",
+        "analytics",
+        "security",
+        "bot-detection"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:etc/queries/suspicious_user_agents.sql",
+      "type": "file",
+      "name": "suspicious_user_agents.sql",
+      "filePath": "etc/queries/suspicious_user_agents.sql",
+      "summary": "Ad-hoc SQL query using CTEs to identify suspicious user agents that hit PHP/WordPress URLs repeatedly while never making legitimate requests, used for bot and scanner detection analysis.",
+      "tags": [
+        "database",
+        "analytics",
+        "security",
+        "bot-detection"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Uses two CTEs (non_legit_agents and legit_agents) with HAVING clauses for threshold filtering."
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Node.js package configuration defining JavaScript test tooling (Vitest for unit tests, Playwright for E2E) and coverage reporting for the frontend assets of the Spring Boot application.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "testing",
+        "frontend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:playwright.config.js",
+      "type": "file",
+      "name": "playwright.config.js",
+      "filePath": "playwright.config.js",
+      "summary": "Playwright end-to-end test configuration targeting the local Spring Boot server at port 8080, with a single Chromium browser project and HTML reporter.",
+      "tags": [
+        "test",
+        "configuration",
+        "e2e"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:pom.xml",
+      "type": "config",
+      "name": "pom.xml",
+      "filePath": "pom.xml",
+      "summary": "Maven build descriptor for the analyze-logs Spring Boot 4 application, declaring dependencies on AWS SDK v2 S3, SQLite JDBC, Thymeleaf, Spring Security, Liquibase, and Chart.js/Bootstrap WebJars, with JaCoCo and SonarQube plugins configured.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "dependency-management"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses AWS SDK BOM for dependency management; targets Java 25 with Spring Boot 4.0.6."
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "type": "file",
+      "name": "AnalyzeLogsApplication.java",
+      "filePath": "src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "summary": "Spring Boot application entry point annotated with @SpringBootApplication that bootstraps the analyze-logs application.",
+      "tags": [
+        "entry-point",
+        "spring-boot",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java:AnalyzeLogsApplication",
+      "type": "class",
+      "name": "AnalyzeLogsApplication",
+      "filePath": "src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "lineRange": [
+        8,
+        16
+      ],
+      "summary": "Spring Boot main class that launches the application via SpringApplication.run.",
+      "tags": [
+        "entry-point",
+        "spring-boot"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/AppConfig.java",
+      "type": "file",
+      "name": "AppConfig.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/AppConfig.java",
+      "summary": "Spring @Configuration class that creates the AWS S3Client bean, configuring region from application properties and using the default credential provider chain.",
+      "tags": [
+        "configuration",
+        "spring-boot",
+        "service",
+        "aws"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/config/AppConfig.java:AppConfig",
+      "type": "class",
+      "name": "AppConfig",
+      "filePath": "src/main/java/com/example/analyzelog/config/AppConfig.java",
+      "lineRange": [
+        9,
+        22
+      ],
+      "summary": "Spring configuration class providing the S3Client bean wired from AppProperties.",
+      "tags": [
+        "configuration",
+        "factory",
+        "aws"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "file",
+      "name": "AppProperties.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "summary": "Spring Boot @ConfigurationProperties record binding the 'app' prefix, encapsulating AWS credentials/bucket/prefix, database path, and pagination limits.",
+      "tags": [
+        "configuration",
+        "spring-boot",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/RefererFilterProperties.java",
+      "type": "file",
+      "name": "RefererFilterProperties.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/RefererFilterProperties.java",
+      "summary": "Spring Boot @ConfigurationProperties record that binds referer filter configuration, likely holding a list of referer patterns to exclude from dashboard analytics.",
+      "tags": [
+        "configuration",
+        "spring-boot",
+        "type-definition",
+        "filtering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+      "type": "file",
+      "name": "SecurityConfig.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+      "summary": "Spring Security configuration that permits all requests without authentication, enables CSRF protection with session-backed token storage, and disables form login and HTTP Basic for the dashboard.",
+      "tags": [
+        "configuration",
+        "security",
+        "spring-boot"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/config/SecurityConfig.java:SecurityConfig",
+      "type": "class",
+      "name": "SecurityConfig",
+      "filePath": "src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+      "lineRange": [
+        10,
+        37
+      ],
+      "summary": "Spring Security @Configuration providing the SecurityFilterChain bean: all requests permitted, CSRF enabled, no login form or HTTP Basic.",
+      "tags": [
+        "configuration",
+        "security"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/UriStemFilterProperties.java",
+      "type": "file",
+      "name": "UriStemFilterProperties.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/UriStemFilterProperties.java",
+      "summary": "Spring Boot @ConfigurationProperties record that binds URI stem filter configuration for excluding specific URL patterns from analytics queries.",
+      "tags": [
+        "configuration",
+        "spring-boot",
+        "type-definition",
+        "filtering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/config/UriStemGroupProperties.java",
+      "type": "file",
+      "name": "UriStemGroupProperties.java",
+      "filePath": "src/main/java/com/example/analyzelog/config/UriStemGroupProperties.java",
+      "summary": "Spring Boot @ConfigurationProperties record that binds URI stem grouping configuration, enabling logical grouping of URL patterns for dashboard chart aggregation.",
+      "tags": [
+        "configuration",
+        "spring-boot",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "type": "file",
+      "name": "S3LogFetcher.java",
+      "filePath": "src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "summary": "Spring @Component that wraps the AWS SDK S3Client to download individual CloudFront log files (with gzip decompression) and stream S3 object keys using paginated listing filtered by last-modified timestamp.",
+      "tags": [
+        "service",
+        "aws",
+        "data-pipeline",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java:S3LogFetcher",
+      "type": "class",
+      "name": "S3LogFetcher",
+      "filePath": "src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "lineRange": [
+        19,
+        61
+      ],
+      "summary": "Spring component providing downloadLogFile (fetches and decompresses a single S3 object) and streamLogKeys (paginates S3 listing and streams keys newer than a given instant).",
+      "tags": [
+        "service",
+        "aws",
+        "data-pipeline"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "file",
+      "name": "CloudFrontLogEntry.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "summary": "Java record representing a single parsed CloudFront standard log line, with fields mapping directly to CloudFront log columns including timestamp, IP, URI, status, user-agent, country, and performance metrics.",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Java record with 19 fields, used as the parsed in-memory representation of a raw CloudFront log row before insertion into SQLite."
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "file",
+      "name": "CountryResultTypeCount.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "summary": "Java record (or interface) projecting aggregated request counts grouped by country and CloudFront result type, used as a DTO for dashboard analytics queries.",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "file",
+      "name": "DailyResultTypeCount.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "summary": "Java record projecting aggregated daily request counts by CloudFront result type, used as a DTO for time-series chart data in the dashboard.",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "file",
+      "name": "DateRange.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/DateRange.java",
+      "summary": "Java record encapsulating a UTC Instant date range with factory methods (lastDays, lastMonths, fromParams) and conversion helpers (fromIso, toIso, fromDate, toDate) used to parameterize all dashboard SQL queries.",
+      "tags": [
+        "data-model",
+        "utility",
+        "type-definition"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "file",
+      "name": "NameCount.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/NameCount.java",
+      "summary": "Minimal Java record or interface projecting a name-count pair, used as a generic DTO for top-N aggregation queries (e.g., top user agents, top URLs).",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "file",
+      "name": "NameResultTypeCount.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "summary": "Java record projecting aggregated counts grouped by name and CloudFront result type, used as a DTO for stacked-bar chart data in the dashboard.",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "type": "file",
+      "name": "NoiseFilterEntry.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "summary": "Java record representing a noise-filter entry (likely a URI stem or pattern) loaded from the database to exclude noisy traffic from dashboard analytics.",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "filtering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "type": "file",
+      "name": "StaticRefererEntry.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "summary": "Java record representing a static referer entry stored in the database, used to classify and filter known referer origins in dashboard queries.",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "filtering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "type": "file",
+      "name": "StaticUaEntry.java",
+      "filePath": "src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "summary": "Java record representing a static user-agent classification entry stored in the database, used to label known user agents in dashboard charts.",
+      "tags": [
+        "data-model",
+        "type-definition",
+        "filtering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "type": "file",
+      "name": "CloudFrontLogParser.java",
+      "filePath": "src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "summary": "Parses CloudFront access log lines from both TSV (standard log format with #Fields header) and JSON formats into CloudFrontLogEntry records, applying URL decoding and field type coercion.",
+      "tags": [
+        "parser",
+        "utility",
+        "service",
+        "tested"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Handles dual-format input (TSV and JSON) with a dispatch strategy; uses Optional to represent parse failures without exceptions propagating."
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java:CloudFrontLogParser",
+      "type": "class",
+      "name": "CloudFrontLogParser",
+      "filePath": "src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "lineRange": [
+        23,
+        160
+      ],
+      "summary": "Spring component that parses raw CloudFront log content (TSV or JSON) into structured log entry objects, with per-row error recovery and URL-decoded user agent strings.",
+      "tags": [
+        "parser",
+        "service",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "file",
+      "name": "LogRepository.java",
+      "filePath": "src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "summary": "Spring JDBC repository responsible for batch-inserting parsed CloudFront log entries into SQLite, tracking already-fetched S3 keys, and executing analytics queries such as probable-bot detection.",
+      "tags": [
+        "data-model",
+        "service",
+        "database",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/repository/LogRepository.java:LogRepository",
+      "type": "class",
+      "name": "LogRepository",
+      "filePath": "src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "lineRange": [
+        17,
+        123
+      ],
+      "summary": "Repository class wrapping JdbcTemplate to persist log entries, check deduplication, compute aggregate statistics, and detect probable bot IPs via a self-join query on robots.txt visits.",
+      "tags": [
+        "data-model",
+        "database",
+        "service"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "type": "file",
+      "name": "AdminService.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/AdminService.java",
+      "summary": "Admin-layer service providing full CRUD operations for user-agent rules, referer rules, and noise-filter entries in SQLite, plus a re-classification job that updates ua_name for all existing log rows.",
+      "tags": [
+        "service",
+        "api-handler",
+        "database",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/service/AdminService.java:AdminService",
+      "type": "class",
+      "name": "AdminService",
+      "filePath": "src/main/java/com/example/analyzelog/service/AdminService.java",
+      "lineRange": [
+        14,
+        129
+      ],
+      "summary": "Spring service exposing CRUD for the static_ua, static_referer, and noise_filter tables, and a transactional reclassifyLogs() method that re-applies classifier rules across all existing cloudfront_logs rows.",
+      "tags": [
+        "service",
+        "database",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "file",
+      "name": "DashboardService.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "summary": "Core analytics service providing all dashboard query methods \u2014 top user agents, countries, URLs, edge locations, referers, daily breakdowns, and probable-bot detection \u2014 with configurable bot/noise exclusion and URI-stem grouping applied at query-build time.",
+      "tags": [
+        "service",
+        "api-handler",
+        "database"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Builds SQL dynamically using trusted Java constants (never user input), with static RowMappers defined at class level. URI-stem grouping SQL is assembled once in the constructor to avoid repeated string building per request."
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/service/DashboardService.java:DashboardService",
+      "type": "class",
+      "name": "DashboardService",
+      "filePath": "src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "lineRange": [
+        29,
+        544
+      ],
+      "summary": "The central analytics Spring service exposing 20+ query methods covering traffic by UA, country, URL, referer, edge location, and day, with shared bot-exclusion and noise-filter predicates applied dynamically.",
+      "tags": [
+        "service",
+        "database",
+        "api-handler"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "type": "file",
+      "name": "EdgeLocationResolver.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "summary": "Spring component that loads the AWS edge locations JSON at startup and provides IATA code extraction from raw CloudFront edge location strings and human-readable city/country display resolution.",
+      "tags": [
+        "service",
+        "utility",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java:EdgeLocationResolver",
+      "type": "class",
+      "name": "EdgeLocationResolver",
+      "filePath": "src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "lineRange": [
+        15,
+        69
+      ],
+      "summary": "Eagerly loads aws-edge-locations.json at construction time into an immutable map, then resolves raw CloudFront location codes (e.g. CDG55-P2) to IATA codes and city/country display strings.",
+      "tags": [
+        "service",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "type": "file",
+      "name": "FetchService.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/FetchService.java",
+      "summary": "Orchestrates the S3 log fetch pipeline: lists keys, downloads each log file, parses it, and persists entries; tracks per-file progress using an AtomicReference and exposes an async entry point for background fetching.",
+      "tags": [
+        "service",
+        "data-pipeline",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/service/FetchService.java:FetchService",
+      "type": "class",
+      "name": "FetchService",
+      "filePath": "src/main/java/com/example/analyzelog/service/FetchService.java",
+      "lineRange": [
+        21,
+        111
+      ],
+      "summary": "Spring service orchestrating the full log ingestion pipeline from S3 listing through parsing and SQLite persistence, with thread-safe progress tracking and a @Async startAsync method for non-blocking invocation.",
+      "tags": [
+        "service",
+        "data-pipeline"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/RefererRule.java",
+      "type": "file",
+      "name": "RefererRule.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/RefererRule.java",
+      "summary": "Immutable record representing a single referer normalization rule with label and optional domain-matching fields (exact, prefix, suffix).",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/ReloadableClassifierService.java",
+      "type": "file",
+      "name": "ReloadableClassifierService.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/ReloadableClassifierService.java",
+      "summary": "Spring service that loads user-agent classification rules from SQLite on startup and holds a hot-reloadable UserAgentClassifier instance, allowing rule changes to take effect without a restart.",
+      "tags": [
+        "service",
+        "singleton"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/ReloadableRefererService.java",
+      "type": "file",
+      "name": "ReloadableRefererService.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/ReloadableRefererService.java",
+      "summary": "Spring service that loads referer normalization rules from the static_referer table on startup and supports hot-reload, providing an always-current rule list to DashboardService for referer label aggregation.",
+      "tags": [
+        "service",
+        "singleton"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/UaClassifierRule.java",
+      "type": "file",
+      "name": "UaClassifierRule.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/UaClassifierRule.java",
+      "summary": "Immutable record representing a single user-agent classifier rule pairing a substring pattern with a human-readable label.",
+      "tags": [
+        "data-model",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+      "type": "file",
+      "name": "UserAgentClassifier.java",
+      "filePath": "src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+      "summary": "Stateless classifier that matches a raw user-agent string against compiled regex rules from the database, falling back to heuristic browser/OS detection from well-known UA substrings.",
+      "tags": [
+        "service",
+        "utility",
+        "validation",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java:UserAgentClassifier",
+      "type": "class",
+      "name": "UserAgentClassifier",
+      "filePath": "src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+      "lineRange": [
+        6,
+        51
+      ],
+      "summary": "Compiles DB-sourced pattern rules at construction time and applies them in priority order; falls through to browser/OS heuristics for unknown agents.",
+      "tags": [
+        "service",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "type": "file",
+      "name": "AdminController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/AdminController.java",
+      "summary": "Spring MVC controller handling the /admin UI, exposing form-based endpoints to manage user-agent rules, referer rules, and noise-filter entries, plus reload and re-classify actions.",
+      "tags": [
+        "api-handler",
+        "middleware"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/web/AdminController.java:AdminController",
+      "type": "class",
+      "name": "AdminController",
+      "filePath": "src/main/java/com/example/analyzelog/web/AdminController.java",
+      "lineRange": [
+        17,
+        186
+      ],
+      "summary": "MVC controller at /admin with 10 POST endpoints for CRUD operations on UA rules, referer rules, and noise filters, delegating to AdminService and redirecting with flash messages.",
+      "tags": [
+        "api-handler",
+        "middleware"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "type": "file",
+      "name": "ApiController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/ApiController.java",
+      "summary": "REST controller at /api exposing JSON endpoints for dashboard chart data including UA groups, top user agents, countries, URLs, requests-per-day, edge locations, referers, and probable bots.",
+      "tags": [
+        "api-handler",
+        "service",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/web/ApiController.java:ApiController",
+      "type": "class",
+      "name": "ApiController",
+      "filePath": "src/main/java/com/example/analyzelog/web/ApiController.java",
+      "lineRange": [
+        19,
+        83
+      ],
+      "summary": "RestController exposing 8 GET endpoints under /api that parse date range parameters and delegate directly to DashboardService, returning JSON for chart rendering.",
+      "tags": [
+        "api-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "type": "file",
+      "name": "CountryDetailController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "summary": "REST controller at /api/country-detail exposing JSON endpoints for per-country drill-down data: top UAs, result-type breakdown, top URLs, and daily request counts.",
+      "tags": [
+        "api-handler",
+        "service",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "type": "file",
+      "name": "DashboardController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "summary": "MVC controller rendering the main dashboard and detail pages (UA, country, URL, probable-bots), resolving date range parameters into model attributes consumed by Thymeleaf templates.",
+      "tags": [
+        "api-handler",
+        "middleware",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/main/java/com/example/analyzelog/web/DashboardController.java:DashboardController",
+      "type": "class",
+      "name": "DashboardController",
+      "filePath": "src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "lineRange": [
+        12,
+        99
+      ],
+      "summary": "Spring MVC Controller with 5 GET mappings (/, /ua-detail, /country-detail, /url-detail, /probable-bots) that normalize date-range params and populate Thymeleaf model attributes.",
+      "tags": [
+        "api-handler",
+        "middleware"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/GlobalExceptionHandler.java",
+      "type": "file",
+      "name": "GlobalExceptionHandler.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/GlobalExceptionHandler.java",
+      "summary": "Spring @ControllerAdvice that maps IllegalArgumentException and MissingServletRequestParameterException to 400 responses and unhandled exceptions to 500, with POST-vs-GET redirect handling.",
+      "tags": [
+        "middleware",
+        "api-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/RefreshController.java",
+      "type": "file",
+      "name": "RefreshController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/RefreshController.java",
+      "summary": "REST controller providing /refresh (POST to trigger async S3 fetch) and /refresh/progress (GET to poll fetch status), returning 409 if a fetch is already in progress.",
+      "tags": [
+        "api-handler",
+        "service"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "type": "file",
+      "name": "UaDetailController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "summary": "REST controller at /api/ua-detail exposing JSON endpoints for per-user-agent drill-down: raw user agents, result types, countries, URI stems, and daily request counts.",
+      "tags": [
+        "api-handler",
+        "service",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "type": "file",
+      "name": "UrlDetailController.java",
+      "filePath": "src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "summary": "REST controller at /api/url-detail exposing JSON endpoints for per-URL drill-down: matching URI stems, top countries, top user agents, and daily request counts.",
+      "tags": [
+        "api-handler",
+        "service",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/application.yml",
+      "type": "config",
+      "name": "application.yml",
+      "filePath": "src/main/resources/application.yml",
+      "summary": "Main Spring Boot application configuration defining SQLite datasource with WAL mode, Liquibase changelog path, Thymeleaf settings, virtual threads, AWS S3 coordinates, analytics limits, referer filter, URI-stem grouping patterns, and static-asset extension exclusions.",
+      "tags": [
+        "configuration",
+        "infrastructure",
+        "database"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Enables Java 21 virtual threads (spring.threads.virtual.enabled=true) and SQLite WAL journal mode via connection-init-sql \u2014 notable performance choices."
+    },
+    {
+      "id": "config:src/main/resources/aws-edge-locations.json",
+      "type": "config",
+      "name": "aws-edge-locations.json",
+      "filePath": "src/main/resources/aws-edge-locations.json",
+      "summary": "Static reference data mapping AWS CloudFront edge-location IATA codes to city, country, country code, and pricing region; loaded at startup by EdgeLocationResolver for human-readable display.",
+      "tags": [
+        "configuration",
+        "data-model"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/001-initial-schema.xml",
+      "type": "config",
+      "name": "001-initial-schema.xml",
+      "filePath": "src/main/resources/db/changelog/changes/001-initial-schema.xml",
+      "summary": "Liquibase changeset creating the cloudfront_logs table (with timestamp index) and the fetched_files deduplication table as the initial database schema.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/002-add-ua-name.xml",
+      "type": "config",
+      "name": "002-add-ua-name.xml",
+      "filePath": "src/main/resources/db/changelog/changes/002-add-ua-name.xml",
+      "summary": "Liquibase changeset adding the ua_name column and a covering index to cloudfront_logs to support efficient user-agent classification queries.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/003-add-edge-location-iata.xml",
+      "type": "config",
+      "name": "003-add-edge-location-iata.xml",
+      "filePath": "src/main/resources/db/changelog/changes/003-add-edge-location-iata.xml",
+      "summary": "Liquibase changeset adding the edge_location_iata column and index to cloudfront_logs to enable fast grouping by normalized IATA code.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/004-drop-protocol.xml",
+      "type": "config",
+      "name": "004-drop-protocol.xml",
+      "filePath": "src/main/resources/db/changelog/changes/004-drop-protocol.xml",
+      "summary": "Liquibase changeset removing HTTP-only rows from cloudfront_logs and dropping the protocol column, reflecting the parser-level decision to skip non-HTTPS log entries.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/005-static-ua.xml",
+      "type": "config",
+      "name": "005-static-ua.xml",
+      "filePath": "src/main/resources/db/changelog/changes/005-static-ua.xml",
+      "summary": "Liquibase changeset that inserts static user-agent classification data into the bot/UA reference tables.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/006-static-ua-classifier.xml",
+      "type": "config",
+      "name": "006-static-ua-classifier.xml",
+      "filePath": "src/main/resources/db/changelog/changes/006-static-ua-classifier.xml",
+      "summary": "Liquibase changeset adding a UA classifier column or related static classification data for user-agent detection.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/007-merge-static-ua-classifier.xml",
+      "type": "config",
+      "name": "007-merge-static-ua-classifier.xml",
+      "filePath": "src/main/resources/db/changelog/changes/007-merge-static-ua-classifier.xml",
+      "summary": "Liquibase changeset merging previously added static UA classifier data, consolidating earlier changesets.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/008-add-feed-reader-patterns.xml",
+      "type": "config",
+      "name": "008-add-feed-reader-patterns.xml",
+      "filePath": "src/main/resources/db/changelog/changes/008-add-feed-reader-patterns.xml",
+      "summary": "Liquibase changeset inserting feed-reader user-agent patterns to improve bot classification coverage.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/009-static-referer.xml",
+      "type": "config",
+      "name": "009-static-referer.xml",
+      "filePath": "src/main/resources/db/changelog/changes/009-static-referer.xml",
+      "summary": "Liquibase changeset inserting static referrer classification data used for filtering and grouping traffic by source.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/010-noise-filter.xml",
+      "type": "config",
+      "name": "010-noise-filter.xml",
+      "filePath": "src/main/resources/db/changelog/changes/010-noise-filter.xml",
+      "summary": "Liquibase changeset adding noise-filter rules to exclude known irrelevant traffic patterns from log analysis.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/011-amazonbot.xml",
+      "type": "config",
+      "name": "011-amazonbot.xml",
+      "filePath": "src/main/resources/db/changelog/changes/011-amazonbot.xml",
+      "summary": "Liquibase changeset inserting AmazonBot user-agent pattern into the bot classification table.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/012-more-bots.xml",
+      "type": "config",
+      "name": "012-more-bots.xml",
+      "filePath": "src/main/resources/db/changelog/changes/012-more-bots.xml",
+      "summary": "Liquibase changeset adding additional bot user-agent patterns to extend the known-bots classification list.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/013-meta-externalagent.xml",
+      "type": "config",
+      "name": "013-meta-externalagent.xml",
+      "filePath": "src/main/resources/db/changelog/changes/013-meta-externalagent.xml",
+      "summary": "Liquibase changeset inserting Meta ExternalAgent bot pattern for social-media crawler classification.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/014-applebot.xml",
+      "type": "config",
+      "name": "014-applebot.xml",
+      "filePath": "src/main/resources/db/changelog/changes/014-applebot.xml",
+      "summary": "Liquibase changeset inserting Applebot user-agent pattern for Apple search crawler classification.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/015-iceshrimp-xai.xml",
+      "type": "config",
+      "name": "015-iceshrimp-xai.xml",
+      "filePath": "src/main/resources/db/changelog/changes/015-iceshrimp-xai.xml",
+      "summary": "Liquibase changeset adding Iceshrimp and xAI bot patterns to the classification table.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/016-seamus-bot.xml",
+      "type": "config",
+      "name": "016-seamus-bot.xml",
+      "filePath": "src/main/resources/db/changelog/changes/016-seamus-bot.xml",
+      "summary": "Liquibase changeset inserting Seamus/SeekportBot user-agent pattern for search-bot classification.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/changes/017-yandex-referer.xml",
+      "type": "config",
+      "name": "017-yandex-referer.xml",
+      "filePath": "src/main/resources/db/changelog/changes/017-yandex-referer.xml",
+      "summary": "Liquibase changeset inserting Yandex referrer pattern to support referer-based bot detection for Yandex traffic.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "type": "config",
+      "name": "db.changelog-master.xml",
+      "filePath": "src/main/resources/db/changelog/db.changelog-master.xml",
+      "summary": "Liquibase master changelog that sequentially includes all 17 changeset files defining the full database migration history for the analyze-logs application.",
+      "tags": [
+        "database",
+        "migration",
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Acts as the root changelog aggregator; Liquibase executes changesets in include order."
+    },
+    {
+      "id": "config:src/main/resources/logback-spring.xml",
+      "type": "config",
+      "name": "logback-spring.xml",
+      "filePath": "src/main/resources/logback-spring.xml",
+      "summary": "Spring Boot Logback configuration defining log appenders, log levels, and output format for the application.",
+      "tags": [
+        "configuration",
+        "logging",
+        "infrastructure"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/static/css/app.css",
+      "type": "file",
+      "name": "app.css",
+      "filePath": "src/main/resources/static/css/app.css",
+      "summary": "Main stylesheet for the analyze-logs dashboard providing layout, chart container sizing, table styling, and responsive UI utilities.",
+      "tags": [
+        "stylesheet",
+        "ui",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/static/js/charts.js",
+      "type": "file",
+      "name": "charts.js",
+      "filePath": "src/main/resources/static/js/charts.js",
+      "summary": "Shared Chart.js wrapper module exposing factory functions for pie, horizontal bar, horizontal stacked bar, and stacked-by-day charts, along with color palettes and an async data-loading helper.",
+      "tags": [
+        "utility",
+        "chart",
+        "visualization",
+        "service",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Exports a single namespace object `Charts` rather than named ES module exports; consumers import it via ES module import."
+    },
+    {
+      "id": "file:src/main/resources/static/js/country-detail.js",
+      "type": "file",
+      "name": "country-detail.js",
+      "filePath": "src/main/resources/static/js/country-detail.js",
+      "summary": "Page script for the country-detail view that initializes and reloads Chart.js charts (stacked bar, pie, and stacked-by-day) filtered by country.",
+      "tags": [
+        "component",
+        "chart",
+        "dashboard",
+        "event-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/main/resources/static/js/country-detail.js:loadAllCharts",
+      "type": "function",
+      "name": "loadAllCharts",
+      "filePath": "src/main/resources/static/js/country-detail.js",
+      "lineRange": [
+        8,
+        16
+      ],
+      "summary": "Destroys existing charts, rebuilds query parameters, and loads four charts for the country-detail page using Charts helpers.",
+      "tags": [
+        "chart",
+        "event-handler",
+        "dashboard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/static/js/dashboard.js",
+      "type": "file",
+      "name": "dashboard.js",
+      "filePath": "src/main/resources/static/js/dashboard.js",
+      "summary": "Main dashboard page script managing chart loading and the S3 log-refresh flow with polling progress bar and status feedback.",
+      "tags": [
+        "entry-point",
+        "dashboard",
+        "event-handler",
+        "api-handler",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/main/resources/static/js/dashboard.js:loadAllCharts",
+      "type": "function",
+      "name": "loadAllCharts",
+      "filePath": "src/main/resources/static/js/dashboard.js",
+      "lineRange": [
+        12,
+        24
+      ],
+      "summary": "Destroys existing charts and loads six dashboard charts (pie, horizontal stacked bars, stacked-by-day) via Charts helpers with date-range query params.",
+      "tags": [
+        "chart",
+        "dashboard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/main/resources/static/js/dashboard.js:initRefresh",
+      "type": "function",
+      "name": "initRefresh",
+      "filePath": "src/main/resources/static/js/dashboard.js",
+      "lineRange": [
+        29,
+        111
+      ],
+      "summary": "Sets up the S3 refresh button, progress bar, and 500ms polling loop that tracks log-import progress and updates the UI with fetched/skipped/failed counts.",
+      "tags": [
+        "event-handler",
+        "api-handler",
+        "dashboard"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/main/resources/static/js/probable-bots.js",
+      "type": "file",
+      "name": "probable-bots.js",
+      "filePath": "src/main/resources/static/js/probable-bots.js",
+      "summary": "Page script that fetches and renders the probable-bots table by calling the `/api/probable-bots` endpoint with current date-range parameters.",
+      "tags": [
+        "component",
+        "api-handler",
+        "dashboard",
+        "bot-detection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/main/resources/static/js/probable-bots.js:loadProbableBots",
+      "type": "function",
+      "name": "loadProbableBots",
+      "filePath": "src/main/resources/static/js/probable-bots.js",
+      "lineRange": [
+        6,
+        37
+      ],
+      "summary": "Fetches probable-bot data from the API and renders it into the `#probableBotsTable` element, showing a placeholder message when no data is found.",
+      "tags": [
+        "api-handler",
+        "dashboard",
+        "bot-detection"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/static/js/ua-detail.js",
+      "type": "file",
+      "name": "ua-detail.js",
+      "filePath": "src/main/resources/static/js/ua-detail.js",
+      "summary": "Page script for the user-agent detail view, loading multiple charts and rendering an inline stacked-bar mini-chart per UA row showing cache hit/miss breakdown.",
+      "tags": [
+        "component",
+        "chart",
+        "dashboard",
+        "bot-detection"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/main/resources/static/js/ua-detail.js:loadAllCharts",
+      "type": "function",
+      "name": "loadAllCharts",
+      "filePath": "src/main/resources/static/js/ua-detail.js",
+      "lineRange": [
+        10,
+        37
+      ],
+      "summary": "Loads four UA-detail charts and fetches the user-agent list from the API, rendering each row with an inline stacked-bar visualization.",
+      "tags": [
+        "chart",
+        "api-handler",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/main/resources/static/js/ua-detail.js:stackedBar",
+      "type": "function",
+      "name": "stackedBar",
+      "filePath": "src/main/resources/static/js/ua-detail.js",
+      "lineRange": [
+        46,
+        55
+      ],
+      "summary": "Generates inline HTML div segments representing proportional cache-result breakdowns for a single UA row.",
+      "tags": [
+        "utility",
+        "chart",
+        "visualization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/static/js/url-detail.js",
+      "type": "file",
+      "name": "url-detail.js",
+      "filePath": "src/main/resources/static/js/url-detail.js",
+      "summary": "Page script for the URL detail view that loads charts and a paginated URL table with cache-result breakdowns.",
+      "tags": [
+        "component",
+        "chart",
+        "dashboard",
+        "api-handler"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/main/resources/static/js/url-detail.js:loadUrlsTable",
+      "type": "function",
+      "name": "loadUrlsTable",
+      "filePath": "src/main/resources/static/js/url-detail.js",
+      "lineRange": [
+        8,
+        29
+      ],
+      "summary": "Fetches top-URL data from the API and renders the ranked URL table with HTML-escaped names and localized counts.",
+      "tags": [
+        "api-handler",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/main/resources/static/js/url-detail.js:loadAllCharts",
+      "type": "function",
+      "name": "loadAllCharts",
+      "filePath": "src/main/resources/static/js/url-detail.js",
+      "lineRange": [
+        31,
+        49
+      ],
+      "summary": "Destroys existing charts and loads three URL-detail charts (horizontal stacked bars by result type and stacked-by-day), then triggers the URLs table load.",
+      "tags": [
+        "chart",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/static/js/utils.js",
+      "type": "file",
+      "name": "utils.js",
+      "filePath": "src/main/resources/static/js/utils.js",
+      "summary": "Shared utility module exporting DOM meta-tag readers, HTML escaping, query-parameter builders, and a bot-toggle initializer used across all dashboard page scripts.",
+      "tags": [
+        "utility",
+        "service",
+        "barrel",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/main/resources/static/js/utils.js:buildBaseParams",
+      "type": "function",
+      "name": "buildBaseParams",
+      "filePath": "src/main/resources/static/js/utils.js",
+      "lineRange": [
+        13,
+        20
+      ],
+      "summary": "Builds the base URLSearchParams query string from page meta tags (date range) and the bot-exclusion toggle state.",
+      "tags": [
+        "utility",
+        "api-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/main/resources/static/js/utils.js:initToggleBots",
+      "type": "function",
+      "name": "initToggleBots",
+      "filePath": "src/main/resources/static/js/utils.js",
+      "lineRange": [
+        22,
+        32
+      ],
+      "summary": "Initializes the bot-exclusion toggle checkbox, persists preference in localStorage, and triggers a page reload callback on change.",
+      "tags": [
+        "utility",
+        "event-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/templates/admin.html",
+      "type": "file",
+      "name": "admin.html",
+      "filePath": "src/main/resources/templates/admin.html",
+      "summary": "Thymeleaf admin dashboard template rendering the main CloudFront log analytics view with date-range filters, charts, and the S3 refresh button.",
+      "tags": [
+        "component",
+        "dashboard",
+        "ui",
+        "entry-point"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/main/resources/templates/country-detail.html",
+      "type": "file",
+      "name": "country-detail.html",
+      "filePath": "src/main/resources/templates/country-detail.html",
+      "summary": "Thymeleaf template for the country-detail drill-down page showing traffic charts and statistics for a single country.",
+      "tags": [
+        "component",
+        "dashboard",
+        "ui"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/templates/dashboard.html",
+      "type": "file",
+      "name": "dashboard.html",
+      "filePath": "src/main/resources/templates/dashboard.html",
+      "summary": "Main Thymeleaf dashboard template extending the shared layout, displaying CloudFront traffic charts with date-range filtering controls and Chart.js visualizations.",
+      "tags": [
+        "component",
+        "markup",
+        "dashboard",
+        "thymeleaf"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/templates/error.html",
+      "type": "file",
+      "name": "error.html",
+      "filePath": "src/main/resources/templates/error.html",
+      "summary": "Generic Spring Boot error page template displaying HTTP status code and error message within the shared layout.",
+      "tags": [
+        "markup",
+        "error-handler",
+        "thymeleaf"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/templates/fragments/flash.html",
+      "type": "file",
+      "name": "flash.html",
+      "filePath": "src/main/resources/templates/fragments/flash.html",
+      "summary": "Reusable Thymeleaf fragment rendering Bootstrap flash/alert messages from the model, included by other page templates.",
+      "tags": [
+        "markup",
+        "component",
+        "thymeleaf",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/templates/layout.html",
+      "type": "file",
+      "name": "layout.html",
+      "filePath": "src/main/resources/templates/layout.html",
+      "summary": "Base Thymeleaf layout fragment providing shared HTML shell with Bootstrap navbar, Chart.js script, and slot parameters for page title, extra head, content, and page scripts.",
+      "tags": [
+        "markup",
+        "component",
+        "thymeleaf",
+        "entry-point"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Uses Thymeleaf layout dialect fragment parameters (title, extraHead, content, pageScript) for composable template inheritance."
+    },
+    {
+      "id": "file:src/main/resources/templates/probable-bots.html",
+      "type": "file",
+      "name": "probable-bots.html",
+      "filePath": "src/main/resources/templates/probable-bots.html",
+      "summary": "Thymeleaf template listing probable bot traffic entries as a sortable table, extending the shared layout.",
+      "tags": [
+        "markup",
+        "component",
+        "thymeleaf",
+        "dashboard"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/main/resources/templates/ua-detail.html",
+      "type": "file",
+      "name": "ua-detail.html",
+      "filePath": "src/main/resources/templates/ua-detail.html",
+      "summary": "Thymeleaf detail template for a specific user-agent, showing traffic breakdowns with charts and daily counts, extending the shared layout.",
+      "tags": [
+        "markup",
+        "component",
+        "thymeleaf",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/main/resources/templates/url-detail.html",
+      "type": "file",
+      "name": "url-detail.html",
+      "filePath": "src/main/resources/templates/url-detail.html",
+      "summary": "Thymeleaf detail template for a specific URL path, displaying traffic metrics and charts for that endpoint, extending the shared layout.",
+      "tags": [
+        "markup",
+        "component",
+        "thymeleaf",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "type": "file",
+      "name": "CloudFrontIntegrationTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "summary": "Spring Boot integration test that parses a real gzipped CloudFront log fixture, verifies all parsed field values, and confirms persistence to an in-memory SQLite database.",
+      "tags": [
+        "test",
+        "integration",
+        "service"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java:CloudFrontIntegrationTest",
+      "type": "class",
+      "name": "CloudFrontIntegrationTest",
+      "filePath": "src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "lineRange": [
+        23,
+        104
+      ],
+      "summary": "Integration test class wiring parser and repository together against a temporary SQLite database to validate end-to-end log ingestion from a gzipped fixture file.",
+      "tags": [
+        "test",
+        "integration",
+        "spring-boot"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+      "type": "file",
+      "name": "S3LogFetcherTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+      "summary": "Unit tests for S3LogFetcher covering plain-text and gzip download scenarios, as well as S3 key listing with and without date filtering, using Mockito mocks for the AWS SDK.",
+      "tags": [
+        "test",
+        "service",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java:S3LogFetcherTest",
+      "type": "class",
+      "name": "S3LogFetcherTest",
+      "filePath": "src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+      "lineRange": [
+        31,
+        105
+      ],
+      "summary": "JUnit 5 test class using Mockito to stub the AWS S3Client and verify S3LogFetcher download and key-listing behaviour for both gzipped and plain-text files.",
+      "tags": [
+        "test",
+        "service",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "type": "file",
+      "name": "CloudFrontLogParserTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "summary": "Comprehensive unit tests for CloudFrontLogParser covering W3C and TSV log formats, URL-encoded user agents, dash/null handling, HTTP-entry skipping, and multi-line inputs.",
+      "tags": [
+        "test",
+        "validation",
+        "serialization"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java:CloudFrontLogParserTest",
+      "type": "class",
+      "name": "CloudFrontLogParserTest",
+      "filePath": "src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "lineRange": [
+        11,
+        236
+      ],
+      "summary": "Exhaustive test class for CloudFrontLogParser with 15 test methods exercising both W3C and TSV format variants, edge cases, and error recovery paths.",
+      "tags": [
+        "test",
+        "validation",
+        "serialization"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/repository/LogRepositoryTest.java",
+      "type": "file",
+      "name": "LogRepositoryTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/repository/LogRepositoryTest.java",
+      "summary": "Unit tests for LogRepository verifying SQLite persistence, duplicate detection, and statistics retrieval for CloudFront log entries.",
+      "tags": [
+        "test",
+        "data-model",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "type": "file",
+      "name": "AdminServiceTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "summary": "Unit tests for AdminService covering CRUD operations on noise filters, static UA entries, and static referer entries stored in SQLite.",
+      "tags": [
+        "test",
+        "service",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "type": "file",
+      "name": "DashboardServiceIntegrationTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "summary": "Large integration test suite for DashboardService exercising every aggregation query (top URLs, user agents, countries, daily counts, referrers, edge locations) against an in-memory SQLite database pre-seeded with synthetic log entries.",
+      "tags": [
+        "test",
+        "integration",
+        "service"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/service/EdgeLocationResolverTest.java",
+      "type": "file",
+      "name": "EdgeLocationResolverTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/service/EdgeLocationResolverTest.java",
+      "summary": "Unit tests for EdgeLocationResolver verifying that CloudFront edge location codes are correctly mapped to human-readable region names.",
+      "tags": [
+        "test",
+        "service",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "type": "file",
+      "name": "FetchServiceTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "summary": "Unit tests for FetchService verifying S3 log discovery, download, parsing, and repository persistence with Mockito-stubbed collaborators.",
+      "tags": [
+        "test",
+        "service",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/service/UserAgentClassifierTest.java",
+      "type": "file",
+      "name": "UserAgentClassifierTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/service/UserAgentClassifierTest.java",
+      "summary": "Unit tests for UserAgentClassifier verifying bot detection, browser identification, and classification edge cases across a range of user-agent strings.",
+      "tags": [
+        "test",
+        "service",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "type": "file",
+      "name": "AdminControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "summary": "MockMvc-based controller tests for AdminController verifying GET and POST endpoints for managing noise filters, static UA entries, and static referer entries.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "type": "file",
+      "name": "ApiControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "summary": "MockMvc-based controller tests for ApiController verifying all JSON API endpoints that supply chart data to the frontend.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "type": "file",
+      "name": "CountryDetailControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "summary": "MockMvc-based controller tests for CountryDetailController verifying model attributes and view name for the per-country detail page.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/DashboardControllerTest.java",
+      "type": "file",
+      "name": "DashboardControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/DashboardControllerTest.java",
+      "summary": "MockMvc-based controller tests for DashboardController verifying date-range parameter handling, default ranges, and correct view rendering.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/RefreshControllerTest.java",
+      "type": "file",
+      "name": "RefreshControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/RefreshControllerTest.java",
+      "summary": "MockMvc-based controller tests for RefreshController verifying that a POST to /refresh triggers FetchService and redirects with a flash message.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/SecurityConfigTest.java",
+      "type": "file",
+      "name": "SecurityConfigTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/SecurityConfigTest.java",
+      "summary": "Spring Security integration tests verifying that public pages are accessible without authentication and that protected endpoints require login.",
+      "tags": [
+        "test",
+        "security",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "type": "file",
+      "name": "UaDetailControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "summary": "MockMvc-based controller tests for UaDetailController verifying model population and view selection for the per-user-agent detail page.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "type": "file",
+      "name": "UrlDetailControllerTest.java",
+      "filePath": "src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "summary": "MockMvc-based controller tests for UrlDetailController verifying model attributes and view name for the per-URL detail page.",
+      "tags": [
+        "test",
+        "api-handler",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/test/js/charts.test.js",
+      "type": "file",
+      "name": "charts.test.js",
+      "filePath": "src/test/js/charts.test.js",
+      "summary": "Jest test suite for the frontend charts.js module, verifying Chart.js chart construction, data formatting, and API fetch behavior across all dashboard chart types.",
+      "tags": [
+        "test",
+        "component",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/js/dashboard.test.js",
+      "type": "file",
+      "name": "dashboard.test.js",
+      "filePath": "src/test/js/dashboard.test.js",
+      "summary": "Vitest test suite for the dashboard module, covering chart initialization, refresh button behavior, import polling, and progress bar state transitions via DOM mocking.",
+      "tags": [
+        "test",
+        "dashboard",
+        "vitest",
+        "dom-testing"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/test/js/utils.test.js",
+      "type": "file",
+      "name": "utils.test.js",
+      "filePath": "src/test/js/utils.test.js",
+      "summary": "Vitest test suite for utility functions, verifying formatting, parsing, and helper logic defined in utils.js.",
+      "tags": [
+        "test",
+        "utility",
+        "vitest"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:vitest.config.js",
+      "type": "file",
+      "name": "vitest.config.js",
+      "filePath": "vitest.config.js",
+      "summary": "Vitest configuration file defining test environment settings (jsdom), test file patterns, and coverage options for the JavaScript test suite.",
+      "tags": [
+        "configuration",
+        "test",
+        "vitest",
+        "build-system"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "pipeline:.github/workflows/build.yml",
+      "target": "document:README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:analyze-logs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "pipeline:.github/workflows/playwright.yml.disabled",
+      "target": "file:e2e/country-detail.spec.js",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "pipeline:.github/workflows/playwright.yml.disabled",
+      "target": "file:e2e/dashboard.spec.js",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:etc/changes_documentation/add_spring_security/plan.md",
+      "target": "document:etc/changes_documentation/add_spring_security/research.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:etc/changes_documentation/avoid_duplicate_javascript_code/plan.md",
+      "target": "document:etc/changes_documentation/avoid_duplicate_javascript_code/conversation.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:etc/changes_documentation/migrate_to_spring_boot_4/plan.md",
+      "target": "document:etc/changes_documentation/migrate_to_spring_boot_4/research.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:etc/changes_documentation/simplier_edge_location/plan.md",
+      "target": "document:etc/changes_documentation/simplier_edge_location/research.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:analyze-logs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "target": "class:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java:AnalyzeLogsApplication",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "target": "class:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java:AnalyzeLogsApplication",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/config/AppConfig.java",
+      "target": "class:src/main/java/com/example/analyzelog/config/AppConfig.java:AppConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/config/AppConfig.java",
+      "target": "class:src/main/java/com/example/analyzelog/config/AppConfig.java:AppConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+      "target": "class:src/main/java/com/example/analyzelog/config/SecurityConfig.java:SecurityConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+      "target": "class:src/main/java/com/example/analyzelog/config/SecurityConfig.java:SecurityConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "target": "class:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java:S3LogFetcher",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "target": "class:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java:S3LogFetcher",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "config:pom.xml",
+      "target": "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:playwright.config.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:etc/changes_documentation/user_agent_detail_view/research.md",
+      "target": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:etc/navigation_paths/results.txt",
+      "target": "file:etc/navigation_paths/query.sql",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "target": "class:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java:CloudFrontLogParser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "class:src/main/java/com/example/analyzelog/repository/LogRepository.java:LogRepository",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/ReloadableClassifierService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "class:src/main/java/com/example/analyzelog/service/AdminService.java:AdminService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "class:src/main/java/com/example/analyzelog/service/DashboardService.java:DashboardService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/RefererFilterProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/UriStemFilterProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/UriStemGroupProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "target": "class:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java:EdgeLocationResolver",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "class:src/main/java/com/example/analyzelog/service/FetchService.java:FetchService",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+      "target": "class:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java:UserAgentClassifier",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "target": "class:src/main/java/com/example/analyzelog/web/AdminController.java:AdminController",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "class:src/main/java/com/example/analyzelog/web/ApiController.java:ApiController",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "target": "class:src/main/java/com/example/analyzelog/web/DashboardController.java:DashboardController",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/RefreshController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:src/main/resources/application.yml",
+      "target": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/application.yml",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/aws-edge-locations.json",
+      "target": "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/changes/001-initial-schema.xml",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/changes/002-add-ua-name.xml",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/changes/003-add-edge-location-iata.xml",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/changes/004-drop-protocol.xml",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/005-static-ua.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/006-static-ua-classifier.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/007-merge-static-ua-classifier.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/008-add-feed-reader-patterns.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/009-static-referer.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/010-noise-filter.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/011-amazonbot.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/012-more-bots.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/013-meta-externalagent.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/014-applebot.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/015-iceshrimp-xai.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/016-seamus-bot.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:src/main/resources/db/changelog/db.changelog-master.xml",
+      "target": "config:src/main/resources/db/changelog/changes/017-yandex-referer.xml",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "function:src/main/resources/static/js/utils.js:buildBaseParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "function:src/main/resources/static/js/utils.js:initToggleBots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "function:src/main/resources/static/js/utils.js:buildBaseParams",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "function:src/main/resources/static/js/utils.js:initToggleBots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/resources/static/js/country-detail.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/country-detail.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/country-detail.js",
+      "target": "function:src/main/resources/static/js/country-detail.js:loadAllCharts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "function:src/main/resources/static/js/dashboard.js:loadAllCharts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "function:src/main/resources/static/js/dashboard.js:initRefresh",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "function:src/main/resources/static/js/dashboard.js:loadAllCharts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "function:src/main/resources/static/js/dashboard.js:initRefresh",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/main/resources/static/js/probable-bots.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/probable-bots.js",
+      "target": "function:src/main/resources/static/js/probable-bots.js:loadProbableBots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/ua-detail.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/ua-detail.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/ua-detail.js",
+      "target": "function:src/main/resources/static/js/ua-detail.js:loadAllCharts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/ua-detail.js",
+      "target": "function:src/main/resources/static/js/ua-detail.js:stackedBar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/url-detail.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/url-detail.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/url-detail.js",
+      "target": "function:src/main/resources/static/js/url-detail.js:loadUrlsTable",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/static/js/url-detail.js",
+      "target": "function:src/main/resources/static/js/url-detail.js:loadAllCharts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/main/resources/templates/admin.html",
+      "target": "file:src/main/resources/static/js/dashboard.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/main/resources/templates/admin.html",
+      "target": "file:src/main/resources/static/css/app.css",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/main/resources/templates/country-detail.html",
+      "target": "file:src/main/resources/static/js/country-detail.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/main/resources/templates/country-detail.html",
+      "target": "file:src/main/resources/static/css/app.css",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "target": "class:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java:CloudFrontIntegrationTest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "target": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+      "target": "class:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java:S3LogFetcherTest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "target": "class:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java:CloudFrontLogParserTest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "target": "file:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/repository/LogRepositoryTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "target": "file:src/test/java/com/example/analyzelog/repository/LogRepositoryTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/RefreshControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/RefreshControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "target": "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/js/charts.test.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/charts.js",
+      "target": "file:src/test/js/charts.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/test/js/dashboard.test.js",
+      "target": "file:src/main/resources/static/js/charts.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/js/dashboard.test.js",
+      "target": "file:src/main/resources/static/js/dashboard.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/test/js/utils.test.js",
+      "target": "file:src/main/resources/static/js/utils.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main/resources/static/js/charts.js",
+      "target": "file:src/test/js/dashboard.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/main/resources/static/js/dashboard.js",
+      "target": "file:src/test/js/dashboard.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/main/resources/static/js/utils.js",
+      "target": "file:src/test/js/utils.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:vitest.config.js",
+      "target": "file:src/test/js/dashboard.test.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:vitest.config.js",
+      "target": "file:src/test/js/utils.test.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+      "target": "file:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+      "target": "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+      "target": "file:src/test/java/com/example/analyzelog/service/EdgeLocationResolverTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+      "target": "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+      "target": "file:src/test/java/com/example/analyzelog/service/UserAgentClassifierTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/DashboardControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    },
+    {
+      "source": "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java",
+      "target": "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:web-api",
+      "name": "Web API Layer",
+      "description": "Spring MVC controllers and REST endpoints serving the dashboard, admin panel, detail drill-down pages, and JSON chart data API for CloudFront log analytics.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+        "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+        "file:src/main/java/com/example/analyzelog/web/CountryDetailController.java",
+        "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+        "file:src/main/java/com/example/analyzelog/web/GlobalExceptionHandler.java",
+        "file:src/main/java/com/example/analyzelog/web/RefreshController.java",
+        "file:src/main/java/com/example/analyzelog/web/UaDetailController.java",
+        "file:src/main/java/com/example/analyzelog/web/UrlDetailController.java"
+      ]
+    },
+    {
+      "id": "layer:service",
+      "name": "Service Layer",
+      "description": "Spring services orchestrating S3 log ingestion, CloudFront log parsing, analytics aggregation, user-agent classification, edge location resolution, and admin rule management.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+        "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+        "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+        "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+        "file:src/main/java/com/example/analyzelog/service/RefererRule.java",
+        "file:src/main/java/com/example/analyzelog/service/ReloadableClassifierService.java",
+        "file:src/main/java/com/example/analyzelog/service/ReloadableRefererService.java",
+        "file:src/main/java/com/example/analyzelog/service/UaClassifierRule.java",
+        "file:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java",
+        "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+        "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java"
+      ]
+    },
+    {
+      "id": "layer:data",
+      "name": "Data Layer",
+      "description": "Spring JdbcTemplate repository for CloudFront log persistence and analytics queries against SQLite, plus Java record projections used as data transfer objects between repository and service layers.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/repository/LogRepository.java",
+        "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java",
+        "file:src/main/java/com/example/analyzelog/model/CountryResultTypeCount.java",
+        "file:src/main/java/com/example/analyzelog/model/DailyResultTypeCount.java",
+        "file:src/main/java/com/example/analyzelog/model/DateRange.java",
+        "file:src/main/java/com/example/analyzelog/model/NameCount.java",
+        "file:src/main/java/com/example/analyzelog/model/NameResultTypeCount.java",
+        "file:src/main/java/com/example/analyzelog/model/NoiseFilterEntry.java",
+        "file:src/main/java/com/example/analyzelog/model/StaticRefererEntry.java",
+        "file:src/main/java/com/example/analyzelog/model/StaticUaEntry.java"
+      ]
+    },
+    {
+      "id": "layer:data-migrations",
+      "name": "Database Migrations",
+      "description": "Liquibase changelogs incrementally evolving the SQLite schema from the initial CloudFront log table through bot-pattern classification tables and referer normalization rules.",
+      "nodeIds": [
+        "config:src/main/resources/db/changelog/changes/001-initial-schema.xml",
+        "config:src/main/resources/db/changelog/changes/002-add-ua-name.xml",
+        "config:src/main/resources/db/changelog/changes/003-add-edge-location-iata.xml",
+        "config:src/main/resources/db/changelog/changes/004-drop-protocol.xml",
+        "config:src/main/resources/db/changelog/changes/005-static-ua.xml",
+        "config:src/main/resources/db/changelog/changes/006-static-ua-classifier.xml",
+        "config:src/main/resources/db/changelog/changes/007-merge-static-ua-classifier.xml",
+        "config:src/main/resources/db/changelog/changes/008-add-feed-reader-patterns.xml",
+        "config:src/main/resources/db/changelog/changes/009-static-referer.xml",
+        "config:src/main/resources/db/changelog/changes/010-noise-filter.xml",
+        "config:src/main/resources/db/changelog/changes/011-amazonbot.xml",
+        "config:src/main/resources/db/changelog/changes/012-more-bots.xml",
+        "config:src/main/resources/db/changelog/changes/013-meta-externalagent.xml",
+        "config:src/main/resources/db/changelog/changes/014-applebot.xml",
+        "config:src/main/resources/db/changelog/changes/015-iceshrimp-xai.xml",
+        "config:src/main/resources/db/changelog/changes/016-seamus-bot.xml",
+        "config:src/main/resources/db/changelog/changes/017-yandex-referer.xml",
+        "config:src/main/resources/db/changelog/db.changelog-master.xml"
+      ]
+    },
+    {
+      "id": "layer:config",
+      "name": "Configuration Layer",
+      "description": "Spring Boot application entry point, AWS S3Client bean factory, typed @ConfigurationProperties for AWS credentials, referer/URI stem filters, Spring Security setup, and runtime resource files including edge location lookup table and logging configuration.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java",
+        "file:src/main/java/com/example/analyzelog/config/AppConfig.java",
+        "file:src/main/java/com/example/analyzelog/config/AppProperties.java",
+        "file:src/main/java/com/example/analyzelog/config/RefererFilterProperties.java",
+        "file:src/main/java/com/example/analyzelog/config/SecurityConfig.java",
+        "file:src/main/java/com/example/analyzelog/config/UriStemFilterProperties.java",
+        "file:src/main/java/com/example/analyzelog/config/UriStemGroupProperties.java",
+        "config:src/main/resources/application.yml",
+        "config:src/main/resources/aws-edge-locations.json",
+        "config:src/main/resources/logback-spring.xml"
+      ]
+    },
+    {
+      "id": "layer:frontend",
+      "name": "Frontend Layer",
+      "description": "Thymeleaf HTML templates for all dashboard pages and the admin panel, plus client-side JavaScript modules for Chart.js chart rendering and shared utilities, and the application CSS stylesheet.",
+      "nodeIds": [
+        "file:src/main/resources/templates/admin.html",
+        "file:src/main/resources/templates/country-detail.html",
+        "file:src/main/resources/templates/dashboard.html",
+        "file:src/main/resources/templates/error.html",
+        "file:src/main/resources/templates/fragments/flash.html",
+        "file:src/main/resources/templates/layout.html",
+        "file:src/main/resources/templates/probable-bots.html",
+        "file:src/main/resources/templates/ua-detail.html",
+        "file:src/main/resources/templates/url-detail.html",
+        "file:src/main/resources/static/css/app.css",
+        "file:src/main/resources/static/js/charts.js",
+        "file:src/main/resources/static/js/country-detail.js",
+        "file:src/main/resources/static/js/dashboard.js",
+        "file:src/main/resources/static/js/probable-bots.js",
+        "file:src/main/resources/static/js/ua-detail.js",
+        "file:src/main/resources/static/js/url-detail.js",
+        "file:src/main/resources/static/js/utils.js"
+      ]
+    },
+    {
+      "id": "layer:test",
+      "name": "Test Suite",
+      "description": "JUnit unit and integration tests for all Spring controllers, services, repository, parser, and fetcher components, plus Vitest unit tests for frontend JS modules and Playwright E2E tests for the dashboard and country detail pages.",
+      "nodeIds": [
+        "file:src/test/java/com/example/analyzelog/CloudFrontIntegrationTest.java",
+        "file:src/test/java/com/example/analyzelog/fetcher/S3LogFetcherTest.java",
+        "file:src/test/java/com/example/analyzelog/parser/CloudFrontLogParserTest.java",
+        "file:src/test/java/com/example/analyzelog/repository/LogRepositoryTest.java",
+        "file:src/test/java/com/example/analyzelog/service/AdminServiceTest.java",
+        "file:src/test/java/com/example/analyzelog/service/DashboardServiceIntegrationTest.java",
+        "file:src/test/java/com/example/analyzelog/service/EdgeLocationResolverTest.java",
+        "file:src/test/java/com/example/analyzelog/service/FetchServiceTest.java",
+        "file:src/test/java/com/example/analyzelog/service/UserAgentClassifierTest.java",
+        "file:src/test/java/com/example/analyzelog/web/AdminControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/ApiControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/CountryDetailControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/DashboardControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/RefreshControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/SecurityConfigTest.java",
+        "file:src/test/java/com/example/analyzelog/web/UaDetailControllerTest.java",
+        "file:src/test/java/com/example/analyzelog/web/UrlDetailControllerTest.java",
+        "file:src/test/js/charts.test.js",
+        "file:src/test/js/dashboard.test.js",
+        "file:src/test/js/utils.test.js",
+        "file:e2e/country-detail.spec.js",
+        "file:e2e/dashboard.spec.js",
+        "file:playwright.config.js",
+        "file:vitest.config.js"
+      ]
+    },
+    {
+      "id": "layer:infrastructure",
+      "name": "Infrastructure & Build",
+      "description": "GitHub Actions CI/CD workflows for Maven build and SonarCloud analysis, Dependabot dependency update configuration, Maven POM, Node.js package configuration, SonarLint connected mode config, and the shell launcher script for the Spring Boot JAR.",
+      "nodeIds": [
+        "pipeline:.github/workflows/build.yml",
+        "pipeline:.github/workflows/playwright.yml",
+        "pipeline:.github/workflows/playwright.yml.disabled",
+        "resource:.github/dependabot.yml",
+        "config:.sonarlint/connectedMode.json",
+        "config:pom.xml",
+        "config:package.json",
+        "file:analyze-logs",
+        "config:.claude/settings.json"
+      ]
+    },
+    {
+      "id": "layer:documentation",
+      "name": "Documentation",
+      "description": "Project README, Claude Code configuration documents, and the etc/ engineering decision archive containing feature research notes, migration plans, and ad-hoc SQL queries for CloudFront log analysis.",
+      "nodeIds": [
+        "document:README.md",
+        "document:CLAUDE.md",
+        "document:.claude/agents/test-runner.md",
+        "document:etc/changes_documentation/add_spring_security/plan.md",
+        "document:etc/changes_documentation/add_spring_security/research.md",
+        "document:etc/changes_documentation/avoid_duplicate_javascript_code/conversation.md",
+        "document:etc/changes_documentation/avoid_duplicate_javascript_code/plan.md",
+        "document:etc/changes_documentation/deploy_to_aws/research.md",
+        "document:etc/changes_documentation/migrate_to_spring_boot_4/plan.md",
+        "document:etc/changes_documentation/migrate_to_spring_boot_4/research.md",
+        "document:etc/changes_documentation/research_issue_2.md",
+        "document:etc/changes_documentation/simplier_edge_location/plan.md",
+        "document:etc/changes_documentation/simplier_edge_location/research.md",
+        "document:etc/changes_documentation/top_agents_split/research_and_plan.md",
+        "document:etc/changes_documentation/use_edge_response_result_type/research_and_plan.md",
+        "document:etc/changes_documentation/user_agent_detail_view/plan.md",
+        "document:etc/changes_documentation/user_agent_detail_view/research.md",
+        "document:etc/navigation_paths/results.txt",
+        "file:etc/navigation_paths/query.sql",
+        "file:etc/queries/probable_bots.sql",
+        "file:etc/queries/suspicious_user_agents.sql"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview",
+      "description": "The README is the best starting point for understanding what analyze-logs does: it is a Spring Boot web dashboard that fetches Amazon CloudFront standard access logs from S3, stores them in a local SQLite database, and renders interactive analytics charts. Reading it gives you the full feature set \u2014 traffic trends, bot detection, referer breakdown, and an admin panel \u2014 before you see a single line of Java.",
+      "nodeIds": [
+        "document:README.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Application Entry Point",
+      "description": "AnalyzeLogsApplication.java is the Spring Boot bootstrap class annotated with @SpringBootApplication. It triggers classpath component scanning, auto-configuration, and bean wiring for the entire application. This is where the JVM starts \u2014 every other component in the tour is reachable from here.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/AnalyzeLogsApplication.java"
+      ],
+      "languageLesson": "@SpringBootApplication is a meta-annotation that combines @Configuration, @EnableAutoConfiguration, and @ComponentScan. Auto-configuration inspects the classpath and conditionally creates beans (e.g., DataSource, JdbcTemplate) without requiring explicit XML or Java config."
+    },
+    {
+      "order": 3,
+      "title": "Build and Dependencies",
+      "description": "The pom.xml declares the project's technology stack: Spring Boot 4, AWS SDK v2 for S3 access, SQLite JDBC for the embedded database, Thymeleaf for server-side templating, Spring Security, and Liquibase for schema migrations. Understanding what is on the classpath explains why certain Spring auto-configurations activate and which versions are in play.",
+      "nodeIds": [
+        "config:pom.xml"
+      ],
+      "languageLesson": "Maven's dependency management section (inherited from spring-boot-starter-parent) pins transitive dependency versions so child modules don't need explicit version numbers. The spring-boot-maven-plugin packages the app as a fat jar including all runtime dependencies."
+    },
+    {
+      "order": 4,
+      "title": "Application Configuration",
+      "description": "application.yml is the central configuration file that wires runtime behavior to environment-specific values: AWS region, S3 bucket name, log prefix, and the rule sets that drive the user-agent classifier and referer normalization. It is the single place where an operator changes how the app connects to AWS or tunes noise-filtering behavior without recompiling.",
+      "nodeIds": [
+        "config:src/main/resources/application.yml"
+      ],
+      "languageLesson": "Spring Boot's @ConfigurationProperties binds YAML keys to typed Java beans, providing IDE completion and validation. Nested YAML keys (e.g., app.aws.bucket) map to nested Java record or class hierarchies, keeping config structured rather than flat."
+    },
+    {
+      "order": 5,
+      "title": "Spring Configuration & Security",
+      "description": "AppConfig.java creates the AWS S3Client bean using credentials and region from application.yml, making it injectable throughout the application. SecurityConfig.java sits alongside it, enabling Spring Security's CSRF protection while permitting all HTTP routes \u2014 since the dashboard is an internal tool, authentication is delegated to the network layer rather than enforced in-app.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/config/AppConfig.java",
+        "file:src/main/java/com/example/analyzelog/config/SecurityConfig.java"
+      ],
+      "languageLesson": "Spring Security's SecurityFilterChain bean replaces the deprecated WebSecurityConfigurerAdapter pattern introduced in Spring Security 5.7+. CSRF tokens are embedded in Thymeleaf forms via th:action, so POST requests carry the token automatically without client-side JavaScript involvement."
+    },
+    {
+      "order": 6,
+      "title": "Core Domain Model",
+      "description": "CloudFrontLogEntry.java is a Java record holding every field from a single CloudFront log line \u2014 timestamp, IP, HTTP method, URI, status code, user agent, referer, edge location, and more. With the highest fan-in in the entire graph (5 inbound edges), it is the shared vocabulary that the fetcher, parser, repository, and fetch service all pass around. Understanding its fields is essential before reading any service code.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/model/CloudFrontLogEntry.java"
+      ],
+      "languageLesson": "Java records (introduced in Java 16, stable in Java 17) are immutable data carriers: the compiler auto-generates a canonical constructor, accessors, equals(), hashCode(), and toString(). They are ideal for pipeline data transfer objects because their immutability prevents accidental mutation between parsing, storage, and analytics stages."
+    },
+    {
+      "order": 7,
+      "title": "Log Ingestion Pipeline",
+      "description": "FetchService.java is the orchestrator of the entire ingestion pipeline, with the highest fan-out in the graph (4 outgoing imports). It coordinates three collaborators: S3LogFetcher downloads compressed log files from S3 using paginated listing and gzip decompression; CloudFrontLogParser turns each raw line into a CloudFrontLogEntry record; and LogRepository persists new entries to SQLite. FetchService tracks which S3 keys have already been imported to avoid duplicates.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/service/FetchService.java",
+        "file:src/main/java/com/example/analyzelog/fetcher/S3LogFetcher.java",
+        "file:src/main/java/com/example/analyzelog/parser/CloudFrontLogParser.java"
+      ],
+      "languageLesson": "CloudFront log files are delivered to S3 in gzip format. S3LogFetcher uses AWS SDK v2's S3Client.listObjectsV2Paginator() for efficient paginated listing and reads the object body as a GZIPInputStream \u2014 never loading the entire file into memory, which is important for large log volumes."
+    },
+    {
+      "order": 8,
+      "title": "Database Schema & Migrations",
+      "description": "Liquibase manages all schema changes through versioned XML changesets. The master changelog (db.changelog-master.xml) includes all 17 migrations in order, ensuring the SQLite database is always in a known state. The initial changeset (001-initial-schema.xml) creates the cloudfront_log_entries table whose columns map directly to the CloudFrontLogEntry record from Step 6. Subsequent migrations add indexes, admin filter tables, and analytics-support columns.",
+      "nodeIds": [
+        "config:src/main/resources/db/changelog/db.changelog-master.xml",
+        "config:src/main/resources/db/changelog/changes/001-initial-schema.xml"
+      ],
+      "languageLesson": "Liquibase changesets are identified by id+author pairs and are applied exactly once, tracked in the DATABASECHANGELOG table. The master changelog is the single authoritative ordering file \u2014 individual changeset files stay small and focused, making code review of schema changes straightforward."
+    },
+    {
+      "order": 9,
+      "title": "Data Access Layer",
+      "description": "LogRepository.java is the other node tied for highest fan-in (5 inbound edges), confirming it is the single gateway to all database operations. It uses Spring's JdbcTemplate rather than JPA, keeping SQL explicit and giving fine-grained control over query performance \u2014 critical when running aggregation queries over millions of log rows in SQLite. It handles both write operations (batch insert of new log entries) and analytics read queries consumed by DashboardService.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/repository/LogRepository.java"
+      ]
+    },
+    {
+      "order": 10,
+      "title": "Analytics & Enrichment Services",
+      "description": "DashboardService.java is the analytics brain: it calls LogRepository for raw aggregations and then enriches results using two supporting services. EdgeLocationResolver translates CloudFront's IATA edge location codes (e.g., 'CDG50') into readable city names for geographic charts. UserAgentClassifier applies rule-based pattern matching \u2014 driven by rules in application.yml \u2014 to categorize request origins into browser types, bots, and crawlers for the traffic breakdown chart.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/service/DashboardService.java",
+        "file:src/main/java/com/example/analyzelog/service/EdgeLocationResolver.java",
+        "file:src/main/java/com/example/analyzelog/service/UserAgentClassifier.java"
+      ]
+    },
+    {
+      "order": 11,
+      "title": "Dashboard Web Layer",
+      "description": "DashboardController.java handles the main GET /dashboard route, accepts date-range query parameters, and populates the Thymeleaf model before rendering dashboard.html. ApiController.java is a separate @RestController that exposes JSON endpoints consumed by the browser-side JavaScript \u2014 separating the page-render concern from the data-serving concern. This split lets the frontend update charts dynamically without full page reloads.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/web/DashboardController.java",
+        "file:src/main/java/com/example/analyzelog/web/ApiController.java",
+        "file:src/main/resources/templates/dashboard.html"
+      ],
+      "languageLesson": "Thymeleaf's natural templating model means dashboard.html is valid HTML that renders in a browser without a running server, with th:* attributes activating only when processed by the Thymeleaf engine. This simplifies designer/developer collaboration and UI testing."
+    },
+    {
+      "order": 12,
+      "title": "Frontend Chart Rendering",
+      "description": "dashboard.js is the main client-side module that calls ApiController's JSON endpoints and passes the responses to charts.js for rendering. Charts.js provides reusable Chart.js wrapper functions \u2014 line charts for traffic over time, bar charts for top URIs, doughnut charts for user-agent breakdown \u2014 so dashboard.js stays focused on data fetching and chart lifecycle rather than Chart.js API details.",
+      "nodeIds": [
+        "file:src/main/resources/static/js/dashboard.js",
+        "file:src/main/resources/static/js/charts.js"
+      ],
+      "languageLesson": "Chart.js charts are destroyed and recreated on each data refresh rather than updated in place, avoiding stale dataset accumulation. The charts.js wrapper centralizes Chart.js configuration defaults (colors, font sizes, tooltip formatting), ensuring visual consistency across all charts without duplicating options."
+    },
+    {
+      "order": 13,
+      "title": "Admin Panel",
+      "description": "The admin panel is a self-contained subsystem for managing noise filtering. AdminService.java reads and writes bot filter rules, static user-agent entries, and referer normalization patterns to dedicated SQLite tables. AdminController.java provides the CRUD HTTP endpoints, and admin.html renders the management UI. Together they let an operator suppress bot traffic and refine classifications without code changes or redeployment.",
+      "nodeIds": [
+        "file:src/main/java/com/example/analyzelog/service/AdminService.java",
+        "file:src/main/java/com/example/analyzelog/web/AdminController.java",
+        "file:src/main/resources/templates/admin.html"
+      ]
+    },
+    {
+      "order": 14,
+      "title": "CI/CD Pipeline",
+      "description": "build.yml defines the GitHub Actions workflow that runs on every push: it compiles the project with Maven, executes the JUnit test suite, and sends results to SonarCloud for static analysis and code quality tracking. This file is the safety net ensuring schema migrations, service logic, and security configuration all remain correct as the codebase evolves.",
+      "nodeIds": [
+        "pipeline:.github/workflows/build.yml"
+      ],
+      "languageLesson": "GitHub Actions workflows use the `on` key to specify triggers (push, pull_request). Jobs run in parallel by default; steps within a job run sequentially. The actions/cache step caches ~/.m2/repository between runs, cutting Maven dependency download time from minutes to seconds on repeated builds."
+    }
+  ]
+}
