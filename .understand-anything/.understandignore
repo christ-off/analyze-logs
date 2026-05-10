@@ -12,7 +12,7 @@
 # /target/
 # /node_modules/
 # /coverage/
-# logs.db
+logs.db
 # **/application-local.yml
 # /logs.db-shm
 # /logs.db-wal
