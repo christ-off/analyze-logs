@@ -22,5 +22,10 @@
     <include file="db/changelog/changes/015-iceshrimp-xai.xml"/>
     <include file="db/changelog/changes/016-seamus-bot.xml"/>
     <include file="db/changelog/changes/017-yandex-referer.xml"/>
+    <include file="db/changelog/changes/018-mistral-bot.xml"/>
+    <include file="db/changelog/changes/019-perplexity-user.xml"/>
+    <include file="db/changelog/changes/020-deepseekbot.xml"/>
+    <include file="db/changelog/changes/021-youbot.xml"/>
+    <include file="db/changelog/changes/022-googleother.xml"/>
 
 </databaseChangeLog>
