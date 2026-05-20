@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -64,32 +63,29 @@ public class FetchService {
         int total = keys.size();
         progress.set(new FetchProgress(total, 0, 0, 0, 0, false, null));
 
-        var fetched = new AtomicInteger();
-        var skipped = new AtomicInteger();
-        var failed  = new AtomicInteger();
+        int fetched = 0, skipped = 0, failed = 0;
 
         for (String key : keys) {
             try {
                 if (skipExisting && repository.isAlreadyFetched(key)) {
-                    skipped.incrementAndGet();
+                    skipped++;
                 } else {
                     String content = fetcher.downloadLogFile(bucket, key);
                     var entries = parser.parse(content);
                     repository.saveEntries(key, entries);
                     if (entries.isEmpty()) log.warn("[-] {} — empty", key);
                     else log.info("[+] {} — {} entries", key, entries.size());
-                    fetched.incrementAndGet();
+                    fetched++;
                 }
             } catch (Exception e) {
                 log.error("Failed to process {}: {}", key, e.getMessage());
-                failed.incrementAndGet();
+                failed++;
             }
-            int processed = fetched.get() + skipped.get() + failed.get();
-            progress.set(new FetchProgress(total, processed,
-                    fetched.get(), skipped.get(), failed.get(), false, null));
+            progress.set(new FetchProgress(total, fetched + skipped + failed,
+                    fetched, skipped, failed, false, null));
         }
 
-        var result = new FetchResult(fetched.get(), skipped.get(), failed.get());
+        var result = new FetchResult(fetched, skipped, failed);
         progress.set(new FetchProgress(total, total,
                 result.fetched(), result.skipped(), result.failed(), true, null));
         log.info("Done. Fetched: {}, Skipped: {}, Failed: {}",

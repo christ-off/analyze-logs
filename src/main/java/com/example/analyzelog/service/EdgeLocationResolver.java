@@ -28,20 +28,17 @@ public class EdgeLocationResolver {
         this.locations = load();
     }
 
-    /** Extracts the IATA code from a raw edge location value (e.g. "CDG55-P2" → "CDG"). Returns null if unrecognised. */
     public String extractIata(String raw) {
         if (raw == null || raw.isBlank()) return null;
         var m = IATA.matcher(raw);
         return m.matches() ? m.group(1) : null;
     }
 
-    /** Resolves a stored IATA code to its Location. Returns null if not found. */
     public Location resolve(String iata) {
         if (iata == null) return null;
         return locations.get(iata);
     }
 
-    /** Resolves an IATA code to a display string (e.g. "CDG" → "Paris, France"). Falls back to the raw value. */
     public String resolveDisplay(String iata) {
         var loc = resolve(iata);
         return loc != null ? loc.display() : iata;

@@ -16,10 +16,6 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String ERROR_VIEW = "error";
 
-    /**
-     * Invalid date range or other application-level bad request.
-     * Sets 400 explicitly on the response before returning the error view.
-     */
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleBadRequest(IllegalArgumentException ex,
                                    HttpServletRequest request,
@@ -29,10 +25,6 @@ public class GlobalExceptionHandler {
         return ERROR_VIEW;
     }
 
-    /**
-     * Missing required query parameter (e.g. from/to on API endpoints).
-     * Previously handled by ResponseEntityExceptionHandler; now explicit.
-     */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public String handleMissingParam(MissingServletRequestParameterException ex,
                                      HttpServletRequest request,
@@ -42,10 +34,6 @@ public class GlobalExceptionHandler {
         return ERROR_VIEW;
     }
 
-    /**
-     * Unexpected errors.
-     * POST errors redirect with a flash message; GET errors render the error page.
-     */
     @ExceptionHandler(Exception.class)
     public String handleError(Exception ex,
                               HttpServletRequest request,

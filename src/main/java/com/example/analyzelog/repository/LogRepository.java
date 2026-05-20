@@ -1,7 +1,6 @@
 package com.example.analyzelog.repository;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
-import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.service.EdgeLocationResolver;
 import com.example.analyzelog.service.ReloadableClassifierService;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -91,33 +89,4 @@ public class LogRepository {
     }
 
     public record Stats(long totalEntries, String earliest, String latest) {}
-
-    public List<NameCount> probableBots(Instant from, Instant to, int limit) {
-        return jdbc.query("""
-                SELECT user_agent as name, COUNT(*) as count
-                FROM cloudfront_logs
-                WHERE user_agent != ''
-                  AND client_ip IN (
-                    SELECT DISTINCT c1.client_ip
-                    FROM cloudfront_logs c1
-                    JOIN cloudfront_logs c2
-                      ON c1.client_ip = c2.client_ip
-                      AND c1.user_agent = c2.user_agent
-                      AND c1.uri_stem = '/robots.txt'
-                      AND c2.uri_stem != '/robots.txt'
-                      AND datetime(c2.timestamp) > datetime(c1.timestamp)
-                      AND datetime(c2.timestamp) <= datetime(c1.timestamp, '+1 hour')
-                    WHERE c1.user_agent != ''
-                      AND c1.timestamp BETWEEN ? AND ?
-                      AND c2.timestamp BETWEEN ? AND ?
-                  )
-                  AND timestamp BETWEEN ? AND ?
-                GROUP BY user_agent
-                ORDER BY count DESC
-                LIMIT ?
-                """,
-                (rs, _) -> new NameCount(rs.getString("name"), rs.getLong("count")),
-                from.toString(), to.toString(), from.toString(), to.toString(),
-                from.toString(), to.toString(), limit);
-    }
 }

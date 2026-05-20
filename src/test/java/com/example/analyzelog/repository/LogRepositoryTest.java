@@ -90,12 +90,4 @@ class LogRepositoryTest {
         );
     }
 
-    @Test
-    void probableBotsReturnsEmptyWhenNoData() {
-        var from = Instant.now().minusSeconds(86400);
-        var to = Instant.now();
-        var result = repo.probableBots(from, to, 10);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
 }

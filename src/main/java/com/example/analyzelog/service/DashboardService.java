@@ -77,6 +77,11 @@ public class DashboardService {
     private static final String NOISE_EXCLUSION_CLAUSE_ALIASED =
             "  AND NOT EXISTS (SELECT 1 FROM noise_filter nf" +
             " WHERE nf.ua_name = c.ua_name AND nf.uri_stem = c.uri_stem)\n";
+    private static final String BOT_FILTER_ALIASED =
+            "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
+            "  AND c.edge_response_result_type NOT IN (" +
+            "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
+            NOISE_EXCLUSION_CLAUSE_ALIASED;
     private final String sqlUriByResultType;
     private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
             GROUP BY name
@@ -179,13 +184,7 @@ public class DashboardService {
         args.add(from.toString());
         args.add(to.toString());
 
-        String botFilter = "";
-        if (excludeBots) {
-            botFilter = "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
-                        "  AND c.edge_response_result_type NOT IN (" +
-                        "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
-                        NOISE_EXCLUSION_CLAUSE_ALIASED;
-        }
+        String botFilter = excludeBots ? BOT_FILTER_ALIASED : "";
 
         String sql = "SELECT s.ua_group AS name, COUNT(*) AS count\n" +
                      "FROM cloudfront_logs c\n" +
@@ -504,13 +503,7 @@ public class DashboardService {
     }
 
     public List<NameCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
-        String botFilter = "";
-        if (excludeBots) {
-            botFilter = "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
-                        "  AND c.edge_response_result_type NOT IN (" +
-                        "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
-                        NOISE_EXCLUSION_CLAUSE_ALIASED;
-        }
+        String botFilter = excludeBots ? BOT_FILTER_ALIASED : "";
 
         return jdbc.query("""
                 SELECT c.user_agent as name, COUNT(*) as count

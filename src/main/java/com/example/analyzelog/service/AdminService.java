@@ -24,8 +24,6 @@ public class AdminService {
         this.refererService = refererService;
     }
 
-    // --- static_ua ---
-
     public List<StaticUaEntry> allUa() {
         return jdbc.query(
                 "SELECT ua_name, ua_group, ua_label, pattern, sort_order FROM static_ua ORDER BY ua_group, ua_label",
@@ -57,8 +55,6 @@ public class AdminService {
         jdbc.update("DELETE FROM static_ua WHERE ua_name = ?", uaName);
     }
 
-    // --- static_referer (rowid used as identifier) ---
-
     public List<StaticRefererEntry> allReferers() {
         return jdbc.query(
                 "SELECT rowid as id, label, domain, domain_starts_with, domain_ends_with FROM static_referer ORDER BY label",
@@ -86,8 +82,6 @@ public class AdminService {
         jdbc.update("DELETE FROM static_referer WHERE rowid = ?", id);
     }
 
-    // --- noise_filter ---
-
     public List<NoiseFilterEntry> allNoiseRules() {
         return jdbc.query(
                 "SELECT ua_name, uri_stem FROM noise_filter ORDER BY ua_name, uri_stem",
@@ -103,14 +97,10 @@ public class AdminService {
         jdbc.update("DELETE FROM noise_filter WHERE ua_name = ? AND uri_stem = ?", uaName, uriStem);
     }
 
-    // --- Config reload ---
-
     public void reloadConfiguration() {
         classifierService.reload();
         refererService.reload();
     }
-
-    // --- Re-classify existing cloudfront_logs ---
 
     @Transactional
     public int reclassifyLogs() {
