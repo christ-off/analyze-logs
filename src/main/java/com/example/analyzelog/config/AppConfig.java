@@ -16,7 +16,7 @@ public class AppConfig {
                 ? aws.region() : "us-east-1";
         return S3Client.builder()
                 .region(Region.of(region))
-                .credentialsProvider(DefaultCredentialsProvider.create())
+                .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .build();
     }
 }
