@@ -27,5 +27,9 @@
     <include file="db/changelog/changes/020-deepseekbot.xml"/>
     <include file="db/changelog/changes/021-youbot.xml"/>
     <include file="db/changelog/changes/022-googleother.xml"/>
+    <include file="db/changelog/changes/023-claudebot-variant.xml"/>
+    <include file="db/changelog/changes/024-owler.xml"/>
+    <include file="db/changelog/changes/025-pleroma-fediverse.xml"/>
+    <include file="db/changelog/changes/026-akkoma-fediverse.xml"/>
 
 </databaseChangeLog>
