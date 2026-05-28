@@ -29,10 +29,10 @@ describe('Charts.resultTypeDatasets', () => {
         { hit: 20, miss: 8, function: 0, error: 1 },
     ];
 
-    it('returns 4 datasets in order Hit/Miss/Function/Error', () => {
+    it('returns 4 datasets in order Hit/Miss/Filtered/Error', () => {
         const ds = Charts.resultTypeDatasets(data);
         expect(ds).toHaveLength(4);
-        expect(ds.map(d => d.label)).toEqual(['Hit', 'Miss', 'Function', 'Error']);
+        expect(ds.map(d => d.label)).toEqual(['Hit', 'Miss', 'Filtered', 'Error']);
     });
 
     it('maps each field correctly', () => {
@@ -47,7 +47,7 @@ describe('Charts.resultTypeDatasets', () => {
         const ds = Charts.resultTypeDatasets(data);
         expect(ds[0].backgroundColor).toBe(Charts.COLORS.green);   // Hit
         expect(ds[1].backgroundColor).toBe(Charts.COLORS.blue);    // Miss
-        expect(ds[2].backgroundColor).toBe(Charts.COLORS.orange);  // Function
+        expect(ds[2].backgroundColor).toBe(Charts.COLORS.orange);  // Filtered
         expect(ds[3].backgroundColor).toBe(Charts.COLORS.red);     // Error
     });
 });

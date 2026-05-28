@@ -1,6 +1,8 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.BotHumanDailyCount;
+import com.example.analyzelog.model.BotHumanHourlyCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
@@ -79,5 +81,44 @@ public class ApiController {
                                         @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.probableBots(range.from(), range.to(), appProperties.topLimit(), excludeBots);
+    }
+
+    // Bot vs Human analysis endpoints
+
+    @GetMapping("/bot-human-split")
+    public List<NameCount> botHumanSplit(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.botHumanSplit(range.from(), range.to());
+    }
+
+    @GetMapping("/bot-human-daily")
+    public List<BotHumanDailyCount> botHumanDaily(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.botHumanDailyCounts(range.from(), range.to());
+    }
+
+    @GetMapping("/bot-human-hourly")
+    public List<BotHumanHourlyCount> botHumanHourly(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.botHumanHourlyCounts(range.from(), range.to());
+    }
+
+    @GetMapping("/bot-type-split")
+    public List<NameCount> botTypeSplit(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.botTypeSplit(range.from(), range.to());
+    }
+
+    @GetMapping("/response-codes-bot-human")
+    public List<DashboardService.ResponseCodeBotHuman> responseCodesBotHuman(@RequestParam String from,
+                                                                            @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.responseCodesBotHuman(range.from(), range.to());
+    }
+
+    @GetMapping("/top-bot-ips")
+    public List<NameCount> topBotIps(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topBotIps(range.from(), range.to(), appProperties.topLimit());
     }
 }

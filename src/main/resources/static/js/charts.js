@@ -12,7 +12,7 @@ Charts.COLORS = {
 Charts.RESULT_TYPE_COLORS = {
     'Hit':                       Charts.COLORS.green,
     'Miss':                      Charts.COLORS.blue,
-    'Function':                  Charts.COLORS.orange,
+    'Filtered':                  Charts.COLORS.orange,
     'Error':                     Charts.COLORS.red,
 };
 
@@ -127,7 +127,7 @@ Charts.resultTypeDatasets = function (data) {
     return [
         { label: 'Hit',      data: data.map(d => d.hit),      backgroundColor: Charts.COLORS.green  },
         { label: 'Miss',     data: data.map(d => d.miss),     backgroundColor: Charts.COLORS.blue   },
-        { label: 'Function', data: data.map(d => d.function), backgroundColor: Charts.COLORS.orange },
+        { label: 'Filtered', data: data.map(d => d.function), backgroundColor: Charts.COLORS.orange },
         { label: 'Error',    data: data.map(d => d.error),    backgroundColor: Charts.COLORS.red    },
     ];
 };
