@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal } from './utils.js';
 
 const from = readMeta('cf-from');
 const to   = readMeta('cf-to');
@@ -22,12 +22,11 @@ async function loadAllCharts() {
 
     const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
     if (data.length) {
-        const total = (row) => row.hit + row.miss + row.function + row.error;
         tbody.innerHTML = data.map((row, i) => `
             <tr>
                 <td class="text-muted">${i + 1}</td>
                 <td class="font-monospace small text-break">${escapeHtml(row.name ?? '(none)')}</td>
-                <td class="text-end">${total(row).toLocaleString()}</td>
+                <td class="text-end">${resultTotal(row).toLocaleString()}</td>
                 <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
             </tr>`).join('');
         document.getElementById('uaBarLegend').style.removeProperty('display');
@@ -44,7 +43,7 @@ const BAR_COLORS = {
 };
 
 function stackedBar(row) {
-    const total = row.hit + row.miss + row.function + row.error;
+    const total = resultTotal(row);
     if (total === 0) return '';
     return Object.entries(BAR_COLORS)
         .filter(([k]) => row[k] > 0)

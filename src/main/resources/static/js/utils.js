@@ -19,6 +19,10 @@ export function buildBaseParams(extra) {
     return p.toString();
 }
 
+export function resultTotal(row) {
+    return row.hit + row.miss + row['function'] + row.error;
+}
+
 export function initToggleBots(loadFn) {
     const toggleEl = document.getElementById('toggleBots');
     if (toggleEl) {

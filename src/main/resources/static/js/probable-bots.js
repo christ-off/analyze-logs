@@ -1,6 +1,6 @@
 'use strict';
 
-import { buildBaseParams, initToggleBots } from './utils.js';
+import { buildBaseParams, initToggleBots, resultTotal } from './utils.js';
 
 const SEGMENTS = [
     { key: 'hit',      label: 'Hit',      color: 'rgba(40, 167, 69, 0.8)'  },
@@ -10,7 +10,7 @@ const SEGMENTS = [
 ];
 
 function stackedBar(bot, maxTotal) {
-    const total = bot.hit + bot.miss + bot.function + bot.error;
+    const total = resultTotal(bot);
     const pct = total / maxTotal * 100;
     const segments = SEGMENTS
         .filter(s => bot[s.key] > 0)
@@ -43,10 +43,10 @@ function loadProbableBots() {
                 return;
             }
 
-            const maxTotal = Math.max(...data.map(b => b.hit + b.miss + b.function + b.error));
+            const maxTotal = Math.max(...data.map(resultTotal));
 
             tbody.innerHTML = data.map(bot => {
-                const total = bot.hit + bot.miss + bot.function + bot.error;
+                const total = resultTotal(bot);
                 return `<tr>
                     <td><code>${bot.name}</code></td>
                     <td class="text-end">${total.toLocaleString()}</td>

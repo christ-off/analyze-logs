@@ -37,11 +37,9 @@ public class DashboardService {
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
-            "edge_response_result_type NOT IN (" +
-            "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')";
+            "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
     private static final String RESULT_TYPE_GROUP_EXPR =
-            "CASE WHEN edge_response_result_type IN " +
-            "('FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError') " +
+            "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") " +
             "THEN 'Function' ELSE edge_response_result_type END";
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
@@ -63,15 +61,7 @@ public class DashboardService {
                         rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
             };
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
-    private static final String RESULT_TYPE_SUMS = """
-            SUM(CASE WHEN edge_response_result_type = 'Hit'    THEN 1 ELSE 0 END) as hit,
-            SUM(CASE WHEN edge_response_result_type = 'Miss'   THEN 1 ELSE 0 END) as miss,
-            SUM(CASE WHEN edge_response_result_type IN (
-                    'FunctionGeneratedResponse',
-                    'FunctionExecutionError',
-                    'FunctionThrottledError')                  THEN 1 ELSE 0 END) as function,
-            SUM(CASE WHEN edge_response_result_type = 'Error'    THEN 1 ELSE 0 END) as error\
-            """;
+    private static final String RESULT_TYPE_SUMS = ResultTypeSql.RESULT_TYPE_SUMS;
     private static final String NOISE_EXCLUSION_CLAUSE =
             "NOT EXISTS (SELECT 1 FROM noise_filter nf" +
             " WHERE nf.ua_name = cloudfront_logs.ua_name AND nf.uri_stem = cloudfront_logs.uri_stem)";
@@ -80,15 +70,11 @@ public class DashboardService {
             " WHERE nf.ua_name = c.ua_name AND nf.uri_stem = c.uri_stem)\n";
     private static final String BOT_FILTER_ALIASED =
             "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
-            "  AND c.edge_response_result_type NOT IN (" +
-            "'Error','FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError')\n" +
+            "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private final String sqlUriByResultType;
-    private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER = """
-            GROUP BY name
-            ORDER BY (hit + miss + function + error) DESC
-            LIMIT ?
-            """;
+    private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER =
+            "GROUP BY name\n" + ResultTypeSql.ORDER_BY_TOTAL_DESC + "LIMIT ?\n";
     private static final String SQL_DAILY_SELECT = """
             SELECT date(timestamp) as day,
             """ + RESULT_TYPE_SUMS + """
@@ -204,7 +190,7 @@ public class DashboardService {
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 exclusion +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 "LIMIT ?\n";
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
@@ -217,7 +203,7 @@ public class DashboardService {
                 "  AND country IS NOT NULL\n" +
                 exclusion +
                 "GROUP BY country\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 "LIMIT ?\n";
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
@@ -230,7 +216,7 @@ public class DashboardService {
                 "  AND country = ?\n" +
                 exclusion +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 "LIMIT ?\n";
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), countryCode, limit);
@@ -369,7 +355,7 @@ public class DashboardService {
                 "  AND ua_name = ?\n" +
                 exclusion +
                 "GROUP BY user_agent\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n",
+                ResultTypeSql.ORDER_BY_TOTAL_DESC,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), uaName);
     }
@@ -452,7 +438,7 @@ public class DashboardService {
                 "  AND " + entry.getKey() + "\n" +
                 exclusion +
                 "GROUP BY country\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -471,7 +457,7 @@ public class DashboardService {
                 "  AND " + entry.getKey() + "\n" +
                 exclusion +
                 "GROUP BY ua_name\n" +
-                "ORDER BY (hit + miss + function + error) DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 "LIMIT ?\n";
         var args = new ArrayList<>();
         args.add(from.toString());
@@ -527,11 +513,10 @@ public class DashboardService {
                       AND c2.timestamp BETWEEN ? AND ?
                   )
                   AND c.timestamp BETWEEN ? AND ?
-                """ + botFilter + """
-                GROUP BY c.user_agent
-                ORDER BY (hit + miss + function + error) DESC
-                LIMIT ?
-                """,
+                """ + botFilter +
+                "GROUP BY c.user_agent\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
+                "LIMIT ?\n",
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), from.toString(), to.toString(),
                 from.toString(), to.toString(), limit);
