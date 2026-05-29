@@ -137,9 +137,9 @@ class AdminServiceTest {
 
     @Test
     void addNoiseRule_insertsRow() {
-        service.addNoiseRule(new NoiseFilterEntry("Mastodon", "/"));
+        service.addNoiseRule(new NoiseFilterEntry("Fediverse", "/"));
         verify(jdbc).update("INSERT INTO noise_filter (ua_name, uri_stem) VALUES (?, ?)",
-                "Mastodon", "/");
+                "Fediverse", "/");
     }
 
     @Test

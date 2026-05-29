@@ -80,8 +80,9 @@ class UserAgentClassifierTest {
         "'flus/2.3.1 (https://app.flus.fr/about)', Flus",
         "'wp.com feedbot/1.0', WP.com FeedBot",
         // Fediverse
-        "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",
+        "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Fediverse",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
+        "'Friendica/2026.05 DatabaseVersion/1595 Request/SiteInfo/1 https://friendica.me', Friendica",
         "'Iceshrimp/2023.12.14 (https://peculiar.florist)', Iceshrimp",
         "'SummalyBot/5.2.5', SummalyBot",
         "'Yumechi-no-Kuni-Proxy-Worker (+https://forge.yumechi.jp)', Yumechi Proxy",
