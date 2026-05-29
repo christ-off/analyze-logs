@@ -4,7 +4,6 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotHumanDailyCount;
-import com.example.analyzelog.model.BotHumanHourlyCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
@@ -537,19 +536,6 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    // Bot vs Human analysis methods
-
-    public List<NameCount> botHumanSplit(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT s.ua_group AS name, COUNT(*) AS count
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                GROUP BY s.ua_group
-                ORDER BY count DESC
-                """, NAME_COUNT_MAPPER, from.toString(), to.toString());
-    }
-
     public List<BotHumanDailyCount> botHumanDailyCounts(Instant from, Instant to) {
         return jdbc.query("""
                 SELECT date(c.timestamp) as day,
@@ -570,90 +556,4 @@ public class DashboardService {
                 from.toString(), to.toString());
     }
 
-    public List<BotHumanHourlyCount> botHumanHourlyCounts(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT CAST(strftime('%H', c.timestamp) AS INTEGER) as hour,
-                    SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps') THEN 1 ELSE 0 END) as bots,
-                    SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
-                             AND s.ua_group != 'Unknown'
-                             AND c.ua_name != '(no user agent)' THEN 1 ELSE 0 END) as humans
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                GROUP BY hour
-                ORDER BY hour
-                """,
-                (rs, _) -> new BotHumanHourlyCount(
-                        rs.getInt("hour"),
-                        rs.getLong("bots"),
-                        rs.getLong("humans")),
-                from.toString(), to.toString());
-    }
-
-    public List<NameCount> botTypeSplit(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT s.ua_group AS name, COUNT(*) AS count
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                  AND s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                GROUP BY s.ua_group
-                ORDER BY count DESC
-                """, NAME_COUNT_MAPPER, from.toString(), to.toString());
-    }
-
-    public record ResponseCodeBotHuman(String codeType, long bots, long humans) {}
-
-    public List<ResponseCodeBotHuman> responseCodesBotHuman(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT
-                    COALESCE(SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND c.edge_response_result_type = 'Hit' THEN 1 ELSE 0 END), 0) as bot_hit,
-                    COALESCE(SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND c.edge_response_result_type = 'Miss' THEN 1 ELSE 0 END), 0) as bot_miss,
-                    COALESCE(SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND c.edge_response_result_type = 'Error' THEN 1 ELSE 0 END), 0) as bot_error,
-                    COALESCE(SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND s.ua_group != 'Unknown'
-                                      AND c.edge_response_result_type = 'Hit' THEN 1 ELSE 0 END), 0) as human_hit,
-                    COALESCE(SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND s.ua_group != 'Unknown'
-                                      AND c.edge_response_result_type = 'Miss' THEN 1 ELSE 0 END), 0) as human_miss,
-                    COALESCE(SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
-                                      AND s.ua_group != 'Unknown'
-                                      AND c.edge_response_result_type = 'Error' THEN 1 ELSE 0 END), 0) as human_error
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                """,
-                rs -> {
-                    long botHit = rs.getLong("bot_hit");
-                    long botMiss = rs.getLong("bot_miss");
-                    long botError = rs.getLong("bot_error");
-                    long humanHit = rs.getLong("human_hit");
-                    long humanMiss = rs.getLong("human_miss");
-                    long humanError = rs.getLong("human_error");
-                    return List.of(
-                        new ResponseCodeBotHuman("Hit", botHit, humanHit),
-                        new ResponseCodeBotHuman("Miss", botMiss, humanMiss),
-                        new ResponseCodeBotHuman("Error", botError, humanError)
-                    );
-                },
-                from.toString(), to.toString());
-    }
-
-    public List<NameCount> topBotIps(Instant from, Instant to, int limit) {
-        return jdbc.query("""
-                SELECT c.client_ip AS name, COUNT(*) AS count
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                  AND s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                  AND c.client_ip IS NOT NULL
-                  AND c.client_ip != ''
-                GROUP BY c.client_ip
-                ORDER BY count DESC
-                LIMIT ?
-                """, NAME_COUNT_MAPPER, from.toString(), to.toString(), limit);
-    }
 }
