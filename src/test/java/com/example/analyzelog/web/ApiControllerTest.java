@@ -226,9 +226,9 @@ class ApiControllerTest {
     void probableBotsReturnsJson() {
         when(dashboardService.probableBots(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
                 .thenReturn(List.of(
-                        new NameCount("Googlebot/2.1", 150),
-                        new NameCount("Bingbot/2.0",  120),
-                        new NameCount("YandexBot/3.0",  90)));
+                        new NameResultTypeCount("Googlebot/2.1", 100, 30, 10, 10),
+                        new NameResultTypeCount("Bingbot/2.0",    80, 20, 10, 10),
+                        new NameResultTypeCount("YandexBot/3.0",  60, 15,  5, 10)));
 
         assertThat(mvc.get().uri("/api/probable-bots")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
@@ -243,13 +243,13 @@ class ApiControllerTest {
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].count").isEqualTo(150);
+                .extractingPath("$[0].hit").isEqualTo(100);
     }
 
     @Test
     void probableBotsExcludeBotsPassesFlag() {
         when(dashboardService.probableBots(any(Instant.class), any(Instant.class), anyInt(), eq(true)))
-                .thenReturn(List.of(new NameCount("Crawler", 100)));
+                .thenReturn(List.of(new NameResultTypeCount("Crawler", 80, 10, 5, 5)));
 
         assertThat(mvc.get().uri("/api/probable-bots")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

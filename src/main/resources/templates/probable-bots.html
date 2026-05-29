@@ -46,15 +46,12 @@
                     <tr>
                         <th>User Agent</th>
                         <th class="text-end">Requests</th>
+                        <th style="width:40%"></th>
                     </tr>
                 </thead>
                 <tbody id="probableBotsTable">
-                    <tr th:each="bot : ${probableBots}">
-                        <td th:text="${bot.name}"></td>
-                        <td class="text-end" th:text="${#numbers.formatInteger(bot.count, 1000)}"></td>
-                    </tr>
-                    <tr th:if="${probableBots.isEmpty()}">
-                        <td colspan="2" class="text-center text-muted">No probable bots found for the selected date range.</td>
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Loading...</td>
                     </tr>
                 </tbody>
             </table>

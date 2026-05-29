@@ -503,11 +503,12 @@ public class DashboardService {
                 .toList();
     }
 
-    public List<NameCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
+    public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
         String botFilter = excludeBots ? BOT_FILTER_ALIASED : "";
 
         return jdbc.query("""
-                SELECT c.user_agent as name, COUNT(*) as count
+                SELECT c.user_agent as name,
+                """ + RESULT_TYPE_SUMS + "\n" + """
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE c.user_agent != ''
@@ -528,10 +529,10 @@ public class DashboardService {
                   AND c.timestamp BETWEEN ? AND ?
                 """ + botFilter + """
                 GROUP BY c.user_agent
-                ORDER BY count DESC
+                ORDER BY (hit + miss + function + error) DESC
                 LIMIT ?
                 """,
-                NAME_COUNT_MAPPER,
+                NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), from.toString(), to.toString(),
                 from.toString(), to.toString(), limit);
     }

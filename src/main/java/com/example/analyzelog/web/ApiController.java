@@ -76,8 +76,8 @@ public class ApiController {
     }
 
     @GetMapping("/probable-bots")
-    public List<NameCount> probableBots(@RequestParam String from, @RequestParam String to,
-                                        @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameResultTypeCount> probableBots(@RequestParam String from, @RequestParam String to,
+                                                  @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.probableBots(range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
