@@ -1,7 +1,6 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.DateRange;
-import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -61,17 +60,6 @@ public class DashboardController {
         model.addAttribute("urlName", url);
         addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
         return "url-detail";
-    }
-
-    @GetMapping("/probable-bots")
-    public String probableBots(
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            Model model) {
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        model.addAttribute("probableBots", List.of());
-        return "probable-bots";
     }
 
     private void addDateAttributes(Model model, DateRange dateRange, String activeRange) {

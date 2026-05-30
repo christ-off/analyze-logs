@@ -282,6 +282,27 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
+    public List<NameCount> platformCounts(Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        String sql = """
+                SELECT CASE
+                    WHEN user_agent LIKE '%iPhone%' OR user_agent LIKE '%iPad%' OR user_agent LIKE '%iPod%' THEN 'iOS'
+                    WHEN user_agent LIKE '%Android%' THEN 'Android'
+                    WHEN user_agent LIKE '%Windows%' THEN 'Windows'
+                    WHEN user_agent LIKE '%Macintosh%' OR user_agent LIKE '%Mac OS X%' THEN 'Mac'
+                    WHEN user_agent LIKE '%Linux%' THEN 'Linux'
+                    ELSE 'Other'
+                END as name,
+                COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                """ + exclusion + """
+                GROUP BY name
+                ORDER BY count DESC
+                """;
+        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString());
+    }
+
     public List<NameCount> topReferers(Instant from, Instant to, int limit, boolean excludeBots) {
         List<String> exclusionPatterns = selfReferers.stream()
                 .flatMap(prefix -> selfExclusionPatterns(prefix).stream())

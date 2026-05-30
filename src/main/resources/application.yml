@@ -29,6 +29,7 @@ app:
   db-path: logs.db
   top-limit: 10
   top-urls-limit: 20
+  top-referers-limit: 20
   robots-url: "https://post-tenebras-lire.net/robots.txt"
 
 referer-filter:

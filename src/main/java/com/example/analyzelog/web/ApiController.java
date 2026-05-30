@@ -72,11 +72,18 @@ public class ApiController {
         return dashboardService.topEdgeLocations(range.from(), range.to(), appProperties.topLimit());
     }
 
+    @GetMapping("/platforms")
+    public List<NameCount> platforms(@RequestParam String from, @RequestParam String to,
+                                     @RequestParam(defaultValue = "false") boolean excludeBots) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.platformCounts(range.from(), range.to(), excludeBots);
+    }
+
     @GetMapping("/referers")
     public List<NameCount> referers(@RequestParam String from, @RequestParam String to,
                                     @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topReferers(range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.topReferers(range.from(), range.to(), appProperties.topReferersLimit(), excludeBots);
     }
 
     @GetMapping("/probable-bots")

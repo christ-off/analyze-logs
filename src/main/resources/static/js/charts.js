@@ -46,10 +46,12 @@ Charts.loadChart = async function (endpoint, render) {
 Charts.horizontalBar = function (canvasId, data, urlFn) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    const MAX = 35;
+    const truncate = s => s.length > MAX ? s.slice(0, MAX) + '…' : s;
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.map(d => d.name ?? '(unknown)'),
+            labels: data.map(d => truncate(d.name ?? '(unknown)')),
             datasets: [{
                 label: 'Requests',
                 data: data.map(d => d.count),
@@ -59,6 +61,7 @@ Charts.horizontalBar = function (canvasId, data, urlFn) {
         options: {
             indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { x: { beginAtZero: true } },
             ...(urlFn ? {
@@ -90,6 +93,7 @@ Charts.pie = function (canvasId, data, colorMap) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     labels: {

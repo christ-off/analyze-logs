@@ -5,7 +5,7 @@ const from = readMeta('cf-from');
 const to   = readMeta('cf-to');
 
 const CHART_IDS = [
-    'chartUaGroups', 'chartUaNames', 'chartCountries',
+    'chartUaGroups', 'chartPlatforms', 'chartUaNames', 'chartCountries',
     'chartTopUrls', 'chartReferers', 'chartRequestsPerDay',
 ];
 
@@ -13,6 +13,7 @@ export function loadAllCharts() {
     CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
     const p = buildBaseParams({});
     Charts.loadChart(`ua-groups?${p}`,        data => Charts.pie('chartUaGroups',     data, null));
+    Charts.loadChart(`platforms?${p}`,        data => Charts.pie('chartPlatforms',    data, null));
     Charts.loadChart(`ua-names-split?${p}`,   data => Charts.horizontalStackedBar('chartUaNames', data,
         d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`countries?${p}`,        data => Charts.horizontalStackedBar('chartCountries', data,
