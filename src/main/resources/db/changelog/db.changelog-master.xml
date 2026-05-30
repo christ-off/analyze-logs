@@ -33,5 +33,7 @@
     <include file="db/changelog/changes/026-akkoma-fediverse.xml"/>
     <include file="db/changelog/changes/027-mastodon-to-fediverse.xml"/>
     <include file="db/changelog/changes/028-friendica-fediverse.xml"/>
+    <include file="db/changelog/changes/029-robots-disallowed.xml"/>
+    <include file="db/changelog/changes/030-catodon-fediverse.xml"/>
 
 </databaseChangeLog>

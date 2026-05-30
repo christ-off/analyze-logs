@@ -83,6 +83,8 @@ class UserAgentClassifierTest {
         "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Fediverse",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
         "'Friendica/2026.05 DatabaseVersion/1595 Request/SiteInfo/1 https://friendica.me', Friendica",
+        "'Catodon/26.5.0-dev.0 ( https://social.agnos.is)', Catodon",
+        "'Catodon (like Discordbot)', Catodon",
         "'Iceshrimp/2023.12.14 (https://peculiar.florist)', Iceshrimp",
         "'SummalyBot/5.2.5', SummalyBot",
         "'Yumechi-no-Kuni-Proxy-Worker (+https://forge.yumechi.jp)', Yumechi Proxy",
