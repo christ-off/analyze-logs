@@ -6,6 +6,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
+import com.example.analyzelog.service.RobotsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -33,6 +34,9 @@ class ApiControllerTest {
 
     @MockitoBean
     DashboardService dashboardService;
+
+    @MockitoBean
+    RobotsService robotsService;
 
     @Test
     void uaGroupsReturnsJson() {

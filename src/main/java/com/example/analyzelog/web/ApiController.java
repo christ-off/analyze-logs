@@ -5,9 +5,11 @@ import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
+import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
+import com.example.analyzelog.service.RobotsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,10 +23,12 @@ public class ApiController {
 
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
+    private final RobotsService robotsService;
 
-    public ApiController(DashboardService dashboardService, AppProperties appProperties) {
+    public ApiController(DashboardService dashboardService, AppProperties appProperties, RobotsService robotsService) {
         this.dashboardService = dashboardService;
         this.appProperties = appProperties;
+        this.robotsService = robotsService;
     }
 
     @GetMapping("/ua-groups")
@@ -86,5 +90,21 @@ public class ApiController {
     public List<BotHumanDailyCount> botHumanDaily(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.botHumanDailyCounts(range.from(), range.to());
+    }
+
+    @GetMapping("/robots-disobedient")
+    public List<DisobedientBot> robotsDisobedient(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return robotsService.findDisobedientBots(range.from(), range.to());
+    }
+
+    @GetMapping("/robots-refresh")
+    public String robotsRefresh() {
+        try {
+            robotsService.refresh();
+            return "OK — refreshed at " + robotsService.getRefreshedAt().orElse("?");
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
     }
 }
