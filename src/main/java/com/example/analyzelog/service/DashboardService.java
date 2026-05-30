@@ -364,6 +364,7 @@ public class DashboardService {
                     return rule.label();
                 }
             }
+            return h;
         } catch (IllegalArgumentException _) {
             // malformed URI — return as-is
         }

@@ -881,7 +881,7 @@ class DashboardServiceIntegrationTest {
         assertEquals(1L, map.get("Qwant"));
         assertEquals(2L, map.get("DuckDuckGo"));
         assertEquals(2L, map.get("Yahoo"), "all *.search.yahoo.com must be grouped");
-        assertTrue(map.containsKey("https://external.com/page"), "unknown referers pass through unchanged");
+        assertTrue(map.containsKey("external.com"), "unknown referers are grouped by hostname");
     }
 
     @Test
@@ -901,15 +901,15 @@ class DashboardServiceIntegrationTest {
         var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameCount::name).toList();
-        assertTrue(names.contains("https://external.com/page"));
-        assertTrue(names.contains("https://other.org/"));
+        assertTrue(names.contains("external.com"), "unknown referers are grouped by hostname");
+        assertTrue(names.contains("other.org"), "unknown referers are grouped by hostname");
         assertFalse(names.contains("https://post-tenebras-lire.net/some-post"), "https self must be excluded");
         assertFalse(names.contains("http://post-tenebras-lire.net/some-post"),  "http self must be excluded");
         assertFalse(names.contains("https://post-tenebras-lire.net"),           "bare domain self must be excluded");
         assertFalse(names.contains("post-tenebras-lire.net"),                   "no-scheme self must be excluded");
         assertFalse(names.stream().anyMatch(n -> n == null), "null referers must be excluded");
         var extCount = result.stream()
-                .filter(n -> "https://external.com/page".equals(n.name()))
+                .filter(n -> "external.com".equals(n.name()))
                 .mapToLong(NameCount::count).sum();
         assertEquals(2, extCount);
     }
