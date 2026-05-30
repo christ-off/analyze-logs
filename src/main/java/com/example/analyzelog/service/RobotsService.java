@@ -55,8 +55,8 @@ public class RobotsService {
             if (line.startsWith("#") || line.isEmpty()) continue;
             if (line.toLowerCase().startsWith("user-agent:")) {
                 agents.add(line.substring("user-agent:".length()).trim());
-            } else if (line.toLowerCase().startsWith("disallow:")) {
-                if (!line.substring("disallow:".length()).trim().isEmpty()) hasDisallow = true;
+            } else if (line.toLowerCase().startsWith("disallow:") && !line.substring("disallow:".length()).trim().isEmpty()) {
+                hasDisallow = true;
             }
         }
         if (hasDisallow) {

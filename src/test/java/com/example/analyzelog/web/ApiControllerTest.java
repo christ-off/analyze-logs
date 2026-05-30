@@ -3,6 +3,7 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -248,6 +250,38 @@ class ApiControllerTest {
                 .hasStatusOk()
                 .bodyJson()
                 .extractingPath("$[0].hit").isEqualTo(100);
+    }
+
+    @Test
+    void robotsDisobedientReturnsJson() {
+        when(robotsService.findDisobedientBots(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new DisobedientBot("Googlebot", 10, 8, 2, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/robots-disobedient")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].userAgent").isEqualTo("Googlebot");
+    }
+
+    @Test
+    void robotsRefreshReturnsOk() {
+        when(robotsService.getRefreshedAt()).thenReturn(java.util.Optional.of("2026-01-01T00:00:00Z"));
+
+        assertThat(mvc.get().uri("/api/robots-refresh").exchange())
+                .hasStatusOk()
+                .bodyText().contains("OK");
+    }
+
+    @Test
+    void robotsRefreshReturnsErrorOnException() {
+        doThrow(new RuntimeException("timeout")).when(robotsService).refresh();
+
+        assertThat(mvc.get().uri("/api/robots-refresh").exchange())
+                .hasStatusOk()
+                .bodyText().contains("Error: timeout");
     }
 
     @Test
