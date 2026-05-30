@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("java:S2077") // SQL is fully parameterized — dynamic parts are trusted Java constants
 @Service
 public class RobotsService {
 
@@ -38,29 +39,29 @@ public class RobotsService {
     }
 
     static List<String> parseDisallowedAgents(String robotsTxt) {
+        if (robotsTxt == null || robotsTxt.isBlank()) return List.of();
         List<String> result = new ArrayList<>();
-        if (robotsTxt == null || robotsTxt.isBlank()) return result;
-
-        // Split into blocks separated by blank lines
-        String[] blocks = robotsTxt.split("\\r?\\n\\s*\\r?\\n");
-        for (String block : blocks) {
-            List<String> agents = new ArrayList<>();
-            boolean hasDisallow = false;
-            for (String raw : block.lines().toList()) {
-                String line = raw.trim();
-                if (line.startsWith("#") || line.isEmpty()) continue;
-                if (line.toLowerCase().startsWith("user-agent:")) {
-                    agents.add(line.substring("user-agent:".length()).trim());
-                } else if (line.toLowerCase().startsWith("disallow:")) {
-                    String path = line.substring("disallow:".length()).trim();
-                    if (!path.isEmpty()) hasDisallow = true;
-                }
-            }
-            if (hasDisallow) {
-                agents.stream().filter(a -> !a.equals("*")).forEach(result::add);
-            }
+        for (String block : robotsTxt.split("\\r?\\n\\s*\\r?\\n")) {
+            collectDisallowedAgents(block, result);
         }
         return result;
+    }
+
+    private static void collectDisallowedAgents(String block, List<String> result) {
+        List<String> agents = new ArrayList<>();
+        boolean hasDisallow = false;
+        for (String raw : block.lines().toList()) {
+            String line = raw.trim();
+            if (line.startsWith("#") || line.isEmpty()) continue;
+            if (line.toLowerCase().startsWith("user-agent:")) {
+                agents.add(line.substring("user-agent:".length()).trim());
+            } else if (line.toLowerCase().startsWith("disallow:")) {
+                if (!line.substring("disallow:".length()).trim().isEmpty()) hasDisallow = true;
+            }
+        }
+        if (hasDisallow) {
+            agents.stream().filter(a -> !a.equals("*")).forEach(result::add);
+        }
     }
 
     public List<DisobedientBot> findDisobedientBots(Instant from, Instant to) {

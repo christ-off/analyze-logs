@@ -72,9 +72,11 @@ public class DashboardService {
             "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
+    private static final String LIMIT_PARAM = "LIMIT ?\n";
+    private static final String GROUP_BY_UA_NAME = "GROUP BY ua_name\n";
     private final String sqlUriByResultType;
     private static final String SQL_URI_RESULT_TYPE_GROUP_ORDER =
-            "GROUP BY name\n" + ResultTypeSql.ORDER_BY_TOTAL_DESC + "LIMIT ?\n";
+            "GROUP BY name\n" + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM;
     private static final String SQL_DAILY_SELECT = """
             SELECT date(timestamp) as day,
             """ + RESULT_TYPE_SUMS + """
@@ -189,9 +191,9 @@ public class DashboardService {
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 exclusion +
-                "GROUP BY ua_name\n" +
+                GROUP_BY_UA_NAME +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n";
+                LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
 
@@ -204,7 +206,7 @@ public class DashboardService {
                 exclusion +
                 "GROUP BY country\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n";
+                LIMIT_PARAM;
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
 
@@ -215,9 +217,9 @@ public class DashboardService {
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country = ?\n" +
                 exclusion +
-                "GROUP BY ua_name\n" +
+                GROUP_BY_UA_NAME +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n";
+                LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), countryCode, limit);
     }
@@ -439,7 +441,7 @@ public class DashboardService {
                 exclusion +
                 "GROUP BY country\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n";
+                LIMIT_PARAM;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
@@ -456,9 +458,9 @@ public class DashboardService {
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
                 exclusion +
-                "GROUP BY ua_name\n" +
+                GROUP_BY_UA_NAME +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n";
+                LIMIT_PARAM;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
@@ -516,7 +518,7 @@ public class DashboardService {
                 """ + botFilter +
                 "GROUP BY c.user_agent\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                "LIMIT ?\n",
+                LIMIT_PARAM,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), from.toString(), to.toString(),
                 from.toString(), to.toString(), limit);

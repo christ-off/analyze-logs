@@ -43,13 +43,10 @@ public class CloudFrontLogParser {
         var entries = new ArrayList<CloudFrontLogEntry>();
         String[] fields = null;
         for (String line : lines) {
-            if (line.isBlank()) continue;
-            if (line.startsWith("#Version:")) continue;
+            if (line.isBlank() || line.startsWith("#Version:")) continue;
             if (line.startsWith("#Fields:")) {
                 fields = line.substring(8).trim().split("\t");
-                continue;
-            }
-            if (fields != null) {
+            } else if (fields != null) {
                 String[] values = line.split("\t", -1);
                 var row = new HashMap<String, String>();
                 for (int i = 0; i < fields.length && i < values.length; i++) {

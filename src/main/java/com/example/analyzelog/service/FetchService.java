@@ -63,7 +63,9 @@ public class FetchService {
         int total = keys.size();
         progress.set(new FetchProgress(total, 0, 0, 0, 0, false, null));
 
-        int fetched = 0, skipped = 0, failed = 0;
+        int fetched = 0;
+        int skipped = 0;
+        int failed = 0;
 
         for (String key : keys) {
             try {
