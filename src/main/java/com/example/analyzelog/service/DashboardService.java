@@ -521,8 +521,8 @@ public class DashboardService {
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE c.user_agent != ''
                   AND c.timestamp BETWEEN ? AND ?
-                  AND c.client_ip IN (
-                    SELECT client_ip
+                  AND (c.client_ip, c.user_agent) IN (
+                    SELECT client_ip, user_agent
                     FROM cloudfront_logs
                     WHERE user_agent != ''
                       AND timestamp BETWEEN ? AND ?
