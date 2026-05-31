@@ -53,23 +53,23 @@ function progress() { return document.getElementById('refreshProgress'); }
 describe('loadAllCharts', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('calls Charts.loadChart exactly 6 times', () => {
+    it('calls Charts.loadChart exactly 7 times', () => {
         loadAllCharts();
-        expect(Charts.loadChart).toHaveBeenCalledTimes(6);
+        expect(Charts.loadChart).toHaveBeenCalledTimes(7);
     });
 
     it('destroys existing charts before reloading', () => {
         const destroyFn = vi.fn();
         globalThis.Chart.getChart = vi.fn(() => ({ destroy: destroyFn }));
         loadAllCharts();
-        expect(destroyFn).toHaveBeenCalledTimes(6);
+        expect(destroyFn).toHaveBeenCalledTimes(7);
         globalThis.Chart.getChart = vi.fn(() => null);
     });
 
     it('ua-names URL builder encodes the UA name', () => {
         loadAllCharts();
-        // loadChart call index 1 = ua-names-split
-        const [, renderFn] = Charts.loadChart.mock.calls[1];
+        // loadChart call index 2 = ua-names-split
+        const [, renderFn] = Charts.loadChart.mock.calls[2];
         renderFn([]);
         const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
         expect(urlBuilder({ name: 'Chrome / Windows' }))
@@ -78,8 +78,8 @@ describe('loadAllCharts', () => {
 
     it('countries URL builder encodes the country code', () => {
         loadAllCharts();
-        // loadChart call index 2 = countries
-        const [, renderFn] = Charts.loadChart.mock.calls[2];
+        // loadChart call index 3 = countries
+        const [, renderFn] = Charts.loadChart.mock.calls[3];
         renderFn([]);
         const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
         expect(urlBuilder({ code: 'FR' }))
@@ -88,8 +88,8 @@ describe('loadAllCharts', () => {
 
     it('top-urls URL builder encodes the URL path', () => {
         loadAllCharts();
-        // loadChart call index 3 = top-urls-split
-        const [, renderFn] = Charts.loadChart.mock.calls[3];
+        // loadChart call index 4 = top-urls-split
+        const [, renderFn] = Charts.loadChart.mock.calls[4];
         renderFn([]);
         const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
         expect(urlBuilder({ name: '/my page' }))
