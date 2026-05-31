@@ -23,56 +23,40 @@ function stackedBar(bot, maxTotal) {
     return `<div style="display:flex;height:1.1em;width:100%;border-radius:2px;overflow:hidden">${segments}</div>`;
 }
 
+function loadBotTable(url, tbodyId, emptyMsg) {
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">${emptyMsg}</td></tr>`;
+                return;
+            }
+            const maxTotal = Math.max(...data.map(resultTotal));
+            tbody.innerHTML = data.map(bot => `<tr>
+                <td><code>${bot.name}</code></td>
+                <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
+                <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
+            </tr>`).join('');
+        })
+        .catch(() => {
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
+        });
+}
+
 function loadProbableBots() {
     const p = buildBaseParams({});
     const toggle = document.getElementById('toggleBots');
     const params = new URLSearchParams(p);
     params.append('excludeBots', toggle ? toggle.checked : false);
-
-    fetch('/api/probable-bots?' + params.toString())
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('probableBotsTable');
-            if (!tbody) return;
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No probable bots found for the selected date range.</td></tr>';
-                return;
-            }
-            const maxTotal = Math.max(...data.map(resultTotal));
-            tbody.innerHTML = data.map(bot => `<tr>
-                <td><code>${bot.name}</code></td>
-                <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
-                <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
-            </tr>`).join('');
-        })
-        .catch(() => {
-            const tbody = document.getElementById('probableBotsTable');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
-        });
+    loadBotTable('/api/probable-bots?' + params.toString(), 'probableBotsTable', 'No probable bots found for the selected date range.');
 }
 
 function loadNoStaticBots() {
     const p = buildBaseParams({});
-    fetch('/api/no-static-bots?' + p)
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById('noStaticBotsTable');
-            if (!tbody) return;
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data found for the selected date range.</td></tr>';
-                return;
-            }
-            const maxTotal = Math.max(...data.map(resultTotal));
-            tbody.innerHTML = data.map(bot => `<tr>
-                <td><code>${bot.name}</code></td>
-                <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
-                <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
-            </tr>`).join('');
-        })
-        .catch(() => {
-            const tbody = document.getElementById('noStaticBotsTable');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
-        });
+    loadBotTable('/api/no-static-bots?' + p, 'noStaticBotsTable', 'No data found for the selected date range.');
 }
 
 function loadBotHumanDaily(data) {
