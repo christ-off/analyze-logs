@@ -35,5 +35,6 @@
     <include file="db/changelog/changes/028-friendica-fediverse.xml"/>
     <include file="db/changelog/changes/029-robots-disallowed.xml"/>
     <include file="db/changelog/changes/030-catodon-fediverse.xml"/>
+    <include file="db/changelog/changes/031-stefanstools-fediverse.xml"/>
 
 </databaseChangeLog>
