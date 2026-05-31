@@ -51,6 +51,30 @@ function loadProbableBots() {
         });
 }
 
+function loadNoStaticBots() {
+    const p = buildBaseParams({});
+    fetch('/api/no-static-bots?' + p)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('noStaticBotsTable');
+            if (!tbody) return;
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data found for the selected date range.</td></tr>';
+                return;
+            }
+            const maxTotal = Math.max(...data.map(resultTotal));
+            tbody.innerHTML = data.map(bot => `<tr>
+                <td><code>${bot.name}</code></td>
+                <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
+                <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
+            </tr>`).join('');
+        })
+        .catch(() => {
+            const tbody = document.getElementById('noStaticBotsTable');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
+        });
+}
+
 function loadBotHumanDaily(data) {
     const ctx = document.getElementById('chartBotHumanDaily');
     if (!ctx) return;
@@ -153,6 +177,7 @@ export function loadAllCharts() {
 
     const p = buildBaseParams({});
     loadProbableBots();
+    loadNoStaticBots();
     Charts.loadChart(`bot-human-daily?${p}`, loadBotHumanDaily);
     loadDisobedientSection();
 }

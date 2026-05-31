@@ -97,6 +97,20 @@ ua-classifier:
 
 ## Dashboard
 
+### Bot Analysis page
+
+Three detection methods, all scoped to the selected date range:
+
+| Section | Detection signal |
+|---------|-----------------|
+| **Top Probable Bots** | IPs that fetched `/robots.txt` and then crawled another URL within 1 hour using the same IP and user agent. |
+| **No Static Assets Bots** | IPs whose every request (per IP+UA pair) contains zero CSS, JS, WebP, ICO, or SVG fetches — real browsers always load static assets. Feed readers (`/feed.xml`, `/rss.xml`) are excluded. |
+| **Robots.txt Disobedient Bots** | User agents that requested disallowed paths after the current `robots.txt` rules were in place. Requires a **Refresh Robots** to load the latest rules. |
+
+The **Bot vs Human Traffic Over Time** chart shows daily request volume split between known bots (AI Bots, Search Bots, Other Bots, Apps) and human browsers.
+
+Date range presets and custom date picker are shared with the main dashboard.
+
 ### Main dashboard
 
 Six charts, all scoped to the selected date range:
