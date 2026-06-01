@@ -4,6 +4,7 @@ import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
 import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.service.AdminService;
+import com.example.analyzelog.util.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +47,7 @@ public class AdminController {
                         RedirectAttributes ra) {
         try {
             adminService.addUa(new StaticUaEntry(uaName, uaGroup, uaLabel,
-                    nullIfBlank(pattern), sortOrder));
+                    StringUtils.nullIfBlank(pattern), sortOrder));
             ra.addFlashAttribute(FLASH_MESSAGE, "User agent '%s' added.".formatted(uaName));
         } catch (Exception e) {
             ra.addFlashAttribute(FLASH_ERROR, ERR_ADD + e.getMessage());
@@ -74,7 +75,7 @@ public class AdminController {
                                      @RequestParam(required = false) Integer sortOrder,
                                      RedirectAttributes ra) {
         try {
-            adminService.updateUaClassifier(uaName, nullIfBlank(pattern), sortOrder);
+            adminService.updateUaClassifier(uaName, StringUtils.nullIfBlank(pattern), sortOrder);
             ra.addFlashAttribute(FLASH_MESSAGE, "Classifier for '%s' updated.".formatted(uaName));
         } catch (Exception e) {
             ra.addFlashAttribute(FLASH_ERROR, ERR_UPDATE + e.getMessage());
@@ -180,7 +181,4 @@ public class AdminController {
         return REDIRECT_ADMIN;
     }
 
-    private static String nullIfBlank(String s) {
-        return (s == null || s.isBlank()) ? null : s;
-    }
 }

@@ -12,12 +12,9 @@ final class ResultTypeSql {
         return """
                 SUM(CASE WHEN %1$sedge_response_result_type = 'Hit'  THEN 1 ELSE 0 END) as hit,
                 SUM(CASE WHEN %1$sedge_response_result_type = 'Miss' THEN 1 ELSE 0 END) as miss,
-                SUM(CASE WHEN %1$sedge_response_result_type IN (
-                        'FunctionGeneratedResponse',
-                        'FunctionExecutionError',
-                        'FunctionThrottledError')                    THEN 1 ELSE 0 END) as function,
+                SUM(CASE WHEN %1$sedge_response_result_type IN (%2$s) THEN 1 ELSE 0 END) as function,
                 SUM(CASE WHEN %1$sedge_response_result_type = 'Error' THEN 1 ELSE 0 END) as error\
-                """.formatted(p);
+                """.formatted(p, FUNCTION_TYPE_LIST);
     }
 
     static final String ORDER_BY_TOTAL_DESC = "ORDER BY (hit + miss + function + error) DESC\n";

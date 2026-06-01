@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
+import com.example.analyzelog.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -69,13 +70,13 @@ public class AdminService {
     public void addReferer(StaticRefererEntry entry) {
         jdbc.update(
                 "INSERT INTO static_referer (label, domain, domain_starts_with, domain_ends_with) VALUES (?, ?, ?, ?)",
-                entry.label(), nullIfBlank(entry.domain()), nullIfBlank(entry.domainStartsWith()), nullIfBlank(entry.domainEndsWith()));
+                entry.label(), StringUtils.nullIfBlank(entry.domain()), StringUtils.nullIfBlank(entry.domainStartsWith()), StringUtils.nullIfBlank(entry.domainEndsWith()));
     }
 
     public void updateReferer(StaticRefererEntry entry) {
         jdbc.update(
                 "UPDATE static_referer SET label = ?, domain = ?, domain_starts_with = ?, domain_ends_with = ? WHERE rowid = ?",
-                entry.label(), nullIfBlank(entry.domain()), nullIfBlank(entry.domainStartsWith()), nullIfBlank(entry.domainEndsWith()), entry.id());
+                entry.label(), StringUtils.nullIfBlank(entry.domain()), StringUtils.nullIfBlank(entry.domainStartsWith()), StringUtils.nullIfBlank(entry.domainEndsWith()), entry.id());
     }
 
     public void deleteReferer(long id) {
@@ -113,7 +114,4 @@ public class AdminService {
         return userAgents.size();
     }
 
-    private static String nullIfBlank(String s) {
-        return (s == null || s.isBlank()) ? null : s;
-    }
 }
