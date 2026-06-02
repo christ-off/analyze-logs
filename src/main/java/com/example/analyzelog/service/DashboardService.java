@@ -40,7 +40,7 @@ public class DashboardService {
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
     private static final String RESULT_TYPE_GROUP_EXPR =
             "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") " +
-            "THEN 'Function' ELSE edge_response_result_type END";
+            "THEN 'Filtered' ELSE edge_response_result_type END";
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -69,7 +69,7 @@ public class DashboardService {
             "  AND NOT EXISTS (SELECT 1 FROM noise_filter nf" +
             " WHERE nf.ua_name = c.ua_name AND nf.uri_stem = c.uri_stem)\n";
     private static final String BOT_FILTER_ALIASED =
-            "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')\n" +
+            "  AND s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps','Feed Readers')\n" +
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
@@ -159,7 +159,7 @@ public class DashboardService {
         return "ua_name != '(no user agent)'" +
                " AND ua_name NOT IN (" +
                "SELECT ua_name FROM static_ua" +
-               " WHERE ua_group IN ('AI Bots','Search Bots','Other Bots','Apps'))";
+               " WHERE ua_group IN ('AI Bots','Search Bots','Other Bots','Apps','Feed Readers'))";
     }
 
     private String humanTrafficExclusionClause() {

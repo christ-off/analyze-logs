@@ -254,6 +254,22 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void uaGroupCounts_excludeBots_removesFeedReaders() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-groups-exclude-bots-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // Browsers — kept
+                entryWithUaAndResultType(UA_FEEDLY,             "Hit") // Feed Readers — excluded
+        ));
+
+        var withBots    = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
+        var withoutBots = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), true);
+
+        assertTrue(withBots.stream().anyMatch(r -> "Feed Readers".equals(r.name())));
+        assertFalse(withoutBots.stream().anyMatch(r -> "Feed Readers".equals(r.name())));
+        assertTrue(withoutBots.stream().anyMatch(r -> "Browsers".equals(r.name())));
+    }
+
+    @Test
     void topUserAgentsByResultType_excludeBots_removesBotEntries() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-split-exclude-bots-test.gz", List.of(
@@ -367,6 +383,8 @@ class DashboardServiceIntegrationTest {
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
     private static final String UA_FEDIVERSE =
             "http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)";
+    private static final String UA_FEEDLY =
+            "Feedly/1.0 (+http://www.feedly.com/fetcher.html)";
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private static final String UA_FIREFOX_LINUX =
@@ -419,9 +437,9 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Error".equals(n.name())).findFirst().orElseThrow().count());
-        assertEquals(3, result.stream().filter(n -> "Function".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(3, result.stream().filter(n -> "Filtered".equals(n.name())).findFirst().orElseThrow().count());
         assertTrue(result.stream().noneMatch(n -> "Miss".equals(n.name())));
-        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Function".equals(n.name())));
+        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Filtered".equals(n.name())));
     }
 
     @Test
@@ -928,8 +946,8 @@ class DashboardServiceIntegrationTest {
         var result = dashboardService.countryResultTypes("FR", from, Instant.now().plusSeconds(5), false);
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
-        assertEquals(2, result.stream().filter(n -> "Function".equals(n.name())).findFirst().orElseThrow().count());
-        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Function".equals(n.name())));
+        assertEquals(2, result.stream().filter(n -> "Filtered".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> n.name().startsWith("Function") && !"Filtered".equals(n.name())));
     }
 
     @Test
