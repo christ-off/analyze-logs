@@ -3,8 +3,9 @@
       th:replace="~{layout :: page('Bot Analysis', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
 <head><title>Bot Analysis</title></head>
 <th:block class="extra-head">
-    <meta name="cf-from" th:content="${from}"/>
-    <meta name="cf-to"   th:content="${to}"/>
+    <meta name="cf-from"      th:content="${from}"/>
+    <meta name="cf-to"        th:content="${to}"/>
+    <meta name="cf-to-date"   th:content="${toDate}"/>
 </th:block>
 <th:block class="page-content">
 
