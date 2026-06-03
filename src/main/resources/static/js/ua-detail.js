@@ -36,10 +36,10 @@ async function loadAllCharts() {
 }
 
 const BAR_COLORS = {
-    hit:      'rgba(40,167,69,0.8)',
-    miss:     'rgba(54,162,235,0.8)',
-    function: 'rgba(253,126,20,0.8)',
-    error:    'rgba(220,53,69,0.8)',
+    hit:      Charts.COLORS.green,
+    miss:     Charts.COLORS.blue,
+    function: Charts.COLORS.orange,
+    error:    Charts.COLORS.red,
 };
 
 function stackedBar(row) {
