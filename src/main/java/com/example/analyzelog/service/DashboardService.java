@@ -4,6 +4,7 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotHumanDailyCount;
+import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
@@ -41,6 +42,11 @@ public class DashboardService {
     private static final String RESULT_TYPE_GROUP_EXPR =
             "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") " +
             "THEN 'Filtered' ELSE edge_response_result_type END";
+    private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> new BotUaRequest(
+            Instant.parse(rs.getString("timestamp")),
+            rs.getString("client_ip"),
+            rs.getString("uri_stem"),
+            rs.getString("result_type"));
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -575,6 +581,19 @@ public class DashboardService {
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), from.toString(), to.toString(),
                 from.toString(), to.toString(), limit);
+    }
+
+    public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {
+        String sql = """
+                SELECT timestamp, client_ip, uri_stem,
+                       CASE WHEN edge_response_result_type IN (%s) THEN 'Filtered'
+                            ELSE edge_response_result_type END as result_type
+                FROM cloudfront_logs
+                WHERE user_agent = ?
+                  AND timestamp >= ? AND timestamp < ?
+                ORDER BY timestamp DESC
+                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST);
+        return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, from.toString(), to.toString());
     }
 
     public List<BotHumanDailyCount> botHumanDailyCounts(Instant from, Instant to) {

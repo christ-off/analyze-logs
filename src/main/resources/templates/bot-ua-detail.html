@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Bot UA Detail', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Bot UA Detail</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Header + date range bar -->
+    <div class="card mb-4 cf-toolbar">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div>
+                    <div class="cf-detail-title">Bot UA Detail</div>
+                    <code class="text-break" th:text="${ua}"></code>
+                </div>
+                <a th:href="@{/bot-analysis(from=${fromDate},to=${toDate})}"
+                   class="btn btn-sm btn-outline-secondary ms-auto">&#8592; Back</a>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                <span class="fw-semibold me-2">Range:</span>
+                <a th:href="@{/bot-ua-detail(ua=${ua},range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+                <a th:href="@{/bot-ua-detail(ua=${ua},range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+                <a th:href="@{/bot-ua-detail(ua=${ua},range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+                <a th:href="@{/bot-ua-detail(ua=${ua},range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+
+                <form th:action="@{/bot-ua-detail}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                    <input type="hidden" name="ua" th:value="${ua}"/>
+                    <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
+                    <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                    <span>&ndash;</span>
+                    <input type="date" name="to" class="form-control form-control-sm" th:value="${toDate}" style="width:150px"/>
+                    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests table -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">
+            All Requests
+            <span class="text-muted fw-normal small ms-2" th:text="'(' + ${#lists.size(requests)} + ' rows)'"></span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date / Time (UTC)</th>
+                        <th>IP</th>
+                        <th>URI</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(requests)}">
+                        <td colspan="4" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
+                    </tr>
+                    <tr th:each="req : ${requests}">
+                        <td th:text="${#temporals.format(req.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
+                        <td th:text="${req.clientIp()}"></td>
+                        <td><code th:text="${req.uriStem()}"></code></td>
+                        <td>
+                            <span th:text="${req.resultType()}"
+                                  th:classappend="${req.resultType() == 'Hit'}      ? ' text-success'   :
+                                                  (${req.resultType() == 'Miss'}     ? ' text-primary'   :
+                                                  (${req.resultType() == 'Filtered'} ? ' text-warning'   :
+                                                                                       ' text-danger'))">
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script"></th:block>
+</html>

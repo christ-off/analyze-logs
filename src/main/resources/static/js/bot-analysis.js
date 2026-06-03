@@ -1,13 +1,19 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, initToggleBots, resultTotal } from './utils.js';
+import { buildBaseParams, escapeHtml, initToggleBots, resultTotal } from './utils.js';
+
+function botUaDetailUrl(ua) {
+    const from = document.querySelector('meta[name="cf-from"]').content.slice(0, 10);
+    const to   = document.querySelector('meta[name="cf-to"]').content.slice(0, 10);
+    return '/bot-ua-detail?' + new URLSearchParams({ ua, from, to }).toString();
+}
 
 const SEGMENTS = [
-    { key: 'hit',      label: 'Hit',      color: 'rgba(40, 167, 69, 0.8)'  },
-    { key: 'miss',     label: 'Miss',     color: 'rgba(54, 162, 235, 0.8)' },
-    { key: 'function', label: 'Filtered', color: 'rgba(253, 126, 20, 0.8)' },
-    { key: 'error',    label: 'Error',    color: 'rgba(220, 53, 69, 0.8)'  },
+    { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
+    { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },
+    { key: 'function', label: 'Filtered', color: Charts.COLORS.orange },
+    { key: 'error',    label: 'Error',    color: Charts.COLORS.red    },
 ];
 
 function stackedBar(bot, maxTotal) {
@@ -35,7 +41,7 @@ function loadBotTable(url, tbodyId, emptyMsg) {
             }
             const maxTotal = Math.max(...data.map(resultTotal));
             tbody.innerHTML = data.map(bot => `<tr>
-                <td><code>${bot.name}</code></td>
+                <td><a href="${botUaDetailUrl(bot.name)}">${escapeHtml(bot.name)}</a></td>
                 <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
                 <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
             </tr>`).join('');
@@ -102,7 +108,7 @@ function resultBar(b) {
             ? `<div style="width:${(val / total * 100).toFixed(1)}%;background:${color};height:16px;display:inline-block" title="${label}: ${val}"></div>`
             : '';
     return `<div class="d-flex" style="background:#dee2e6;border-radius:3px;overflow:hidden">
-        ${seg(b.hit,           'rgba(40,167,69,0.8)',  'Hit')}${seg(b.miss,            'rgba(54,162,235,0.8)', 'Miss')}${seg(b['function'], 'rgba(253,126,20,0.8)', 'Filtered')}${seg(b.error,          'rgba(220,53,69,0.8)',  'Error')}
+        ${seg(b.hit, Charts.COLORS.green, 'Hit')}${seg(b.miss, Charts.COLORS.blue, 'Miss')}${seg(b['function'], Charts.COLORS.orange, 'Filtered')}${seg(b.error, Charts.COLORS.red, 'Error')}
     </div>`;
 }
 
@@ -114,7 +120,7 @@ function loadDisobedientBots(data) {
         return;
     }
     tbody.innerHTML = data.map(b => `<tr>
-        <td><code>${b.userAgent}</code></td>
+        <td><a href="${botUaDetailUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
         <td class="text-end">${b.count.toLocaleString()}</td>
         <td class="align-middle px-2">${resultBar(b)}</td>
     </tr>`).join('');

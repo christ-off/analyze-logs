@@ -843,6 +843,58 @@ class DashboardServiceIntegrationTest {
         );
     }
 
+    // --- requestsByUserAgent integration tests ---
+
+    private static final String UA_BOT = "Googlebot/2.1 (compatible)";
+
+    @Test
+    void requestsByUserAgent_filtersToExactUserAgent() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/bot-ua-filter-test.gz", List.of(
+                entryWithUaAndResultType(UA_BOT,          "Hit"),
+                entryWithUaAndResultType(UA_BOT,          "Miss"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")  // different UA — must not appear
+        ));
+
+        var result = dashboardService.requestsByUserAgent(UA_BOT, from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().allMatch(r -> r.clientIp() != null));
+        assertTrue(result.stream().allMatch(r -> r.uriStem() != null));
+        assertTrue(result.stream().anyMatch(r -> "Hit".equals(r.resultType())));
+        assertTrue(result.stream().anyMatch(r -> "Miss".equals(r.resultType())));
+    }
+
+    @Test
+    void requestsByUserAgent_classifiesFunctionTypesAsFiltered() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/bot-ua-filtered-test.gz", List.of(
+                entryWithUaAndResultType(UA_BOT, "Hit"),
+                entryWithUaAndResultType(UA_BOT, "FunctionGeneratedResponse"),
+                entryWithUaAndResultType(UA_BOT, "FunctionExecutionError"),
+                entryWithUaAndResultType(UA_BOT, "FunctionThrottledError")
+        ));
+
+        var result = dashboardService.requestsByUserAgent(UA_BOT, from, Instant.now().plusSeconds(5));
+
+        assertEquals(4, result.size());
+        assertEquals(1, result.stream().filter(r -> "Hit".equals(r.resultType())).count());
+        assertEquals(3, result.stream().filter(r -> "Filtered".equals(r.resultType())).count());
+        assertTrue(result.stream().noneMatch(r -> r.resultType().startsWith("Function")));
+    }
+
+    @Test
+    void requestsByUserAgent_returnsEmptyWhenNoneMatch() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/bot-ua-empty-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")
+        ));
+
+        var result = dashboardService.requestsByUserAgent(UA_BOT, from, Instant.now().plusSeconds(5));
+
+        assertTrue(result.isEmpty());
+    }
+
     @Test
     void uaGroupCounts_groupsByConfiguredGroups() {
         Instant from = Instant.now();
