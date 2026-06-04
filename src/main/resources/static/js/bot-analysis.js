@@ -48,10 +48,7 @@ function loadBotTable(url, tbodyId, emptyMsg) {
 
 function loadProbableBots() {
     const p = buildBaseParams({});
-    const toggle = document.getElementById('toggleBots');
-    const params = new URLSearchParams(p);
-    params.append('excludeBots', toggle ? toggle.checked : false);
-    loadBotTable('/api/probable-bots?' + params.toString(), 'probableBotsTable', 'No probable bots found for the selected date range.');
+    loadBotTable('/api/probable-bots?' + p, 'probableBotsTable', 'No extless-only bots found for the selected date range.');
 }
 
 function loadBotHumanDaily(data) {

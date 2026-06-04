@@ -519,36 +519,24 @@ public class DashboardService {
                 .toList();
     }
 
-    public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
-        String botFilter = excludeBots ? BOT_FILTER_ALIASED : "";
-
+    public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent as name,
-                """ + RESULT_TYPE_SUMS + "\n" + """
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Hit' THEN 1 ELSE 0 END) AS hit,
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Miss' THEN 1 ELSE 0 END) AS miss,
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type IN ('FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError') THEN 1 ELSE 0 END) AS function,
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Error' THEN 1 ELSE 0 END) AS error,
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' THEN 1 ELSE 0 END) AS extless_pages,
+                SUM(CASE WHEN uri_stem LIKE '%.%' AND uri_stem NOT IN ('/robots.txt', '/sitemap.xml', '/ads.txt') THEN 1 ELSE 0 END) AS assets
                 FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE c.user_agent != ''
-                  AND c.client_ip IN (
-                    SELECT DISTINCT c1.client_ip
-                    FROM cloudfront_logs c1
-                    JOIN cloudfront_logs c2
-                      ON c1.client_ip = c2.client_ip
-                      AND c1.user_agent = c2.user_agent
-                      AND c1.uri_stem = '/robots.txt'
-                      AND c2.uri_stem != '/robots.txt'
-                      AND datetime(c2.timestamp) > datetime(c1.timestamp)
-                      AND datetime(c2.timestamp) <= datetime(c1.timestamp, '+1 hour')
-                    WHERE c1.user_agent != ''
-                      AND c1.timestamp BETWEEN ? AND ?
-                      AND c2.timestamp BETWEEN ? AND ?
-                  )
-                  AND c.timestamp BETWEEN ? AND ?
-                """ + botFilter +
-                "GROUP BY c.user_agent\n" +
-                ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                LIMIT_PARAM,
+                  AND c.timestamp >= ? AND c.timestamp < ?
+                GROUP BY c.user_agent
+                HAVING extless_pages > 5 AND assets = 0
+                ORDER BY hit + miss + function + error DESC
+                LIMIT ?
+                """,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(), from.toString(), to.toString(),
                 from.toString(), to.toString(), limit);
     }
 
