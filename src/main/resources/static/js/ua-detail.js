@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, uaRequestsUrl } from './utils.js';
 
 const from = readMeta('cf-from');
 const to   = readMeta('cf-to');
@@ -25,7 +25,11 @@ async function loadAllCharts() {
         tbody.innerHTML = data.map((row, i) => `
             <tr>
                 <td class="text-muted">${i + 1}</td>
-                <td class="font-monospace small text-break">${escapeHtml(row.name ?? '(none)')}</td>
+                <td class="font-monospace small text-break">
+                    ${row.name
+                        ? `<a href="${uaRequestsUrl(row.name)}">${escapeHtml(row.name)}</a>`
+                        : '(none)'}
+                </td>
                 <td class="text-end">${resultTotal(row).toLocaleString()}</td>
                 <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
             </tr>`).join('');

@@ -23,6 +23,12 @@ export function resultTotal(row) {
     return row.hit + row.miss + row['function'] + row.error;
 }
 
+export function uaRequestsUrl(ua) {
+    const from = readMeta('cf-from').slice(0, 10);
+    const to   = readMeta('cf-to-date');
+    return '/ua-requests?' + new URLSearchParams({ ua, from, to }).toString();
+}
+
 export function initToggleBots(loadFn) {
     const toggleEl = document.getElementById('toggleBots');
     if (toggleEl) {

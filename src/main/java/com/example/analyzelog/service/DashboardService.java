@@ -519,37 +519,6 @@ public class DashboardService {
                 .toList();
     }
 
-    public List<NameResultTypeCount> noStaticAssetsBots(Instant from, Instant to, int limit) {
-        return jdbc.query("""
-                SELECT c.user_agent as name,
-                """ + RESULT_TYPE_SUMS + "\n" + """
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.user_agent != ''
-                  AND c.timestamp BETWEEN ? AND ?
-                  AND (c.client_ip, c.user_agent) IN (
-                    SELECT client_ip, user_agent
-                    FROM cloudfront_logs
-                    WHERE user_agent != ''
-                      AND timestamp BETWEEN ? AND ?
-                    GROUP BY client_ip, user_agent
-                    HAVING SUM(CASE WHEN uri_stem LIKE '%.css' OR uri_stem LIKE '%.js' OR uri_stem LIKE '%.webp' OR uri_stem LIKE '%.ico' OR uri_stem LIKE '%.svg' THEN 1 ELSE 0 END) = 0
-                  )
-                  AND c.client_ip NOT IN (
-                    SELECT DISTINCT client_ip
-                    FROM cloudfront_logs
-                    WHERE uri_stem IN ('/feed.xml', '/rss.xml')
-                      AND timestamp BETWEEN ? AND ?
-                  )
-                GROUP BY c.user_agent
-                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM,
-                NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(),
-                from.toString(), to.toString(),
-                from.toString(), to.toString(),
-                limit);
-    }
-
     public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit, boolean excludeBots) {
         String botFilter = excludeBots ? BOT_FILTER_ALIASED : "";
 

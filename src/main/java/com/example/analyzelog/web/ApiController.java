@@ -86,12 +86,6 @@ public class ApiController {
         return dashboardService.topReferers(range.from(), range.to(), appProperties.topReferersLimit(), excludeBots);
     }
 
-    @GetMapping("/no-static-bots")
-    public List<NameResultTypeCount> noStaticAssetsBots(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.noStaticAssetsBots(range.from(), range.to(), appProperties.topLimit());
-    }
-
     @GetMapping("/probable-bots")
     public List<NameResultTypeCount> probableBots(@RequestParam String from, @RequestParam String to,
                                                   @RequestParam(defaultValue = "false") boolean excludeBots) {

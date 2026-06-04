@@ -1,13 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, initToggleBots, resultTotal } from './utils.js';
-
-function uaRequestsUrl(ua) {
-    const from = document.querySelector('meta[name="cf-from"]').content.slice(0, 10);
-    const to   = document.querySelector('meta[name="cf-to"]').content.slice(0, 10);
-    return '/ua-requests?' + new URLSearchParams({ ua, from, to }).toString();
-}
+import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, uaRequestsUrl } from './utils.js';
 
 const SEGMENTS = [
     { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
@@ -58,11 +52,6 @@ function loadProbableBots() {
     const params = new URLSearchParams(p);
     params.append('excludeBots', toggle ? toggle.checked : false);
     loadBotTable('/api/probable-bots?' + params.toString(), 'probableBotsTable', 'No probable bots found for the selected date range.');
-}
-
-function loadNoStaticBots() {
-    const p = buildBaseParams({});
-    loadBotTable('/api/no-static-bots?' + p, 'noStaticBotsTable', 'No data found for the selected date range.');
 }
 
 function loadBotHumanDaily(data) {
@@ -167,7 +156,6 @@ export function loadAllCharts() {
 
     const p = buildBaseParams({});
     loadProbableBots();
-    loadNoStaticBots();
     Charts.loadChart(`bot-human-daily?${p}`, loadBotHumanDaily);
     loadDisobedientSection();
 }

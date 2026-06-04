@@ -3,9 +3,10 @@
       th:replace="~{layout :: page('UA Detail – ' + ${uaName}, ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
 <head><title th:text="'UA Detail – ' + ${uaName}">UA Detail</title></head>
 <th:block class="extra-head">
-    <meta name="cf-from" th:content="${from}"/>
-    <meta name="cf-to"   th:content="${to}"/>
-    <meta name="cf-ua"   th:content="${uaName}"/>
+    <meta name="cf-from"    th:content="${from}"/>
+    <meta name="cf-to"      th:content="${to}"/>
+    <meta name="cf-to-date" th:content="${toDate}"/>
+    <meta name="cf-ua"      th:content="${uaName}"/>
 </th:block>
 <th:block class="page-content">
 
