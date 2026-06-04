@@ -15,7 +15,7 @@ public class BotUaDetailController extends DateRangeController {
         this.dashboardService = dashboardService;
     }
 
-    @GetMapping("/bot-ua-detail")
+    @GetMapping("/ua-requests")
     public String botUaDetail(
             @RequestParam String ua,
             @RequestParam(required = false) String range,
@@ -26,6 +26,6 @@ public class BotUaDetailController extends DateRangeController {
         addDateAttributes(model, dateRange, resolveActiveRange(range, from, to));
         model.addAttribute("ua", ua);
         model.addAttribute("requests", dashboardService.requestsByUserAgent(ua, dateRange.from(), dateRange.to()));
-        return "bot-ua-detail";
+        return "ua-requests";
     }
 }

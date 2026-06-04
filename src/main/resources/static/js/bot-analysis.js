@@ -3,10 +3,10 @@
 import { Charts } from './charts.js';
 import { buildBaseParams, escapeHtml, initToggleBots, resultTotal } from './utils.js';
 
-function botUaDetailUrl(ua) {
+function uaRequestsUrl(ua) {
     const from = document.querySelector('meta[name="cf-from"]').content.slice(0, 10);
     const to   = document.querySelector('meta[name="cf-to"]').content.slice(0, 10);
-    return '/bot-ua-detail?' + new URLSearchParams({ ua, from, to }).toString();
+    return '/ua-requests?' + new URLSearchParams({ ua, from, to }).toString();
 }
 
 const SEGMENTS = [
@@ -41,7 +41,7 @@ function loadBotTable(url, tbodyId, emptyMsg) {
             }
             const maxTotal = Math.max(...data.map(resultTotal));
             tbody.innerHTML = data.map(bot => `<tr>
-                <td><a href="${botUaDetailUrl(bot.name)}">${escapeHtml(bot.name)}</a></td>
+                <td><a href="${uaRequestsUrl(bot.name)}">${escapeHtml(bot.name)}</a></td>
                 <td class="text-end">${resultTotal(bot).toLocaleString()}</td>
                 <td class="align-middle px-2">${stackedBar(bot, maxTotal)}</td>
             </tr>`).join('');
@@ -120,7 +120,7 @@ function loadDisobedientBots(data) {
         return;
     }
     tbody.innerHTML = data.map(b => `<tr>
-        <td><a href="${botUaDetailUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
+        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
         <td class="text-end">${b.count.toLocaleString()}</td>
         <td class="align-middle px-2">${resultBar(b)}</td>
     </tr>`).join('');

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: page('Bot UA Detail', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
-<head><title>Bot UA Detail</title></head>
+      th:replace="~{layout :: page('UA Requests', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>UA Requests</title></head>
 <th:block class="extra-head">
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
@@ -13,7 +13,7 @@
         <div class="card-body">
             <div class="d-flex align-items-center gap-3 mb-2">
                 <div>
-                    <div class="cf-detail-title">Bot UA Detail</div>
+                    <div class="cf-detail-title">UA Requests</div>
                     <code class="text-break" th:text="${ua}"></code>
                 </div>
                 <a th:href="@{/bot-analysis(from=${fromDate},to=${toDate})}"
@@ -22,12 +22,12 @@
 
             <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
                 <span class="fw-semibold me-2">Range:</span>
-                <a th:href="@{/bot-ua-detail(ua=${ua},range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
-                <a th:href="@{/bot-ua-detail(ua=${ua},range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
-                <a th:href="@{/bot-ua-detail(ua=${ua},range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
-                <a th:href="@{/bot-ua-detail(ua=${ua},range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+                <a th:href="@{/ua-requests(ua=${ua},range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+                <a th:href="@{/ua-requests(ua=${ua},range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+                <a th:href="@{/ua-requests(ua=${ua},range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+                <a th:href="@{/ua-requests(ua=${ua},range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
 
-                <form th:action="@{/bot-ua-detail}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                <form th:action="@{/ua-requests}" method="get" class="d-flex align-items-center gap-2 ms-2">
                     <input type="hidden" name="ua" th:value="${ua}"/>
                     <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
                     <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>

@@ -36,7 +36,7 @@ class BotUaDetailControllerTest {
         when(dashboardService.requestsByUserAgent(eq(UA), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of());
 
-        assertThat(mvc.get().uri("/bot-ua-detail").param("ua", UA).exchange())
+        assertThat(mvc.get().uri("/ua-requests").param("ua", UA).exchange())
                 .hasStatusOk()
                 .model().containsEntry("activeRange", "7d")
                          .containsEntry("ua", UA);
@@ -47,7 +47,7 @@ class BotUaDetailControllerTest {
         when(dashboardService.requestsByUserAgent(eq(UA), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of());
 
-        assertThat(mvc.get().uri("/bot-ua-detail")
+        assertThat(mvc.get().uri("/ua-requests")
                 .param("ua", UA).param("from", "2026-01-01").param("to", "2026-01-31").exchange())
                 .hasStatusOk()
                 .model().containsEntry("activeRange", "custom")
@@ -61,7 +61,7 @@ class BotUaDetailControllerTest {
         when(dashboardService.requestsByUserAgent(eq(UA), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(request));
 
-        assertThat(mvc.get().uri("/bot-ua-detail")
+        assertThat(mvc.get().uri("/ua-requests")
                 .param("ua", UA).param("from", "2026-01-01").param("to", "2026-01-31").exchange())
                 .hasStatusOk()
                 .model().containsEntry("requests", List.of(request));
@@ -69,7 +69,7 @@ class BotUaDetailControllerTest {
 
     @Test
     void missingUaParamReturns400() {
-        assertThat(mvc.get().uri("/bot-ua-detail")
+        assertThat(mvc.get().uri("/ua-requests")
                 .param("from", "2026-01-01").param("to", "2026-01-31").exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
