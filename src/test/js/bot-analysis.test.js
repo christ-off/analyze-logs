@@ -3,13 +3,18 @@ import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 globalThis.Chart = { getChart: vi.fn(() => null) };
 
 vi.mock('../../main/resources/static/js/charts.js', () => ({
-    Charts: { loadChart: vi.fn() },
+    Charts: {
+        COLORS: { green: '#4CAF50', blue: '#2196F3', orange: '#FF9800', red: '#f44336' },
+        loadChart: vi.fn(),
+    },
 }));
 
 vi.mock('../../main/resources/static/js/utils.js', () => ({
     buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
+    escapeHtml:      vi.fn((s) => s),
     initToggleBots:  vi.fn(),
     resultTotal:     (row) => row.hit + row.miss + (row['function'] ?? 0) + row.error,
+    uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
 import { loadDisobedientSection, initRobotsRefresh } from '../../main/resources/static/js/bot-analysis.js';
