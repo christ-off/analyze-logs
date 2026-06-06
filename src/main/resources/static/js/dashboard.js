@@ -20,7 +20,8 @@ export function loadAllCharts() {
         item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`top-urls-split?${p}`,   data => Charts.horizontalStackedBar('chartTopUrls',  data,
         d => `/url-detail?url=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
-    Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers',         data));
+    Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers', data,
+        d => `/referer-detail?referer=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
 }
 

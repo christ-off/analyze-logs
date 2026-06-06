@@ -42,11 +42,18 @@ public class DashboardService {
     private static final String RESULT_TYPE_GROUP_EXPR =
             "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") " +
             "THEN 'Filtered' ELSE edge_response_result_type END";
-    private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> new BotUaRequest(
-            Instant.parse(rs.getString("timestamp")),
-            rs.getString("client_ip"),
-            rs.getString("uri_stem"),
-            rs.getString("result_type"));
+    private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> {
+        String iso = rs.getString("country");
+        String countryName = (iso != null && !iso.isBlank())
+                ? new java.util.Locale("", iso).getDisplayCountry(java.util.Locale.ENGLISH)
+                : "-";
+        return new BotUaRequest(
+                Instant.parse(rs.getString("timestamp")),
+                rs.getString("client_ip"),
+                rs.getString("uri_stem"),
+                rs.getString("result_type"),
+                countryName);
+    };
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -540,9 +547,21 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
+    public List<NameResultTypeCount> refererTopUrlsByResultType(String refererLabel, Instant from, Instant to, int limit, boolean excludeBots) {
+        return urlsByResultType("referer LIKE ?", List.of(from.toString(), to.toString(), "%" + refererLabel + "%"), limit, excludeBots);
+    }
+
+    public List<DailyResultTypeCount> refererRequestsPerDay(String refererLabel, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        String sql = SQL_DAILY_SELECT +
+                "  AND referer LIKE ?\n" +
+                exclusion + SQL_DAILY_GROUP_ORDER;
+        return queryDailyByResultType(sql, from.toString(), to.toString(), "%" + refererLabel + "%");
+    }
+
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {
         String sql = """
-                SELECT timestamp, client_ip, uri_stem,
+                SELECT timestamp, client_ip, uri_stem, country,
                        CASE WHEN edge_response_result_type IN (%s) THEN 'Filtered'
                             ELSE edge_response_result_type END as result_type
                 FROM cloudfront_logs

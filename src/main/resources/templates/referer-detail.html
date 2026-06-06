@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Referer – ' + ${refererName}, ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title th:text="'Referer – ' + ${refererName}">Referer Detail</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"     th:content="${from}"/>
+    <meta name="cf-to"       th:content="${to}"/>
+    <meta name="cf-referer"  th:content="${refererName}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- info + date range bar -->
+    <div class="card mb-4 cf-toolbar">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div>
+                    <div class="cf-detail-title" th:text="${refererName}">Referer</div>
+                    <div class="cf-detail-subtitle">
+                        <span th:text="${fromDate}"></span> &rarr; <span th:text="${toDate}"></span>
+                    </div>
+                </div>
+                <a th:href="@{/(from=${fromDate},to=${toDate})}"
+                   class="btn btn-sm btn-outline-secondary ms-auto">&#8592; Back</a>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="fw-semibold me-2">Range:</span>
+                <a th:href="@{/referer-detail(referer=${refererName},range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+                <a th:href="@{/referer-detail(referer=${refererName},range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+                <a th:href="@{/referer-detail(referer=${refererName},range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+                <a th:href="@{/referer-detail(referer=${refererName},range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+                <form th:action="@{/referer-detail}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                    <input type="hidden" name="referer" th:value="${refererName}"/>
+                    <label for="fromDateReferer" class="form-label mb-0 fw-semibold">Custom:</label>
+                    <input type="date" id="fromDateReferer" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                    <span>&ndash;</span>
+                    <input type="date" name="to" class="form-control form-control-sm" th:value="${toDate}" style="width:150px"/>
+                    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+                </form>
+
+                <!-- Bot filter toggle -->
+                <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" aria-checked="false"
+                           id="toggleBots" style="width:2.5em; height:1.5em"/>
+                    <label class="form-check-label fw-semibold" for="toggleBots">Hide bots, apps &amp; feeds &amp; noise</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests per Day -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold">Requests per Day</div>
+                <div class="card-body"><canvas id="chartRequestsPerDay"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top URLs from this referer -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Top URLs</div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-striped table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:2rem">#</th>
+                        <th>URL</th>
+                        <th class="text-end" style="width:7rem">Requests</th>
+                        <th style="width:200px">Hit / Miss / Filtered / Error</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyUrls">
+                    <tr><td colspan="4" class="text-center text-muted py-3">Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/referer-detail.js}"></script>
+</th:block>
+</html>

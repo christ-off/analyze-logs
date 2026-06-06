@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, uaRequestsUrl } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
 const from = readMeta('cf-from');
 const to   = readMeta('cf-to');
@@ -31,7 +31,7 @@ async function loadAllCharts() {
                         : '(none)'}
                 </td>
                 <td class="text-end">${resultTotal(row).toLocaleString()}</td>
-                <td><div style="display:flex;height:16px;border-radius:3px;overflow:hidden;width:100%">${stackedBar(row)}</div></td>
+                <td>${stackedBar(row)}</td>
             </tr>`).join('');
         document.getElementById('uaBarLegend').style.removeProperty('display');
     } else {
@@ -39,22 +39,5 @@ async function loadAllCharts() {
     }
 }
 
-const BAR_COLORS = {
-    hit:      Charts.COLORS.green,
-    miss:     Charts.COLORS.blue,
-    function: Charts.COLORS.orange,
-    error:    Charts.COLORS.red,
-};
-
-function stackedBar(row) {
-    const total = resultTotal(row);
-    if (total === 0) return '';
-    return Object.entries(BAR_COLORS)
-        .filter(([k]) => row[k] > 0)
-        .map(([k, color]) => {
-            const pct = (row[k] / total * 100).toFixed(2);
-            return `<div style="width:${pct}%;background:${color};height:100%"></div>`;
-        }).join('');
-}
 
 initToggleBots(loadAllCharts);

@@ -45,6 +45,18 @@ public class DashboardController extends DateRangeController {
         return "country-detail";
     }
 
+    @GetMapping("/referer-detail")
+    public String refererDetail(
+            @RequestParam String referer,
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        model.addAttribute("refererName", referer);
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "referer-detail";
+    }
+
     @GetMapping("/url-detail")
     public String urlDetail(
             @RequestParam String url,

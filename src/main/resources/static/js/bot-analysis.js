@@ -1,27 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, uaRequestsUrl } from './utils.js';
-
-const SEGMENTS = [
-    { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
-    { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },
-    { key: 'function', label: 'Filtered', color: Charts.COLORS.orange },
-    { key: 'error',    label: 'Error',    color: Charts.COLORS.red    },
-];
-
-function stackedBar(bot, maxTotal) {
-    const total = resultTotal(bot);
-    const pct = total / maxTotal * 100;
-    const segments = SEGMENTS
-        .filter(s => bot[s.key] > 0)
-        .map(s => {
-            const w = (bot[s.key] / total * pct).toFixed(2);
-            return `<div style="width:${w}%;background:${s.color};height:100%" title="${s.label}: ${bot[s.key].toLocaleString()}"></div>`;
-        })
-        .join('');
-    return `<div style="display:flex;height:1.1em;width:100%;border-radius:2px;overflow:hidden">${segments}</div>`;
-}
+import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
 function loadBotTable(url, tbodyId, emptyMsg) {
     fetch(url)

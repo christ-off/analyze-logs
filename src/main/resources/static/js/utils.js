@@ -29,6 +29,27 @@ export function uaRequestsUrl(ua) {
     return '/ua-requests?' + new URLSearchParams({ ua, from, to }).toString();
 }
 
+const SEGMENTS = [
+    { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
+    { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },
+    { key: 'function', label: 'Filtered', color: Charts.COLORS.orange },
+    { key: 'error',    label: 'Error',    color: Charts.COLORS.red    },
+];
+
+export function stackedBar(row, maxTotal) {
+    const total = resultTotal(row);
+    if (total === 0) return '';
+    const scale = maxTotal != null ? (total / maxTotal * 100) : 100;
+    const segments = SEGMENTS
+        .filter(s => row[s.key] > 0)
+        .map(s => {
+            const w = (row[s.key] / total * scale).toFixed(2);
+            return `<div style="width:${w}%;background:${s.color};height:100%" title="${s.label}: ${row[s.key].toLocaleString()}"></div>`;
+        })
+        .join('');
+    return `<div style="display:flex;height:1.1em;width:100%;border-radius:2px;overflow:hidden">${segments}</div>`;
+}
+
 export function initToggleBots(loadFn) {
     const toggleEl = document.getElementById('toggleBots');
     if (toggleEl) {

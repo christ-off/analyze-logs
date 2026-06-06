@@ -6,5 +6,6 @@ public record BotUaRequest(
     Instant timestamp,
     String clientIp,
     String uriStem,
-    String resultType
+    String resultType,
+    String country
 ) {}
