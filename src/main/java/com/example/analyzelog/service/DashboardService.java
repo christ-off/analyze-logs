@@ -575,16 +575,18 @@ public class DashboardService {
     public List<BotHumanDailyCount> botHumanDailyCounts(Instant from, Instant to) {
         return jdbc.query("""
                 SELECT date(c.timestamp) as day,
-                    SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps') THEN 1 ELSE 0 END) as bots,
+                    SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
+                             OR c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) as bots,
                     SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
                              AND s.ua_group != 'Unknown'
-                             AND c.ua_name != '(no user agent)' THEN 1 ELSE 0 END) as humans
+                             AND c.ua_name != '(no user agent)'
+                             AND c.edge_response_result_type NOT IN (%s) THEN 1 ELSE 0 END) as humans
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE c.timestamp BETWEEN ? AND ?
                 GROUP BY day
                 ORDER BY day
-                """,
+                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST, ResultTypeSql.FUNCTION_TYPE_LIST),
                 (rs, _) -> new BotHumanDailyCount(
                         LocalDate.parse(rs.getString("day")),
                         rs.getLong("bots"),
