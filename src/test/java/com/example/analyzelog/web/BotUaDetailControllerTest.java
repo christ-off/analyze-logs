@@ -57,7 +57,7 @@ class BotUaDetailControllerTest {
 
     @Test
     void requestsArePassedToModel() {
-        var request = new BotUaRequest(Instant.parse("2026-01-15T10:00:00Z"), "1.2.3.4", "/index.html", "Hit", "France");
+        var request = new BotUaRequest(Instant.parse("2026-01-15T10:00:00Z"), "1.2.3.4", "/index.html", "Hit", "France", 200);
         when(dashboardService.requestsByUserAgent(eq(UA), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(request));
 

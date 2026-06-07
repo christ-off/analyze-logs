@@ -1,7 +1,14 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
+import { buildBaseParams, escapeHtml, initToggleBots, readMeta, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
+
+const cfFrom = readMeta('cf-from');
+const cfTo   = readMeta('cf-to');
+
+function uaDetailUrl(uaName) {
+    return `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${Charts.toDateParam(cfFrom)}&to=${Charts.toDateParam(cfTo)}`;
+}
 
 function loadBotTable(url, tbodyId, emptyMsg) {
     fetch(url)
@@ -130,8 +137,11 @@ export function initRobotsRefresh() {
 export function loadAllCharts() {
     const chart = Chart.getChart('chartBotHumanDaily');
     if (chart) chart.destroy();
+    const topBotsChart = Chart.getChart('chartTopBots');
+    if (topBotsChart) topBotsChart.destroy();
 
     const p = buildBaseParams({});
+    Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
     loadProbableBots();
     Charts.loadChart(`bot-human-daily?${p}`, loadBotHumanDaily);
     loadDisobedientSection();

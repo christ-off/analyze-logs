@@ -86,6 +86,12 @@ public class ApiController {
         return dashboardService.topReferers(range.from(), range.to(), appProperties.topReferersLimit(), excludeBots);
     }
 
+    @GetMapping("/top-bots")
+    public List<NameResultTypeCount> topBots(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topBots(range.from(), range.to(), appProperties.topLimit());
+    }
+
     @GetMapping("/probable-bots")
     public List<NameResultTypeCount> probableBots(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
