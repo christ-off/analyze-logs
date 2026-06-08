@@ -205,6 +205,7 @@ public class DashboardService {
                 "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
                 "WHERE c.timestamp BETWEEN ? AND ?\n" +
                 "  AND s.ua_group IN ('AI Bots','Search Bots','Other Bots')\n" +
+                "  AND c.uri_stem != '/robots.txt'\n" +
                 "GROUP BY s.ua_name\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
