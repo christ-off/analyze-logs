@@ -14,6 +14,8 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1033,5 +1035,86 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, chrome.hit());
         assertEquals(1, chrome.miss());
         assertTrue(result.stream().noneMatch(r -> UA_FIREFOX_LINUX.equals(r.name())));
+    }
+
+    // Future time bases keep these datasets out of other tests' [now, now+5s] query windows.
+    @Test
+    void fakeBrowserUas_flagsRoundTheClockBrowserUas() {
+        Instant base = Instant.now().plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+        List<CloudFrontLogEntry> entries = new ArrayList<>();
+        for (int h = 0; h < 24; h++) {
+            for (int i = 0; i < 5; i++) {
+                // Chrome: 120 requests spread over all 24 hours — must be flagged
+                entries.add(entryAt(base.plus(h, ChronoUnit.HOURS).plus(i, ChronoUnit.MINUTES),
+                        "1.2.3.4", UA_CHROME_WINDOWS, "/index.html"));
+                // Firefox: 120 requests but all in a single hour — must not be flagged
+                entries.add(entryAt(base.plusSeconds(h * 60L + i),
+                        "1.2.3.5", UA_FIREFOX_LINUX, "/index.html"));
+                // ClaudeBot: 24/7 but not a browser — must not be flagged
+                entries.add(entryAt(base.plus(h, ChronoUnit.HOURS).plus(i, ChronoUnit.MINUTES),
+                        "1.2.3.6", UA_CLAUDEBOT, "/index.html"));
+            }
+        }
+        repository.saveEntries("logs/fake-browsers-test.gz", entries);
+
+        var result = dashboardService.fakeBrowserUas(base.minusSeconds(1), base.plus(2, ChronoUnit.DAYS), 10);
+
+        assertEquals(1, result.size());
+        var fake = result.getFirst();
+        assertEquals(UA_CHROME_WINDOWS, fake.userAgent());
+        assertEquals(120, fake.count());
+        assertEquals(24, fake.activeHours());
+        assertEquals(1, fake.days());
+    }
+
+    @Test
+    void browsersFetchingRobots_flagsOnlyBrowserGroupOnRobotsTxt() {
+        Instant base = Instant.now().plus(400, ChronoUnit.DAYS);
+        repository.saveEntries("logs/browser-robots-test.gz", List.of(
+                entryAt(base,                "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
+                entryAt(base.plusSeconds(1), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
+                entryAt(base.plusSeconds(2), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
+                entryAt(base.plusSeconds(3), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
+                entryAt(base.plusSeconds(4), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html")   // not robots.txt — excluded
+        ));
+
+        var result = dashboardService.browsersFetchingRobots(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+
+        assertEquals(1, result.size());
+        assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
+        assertEquals(3, result.getFirst().count());
+    }
+
+    @Test
+    void burstIps_flagsIpsWithSixtyPlusRequestsPerMinute() {
+        Instant base = Instant.now().plus(430, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MINUTES);
+        List<CloudFrontLogEntry> entries = new ArrayList<>();
+        for (int i = 0; i < 60; i++) {
+            entries.add(entryAt(base.plusMillis(i * 500L), "7.7.7.7", UA_CHROME_WINDOWS, "/index.html"));
+        }
+        entries.add(entryAt(base.plus(5, ChronoUnit.MINUTES), "7.7.7.7", UA_CHROME_WINDOWS, "/index.html"));
+        for (int i = 0; i < 10; i++) {
+            entries.add(entryAt(base.plusSeconds(i), "8.8.8.8", UA_CHROME_WINDOWS, "/index.html"));
+        }
+        repository.saveEntries("logs/burst-ips-test.gz", entries);
+
+        var result = dashboardService.burstIps(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+
+        assertEquals(1, result.size());
+        var burst = result.getFirst();
+        assertEquals("7.7.7.7", burst.clientIp());
+        assertEquals(60, burst.maxPerMinute());
+        assertEquals(61, burst.total());
+    }
+
+    private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
+        return new CloudFrontLogEntry(
+                ts, "SFO53-P7", 1068L, ip, "GET",
+                uri, 200,
+                null, ua,
+                "Hit", 336L, 0.001,
+                "Hit", "HTTP/1.1", 0.001, "Hit",
+                null, null, "US"
+        );
     }
 }

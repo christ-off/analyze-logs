@@ -5,8 +5,10 @@ import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.BotUaRequest;
+import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -606,6 +608,70 @@ public class DashboardService {
                         rs.getLong("bots"),
                         rs.getLong("humans")),
                 from.toString(), to.toString());
+    }
+
+    // Browser-classified UAs active in nearly every hour of the day — humans show a
+    // diurnal pattern, so round-the-clock activity means the browser UA is fake.
+    public List<FakeBrowserUa> fakeBrowserUas(Instant from, Instant to, int limit) {
+        return jdbc.query("""
+                SELECT c.user_agent AS name, COUNT(*) AS count,
+                       COUNT(DISTINCT strftime('%H', c.timestamp)) AS active_hours,
+                       COUNT(DISTINCT date(c.timestamp)) AS days
+                FROM cloudfront_logs c
+                INNER JOIN static_ua s ON c.ua_name = s.ua_name
+                WHERE s.ua_group = 'Browsers'
+                  AND c.timestamp BETWEEN ? AND ?
+                GROUP BY c.user_agent
+                HAVING count >= 100 AND active_hours >= 22
+                ORDER BY count DESC
+                LIMIT ?
+                """,
+                (rs, _) -> new FakeBrowserUa(
+                        rs.getString("name"),
+                        rs.getLong(COUNT_FIELD),
+                        rs.getLong("active_hours"),
+                        rs.getLong("days")),
+                from.toString(), to.toString(), limit);
+    }
+
+    // Real browsers never request /robots.txt — any browser-classified UA doing so is a bot.
+    public List<NameCount> browsersFetchingRobots(Instant from, Instant to, int limit) {
+        return jdbc.query("""
+                SELECT c.user_agent AS name, COUNT(*) AS count
+                FROM cloudfront_logs c
+                INNER JOIN static_ua s ON c.ua_name = s.ua_name
+                WHERE s.ua_group = 'Browsers'
+                  AND c.uri_stem = '/robots.txt'
+                  AND c.timestamp BETWEEN ? AND ?
+                GROUP BY c.user_agent
+                ORDER BY count DESC
+                LIMIT ?
+                """,
+                NAME_COUNT_MAPPER,
+                from.toString(), to.toString(), limit);
+    }
+
+    // IPs firing at least 60 requests inside a single minute — far beyond human browsing.
+    public List<BurstIp> burstIps(Instant from, Instant to, int limit) {
+        return jdbc.query("""
+                WITH per_min AS (
+                    SELECT client_ip, strftime('%Y-%m-%dT%H:%M', timestamp) AS minute, COUNT(*) AS c
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, minute
+                )
+                SELECT client_ip, MAX(c) AS max_per_minute, SUM(c) AS total
+                FROM per_min
+                GROUP BY client_ip
+                HAVING max_per_minute >= 60
+                ORDER BY max_per_minute DESC
+                LIMIT ?
+                """,
+                (rs, _) -> new BurstIp(
+                        rs.getString("client_ip"),
+                        rs.getLong("max_per_minute"),
+                        rs.getLong("total")),
+                from.toString(), to.toString(), limit);
     }
 
 }

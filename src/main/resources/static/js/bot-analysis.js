@@ -1,6 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
+import { initIpLookup } from './ip-info.js';
 import { buildBaseParams, escapeHtml, initToggleBots, readMeta, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
 const cfFrom = readMeta('cf-from');
@@ -74,6 +75,50 @@ function loadBotHumanDaily(data) {
     });
 }
 
+function loadSimpleTable(url, tbodyId, cols, rowFn, emptyMsg, onRendered) {
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            tbody.innerHTML = data.length === 0
+                ? `<tr><td colspan="${cols}" class="text-center text-muted">${emptyMsg}</td></tr>`
+                : data.map(rowFn).join('');
+            if (data.length > 0 && onRendered) onRendered(tbody);
+        })
+        .catch(() => {
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted py-3">Failed to load data.</td></tr>`;
+        });
+}
+
+export function loadFakeBrowsers() {
+    const p = buildBaseParams({});
+    loadSimpleTable('/api/fake-browsers?' + p, 'fakeBrowsersTable', 4, b => `<tr>
+        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
+        <td class="text-end">${b.count.toLocaleString()}</td>
+        <td class="text-end">${b.activeHours} / 24</td>
+        <td class="text-end">${b.days}</td>
+    </tr>`, 'No round-the-clock browser UAs found for the selected date range.');
+}
+
+export function loadBrowserRobots() {
+    const p = buildBaseParams({});
+    loadSimpleTable('/api/browser-robots?' + p, 'browserRobotsTable', 2, b => `<tr>
+        <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
+        <td class="text-end">${b.count.toLocaleString()}</td>
+    </tr>`, 'No browser UAs fetched robots.txt in the selected date range.');
+}
+
+export function loadBurstIps() {
+    const p = buildBaseParams({});
+    loadSimpleTable('/api/burst-ips?' + p, 'burstIpsTable', 3, b => `<tr>
+        <td class="ip-cell" data-ip="${escapeHtml(b.clientIp)}"><code>${escapeHtml(b.clientIp)}</code></td>
+        <td class="text-end">${b.maxPerMinute.toLocaleString()}</td>
+        <td class="text-end">${b.total.toLocaleString()}</td>
+    </tr>`, 'No burst IPs found for the selected date range.', initIpLookup);
+}
+
 function resultBar(b) {
     const total = resultTotal(b) || 1;
     const seg = (val, color, label) =>
@@ -143,6 +188,9 @@ export function loadAllCharts() {
     const p = buildBaseParams({});
     Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
     loadProbableBots();
+    loadFakeBrowsers();
+    loadBrowserRobots();
+    loadBurstIps();
     Charts.loadChart(`bot-human-daily?${p}`, loadBotHumanDaily);
     loadDisobedientSection();
 }

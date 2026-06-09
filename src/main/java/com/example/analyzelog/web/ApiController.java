@@ -2,6 +2,8 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.BotHumanDailyCount;
+import com.example.analyzelog.model.BurstIp;
+import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
@@ -107,6 +109,24 @@ public class ApiController {
     public List<BotHumanDailyCount> botHumanDaily(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.botHumanDailyCounts(range.from(), range.to());
+    }
+
+    @GetMapping("/fake-browsers")
+    public List<FakeBrowserUa> fakeBrowsers(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.fakeBrowserUas(range.from(), range.to(), appProperties.topLimit());
+    }
+
+    @GetMapping("/browser-robots")
+    public List<NameCount> browserRobots(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.browsersFetchingRobots(range.from(), range.to(), appProperties.topLimit());
+    }
+
+    @GetMapping("/burst-ips")
+    public List<BurstIp> burstIps(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.burstIps(range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/robots-disobedient")
