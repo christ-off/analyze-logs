@@ -1,6 +1,6 @@
 /* ─── CloudFront Logs – app.css ──────────────────────────────────────────────
    Observability-console theme: ink sidebar, paper content, petrol accent.
-   Type: IBM Plex Sans (UI) / IBM Plex Mono (data).
+   Type: system font stack (no CDN, no external deps).
 ──────────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -17,8 +17,8 @@
   --cf-muted:         #64748b;
   --cf-heading:       #1f2937;
   --cf-text:          #1e293b;
-  --cf-font-sans:     'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
-  --cf-font-mono:     'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --cf-font-sans:     -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --cf-font-mono:     ui-monospace, 'SF Mono', 'Cascadia Code', 'Segoe UI Mono', 'Consolas', monospace;
   --cf-shadow-sm:     0 1px 2px rgba(15,23,42,.05), 0 1px 1px rgba(15,23,42,.04);
   --cf-shadow-md:     0 6px 16px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.05);
   --cf-radius:        .75rem;
