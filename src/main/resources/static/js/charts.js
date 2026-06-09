@@ -3,11 +3,13 @@
 const Charts = {};
 
 Charts.COLORS = {
-    blue:   'rgba(54, 162, 235, 0.8)',
-    red:    'rgba(220, 53, 69, 0.8)',
-    orange: 'rgba(253, 126, 20, 0.8)',
-    green:  'rgba(40, 167, 69, 0.8)',
+    blue:   'rgba(56, 189, 248, 0.85)',
+    red:    'rgba(225, 29, 72, 0.85)',
+    orange: 'rgba(245, 158, 11, 0.85)',
+    green:  'rgba(16, 185, 129, 0.85)',
 };
+
+Charts.ACCENT = 'rgba(13, 148, 136, 0.85)';
 
 Charts.RESULT_TYPE_COLORS = {
     'Hit':                       Charts.COLORS.green,
@@ -17,17 +19,43 @@ Charts.RESULT_TYPE_COLORS = {
 };
 
 Charts.PALETTE = [
-    'rgba(54, 162, 235, 0.8)',
-    'rgba(255, 193, 7, 0.8)',
-    'rgba(40, 167, 69, 0.8)',
-    'rgba(220, 53, 69, 0.8)',
-    'rgba(111, 66, 193, 0.8)',
-    'rgba(253, 126, 20, 0.8)',
-    'rgba(32, 201, 151, 0.8)',
-    'rgba(232, 62, 140, 0.8)',
-    'rgba(102, 16, 242, 0.8)',
-    'rgba(13, 202, 240, 0.8)',
+    'rgba(13, 148, 136, 0.85)',
+    'rgba(99, 102, 241, 0.85)',
+    'rgba(245, 158, 11, 0.85)',
+    'rgba(225, 29, 72, 0.85)',
+    'rgba(14, 165, 233, 0.85)',
+    'rgba(132, 204, 22, 0.85)',
+    'rgba(168, 85, 247, 0.85)',
+    'rgba(249, 115, 22, 0.85)',
+    'rgba(100, 116, 139, 0.85)',
+    'rgba(45, 212, 191, 0.85)',
 ];
+
+/* Global Chart.js theme — typography, grid, tooltips, legends */
+Charts.applyTheme = function () {
+    if (typeof Chart === 'undefined' || !Chart.defaults?.font) return;
+    Chart.defaults.font.family = "'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif";
+    Chart.defaults.font.size = 11.5;
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.scale.grid.color = 'rgba(100, 116, 139, 0.12)';
+    Chart.defaults.scale.border = { display: false };
+    Chart.defaults.scale.ticks.padding = 6;
+    Chart.defaults.elements.bar.borderRadius = 3;
+    Chart.defaults.elements.bar.borderSkipped = false;
+    Chart.defaults.maxBarThickness = 18;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.pointStyle = 'rectRounded';
+    Chart.defaults.plugins.legend.labels.boxWidth = 9;
+    Chart.defaults.plugins.legend.labels.boxHeight = 9;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(11, 17, 32, 0.92)';
+    Chart.defaults.plugins.tooltip.titleFont = { family: "'IBM Plex Mono', monospace", size: 11 };
+    Chart.defaults.plugins.tooltip.bodyFont = { family: "'IBM Plex Mono', monospace", size: 11 };
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 6;
+    Chart.defaults.plugins.tooltip.boxPadding = 4;
+};
+
+Charts.applyTheme();
 
 Charts.toDateParam = function (iso) {
     return iso.substring(0, 10);
@@ -55,7 +83,7 @@ Charts.horizontalBar = function (canvasId, data, urlFn) {
             datasets: [{
                 label: 'Requests',
                 data: data.map(d => d.count),
-                backgroundColor: Charts.COLORS.blue,
+                backgroundColor: Charts.ACCENT,
             }]
         },
         options: {
@@ -94,8 +122,10 @@ Charts.pie = function (canvasId, data, colorMap) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '58%',
             plugins: {
                 legend: {
+                    position: 'right',
                     labels: {
                         generateLabels: function (chart) {
                             const dataset = chart.data.datasets[0];
@@ -180,6 +210,7 @@ Charts.stackedBarByDay = function (canvasId, data) {
         },
         options: {
             responsive: true,
+            datasets: { bar: { maxBarThickness: 44 } },
             scales: {
                 x: { stacked: true },
                 y: { stacked: true, beginAtZero: true }
