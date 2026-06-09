@@ -7,6 +7,7 @@ import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
+import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -39,6 +40,9 @@ class ApiControllerTest {
 
     @MockitoBean
     RobotsService robotsService;
+
+    @MockitoBean
+    IpInfoService ipInfoService;
 
     @Test
     void uaGroupsReturnsJson() {
@@ -282,5 +286,17 @@ class ApiControllerTest {
         assertThat(mvc.get().uri("/api/robots-refresh").exchange())
                 .hasStatusOk()
                 .bodyText().contains("Error: timeout");
+    }
+
+    @Test
+    void ipInfoReturnsJson() {
+        when(ipInfoService.lookup("1.2.3.4"))
+                .thenReturn(new IpInfoService.IpInfo("1.2.3.4", "host.example.com", "AS1 Acme", "Paris", "FR"));
+
+        assertThat(mvc.get().uri("/api/ip-info/1.2.3.4").exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$.hostname").isEqualTo("host.example.com");
     }
 }

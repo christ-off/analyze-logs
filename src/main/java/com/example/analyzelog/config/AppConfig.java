@@ -2,12 +2,18 @@ package com.example.analyzelog.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class AppConfig {
+
+    @Bean
+    public RestClient restClient() {
+        return RestClient.create();
+    }
 
     @Bean
     public S3Client s3Client(AppProperties props) {

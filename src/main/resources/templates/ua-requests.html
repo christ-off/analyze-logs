@@ -61,7 +61,7 @@
                     </tr>
                     <tr th:each="req : ${requests}">
                         <td th:text="${#temporals.format(req.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        <td th:text="${req.clientIp()}"></td>
+                        <td class="ip-cell" th:data-ip="${req.clientIp()}" th:text="${req.clientIp()}"></td>
                         <td th:text="${req.country()}"></td>
                         <td><code th:text="${req.uriStem()}"></code></td>
                         <td>
@@ -87,5 +87,7 @@
     </div>
 
 </th:block>
-<th:block class="page-script"></th:block>
+<th:block class="page-script">
+<script type="module" th:src="@{/js/pages/ua-requests.js}"></script>
+</th:block>
 </html>

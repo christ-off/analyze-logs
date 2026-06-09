@@ -9,8 +9,10 @@ import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
+import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,11 +26,14 @@ public class ApiController {
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
     private final RobotsService robotsService;
+    private final IpInfoService ipInfoService;
 
-    public ApiController(DashboardService dashboardService, AppProperties appProperties, RobotsService robotsService) {
+    public ApiController(DashboardService dashboardService, AppProperties appProperties,
+                         RobotsService robotsService, IpInfoService ipInfoService) {
         this.dashboardService = dashboardService;
         this.appProperties = appProperties;
         this.robotsService = robotsService;
+        this.ipInfoService = ipInfoService;
     }
 
     @GetMapping("/ua-groups")
@@ -108,6 +113,11 @@ public class ApiController {
     public List<DisobedientBot> robotsDisobedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return robotsService.findDisobedientBots(range.from(), range.to());
+    }
+
+    @GetMapping("/ip-info/{ip}")
+    public IpInfoService.IpInfo ipInfo(@PathVariable String ip) {
+        return ipInfoService.lookup(ip);
     }
 
     @GetMapping("/robots-refresh")

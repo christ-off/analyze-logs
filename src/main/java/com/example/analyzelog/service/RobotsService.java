@@ -17,11 +17,12 @@ public class RobotsService {
 
     private final JdbcTemplate jdbc;
     private final AppProperties appProperties;
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient;
 
-    public RobotsService(JdbcTemplate jdbc, AppProperties appProperties) {
+    public RobotsService(JdbcTemplate jdbc, AppProperties appProperties, RestClient restClient) {
         this.jdbc = jdbc;
         this.appProperties = appProperties;
+        this.restClient = restClient;
     }
 
     public void refresh() {
