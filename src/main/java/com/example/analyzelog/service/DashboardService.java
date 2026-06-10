@@ -634,14 +634,14 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    // Real browsers never request /robots.txt — any browser-classified UA doing so is a bot.
-    public List<NameCount> browsersFetchingRobots(Instant from, Instant to, int limit) {
+    // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
+    public List<NameCount> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent AS name, COUNT(*) AS count
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE s.ua_group = 'Browsers'
-                  AND c.uri_stem = '/robots.txt'
+                  AND c.uri_stem IN ('/robots.txt', '/ads.txt', '/sitemap.xml')
                   AND c.timestamp BETWEEN ? AND ?
                 GROUP BY c.user_agent
                 ORDER BY count DESC

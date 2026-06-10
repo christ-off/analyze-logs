@@ -1068,21 +1068,23 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void browsersFetchingRobots_flagsOnlyBrowserGroupOnRobotsTxt() {
+    void browserConfigFetches_flagsOnlyBrowserGroupOnConfigFiles() {
         Instant base = Instant.now().plus(400, ChronoUnit.DAYS);
-        repository.saveEntries("logs/browser-robots-test.gz", List.of(
+        repository.saveEntries("logs/browser-config-test.gz", List.of(
                 entryAt(base,                "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
                 entryAt(base.plusSeconds(1), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
                 entryAt(base.plusSeconds(2), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
-                entryAt(base.plusSeconds(3), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
-                entryAt(base.plusSeconds(4), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html")   // not robots.txt — excluded
+                entryAt(base.plusSeconds(3), "1.1.1.1", UA_CHROME_WINDOWS, "/ads.txt"),
+                entryAt(base.plusSeconds(4), "1.1.1.1", UA_CHROME_WINDOWS, "/sitemap.xml"),
+                entryAt(base.plusSeconds(5), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
+                entryAt(base.plusSeconds(6), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html")   // not a config file — excluded
         ));
 
-        var result = dashboardService.browsersFetchingRobots(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+        var result = dashboardService.browserConfigFetches(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(3, result.getFirst().count());
+        assertEquals(5, result.getFirst().count());
     }
 
     @Test

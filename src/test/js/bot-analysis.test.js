@@ -19,7 +19,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
-import { loadDisobedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserRobots, loadBurstIps } from '../../main/resources/static/js/bot-analysis.js';
+import { loadDisobedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches, loadBurstIps } from '../../main/resources/static/js/bot-analysis.js';
 
 async function flushPromises() {
     for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -79,7 +79,7 @@ describe('bot signal tables', () => {
     beforeEach(() => {
         document.body.innerHTML = `
             <table><tbody id="fakeBrowsersTable"></tbody></table>
-            <table><tbody id="browserRobotsTable"></tbody></table>
+            <table><tbody id="browserConfigTable"></tbody></table>
             <table><tbody id="burstIpsTable"></tbody></table>
         `;
         vi.clearAllMocks();
@@ -99,15 +99,15 @@ describe('bot signal tables', () => {
         expect(row.textContent).toContain('67');
     });
 
-    it('loadBrowserRobots renders UA and count', async () => {
+    it('loadBrowserConfigFetches renders UA and count', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
             json: () => Promise.resolve([{ name: 'FakeChrome/103', count: 56 }]),
         }));
-        loadBrowserRobots();
+        loadBrowserConfigFetches();
         await flushPromises();
 
-        const row = document.querySelector('#browserRobotsTable tr');
-        expect(fetch.mock.calls[0][0]).toContain('/api/browser-robots?');
+        const row = document.querySelector('#browserConfigTable tr');
+        expect(fetch.mock.calls[0][0]).toContain('/api/browser-config?');
         expect(row.textContent).toContain('FakeChrome/103');
         expect(row.textContent).toContain('56');
     });

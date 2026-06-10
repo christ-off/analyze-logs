@@ -102,12 +102,12 @@ export function loadFakeBrowsers() {
     </tr>`, 'No round-the-clock browser UAs found for the selected date range.');
 }
 
-export function loadBrowserRobots() {
+export function loadBrowserConfigFetches() {
     const p = buildBaseParams({});
-    loadSimpleTable('/api/browser-robots?' + p, 'browserRobotsTable', 2, b => `<tr>
+    loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 2, b => `<tr>
         <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
         <td class="text-end">${b.count.toLocaleString()}</td>
-    </tr>`, 'No browser UAs fetched robots.txt in the selected date range.');
+    </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
 
 export function loadBurstIps() {
@@ -189,7 +189,7 @@ export function loadAllCharts() {
     Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
     loadProbableBots();
     loadFakeBrowsers();
-    loadBrowserRobots();
+    loadBrowserConfigFetches();
     loadBurstIps();
     Charts.loadChart(`bot-human-daily?${p}`, loadBotHumanDaily);
     loadDisobedientSection();

@@ -305,11 +305,11 @@ class ApiControllerTest {
     }
 
     @Test
-    void browserRobotsReturnsJson() {
-        when(dashboardService.browsersFetchingRobots(any(Instant.class), any(Instant.class), anyInt()))
+    void browserConfigReturnsJson() {
+        when(dashboardService.browserConfigFetches(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameCount("Mozilla/5.0 Chrome/103", 56)));
 
-        assertThat(mvc.get().uri("/api/browser-robots")
+        assertThat(mvc.get().uri("/api/browser-config")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()

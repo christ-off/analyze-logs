@@ -117,10 +117,10 @@ public class ApiController {
         return dashboardService.fakeBrowserUas(range.from(), range.to(), appProperties.topLimit());
     }
 
-    @GetMapping("/browser-robots")
-    public List<NameCount> browserRobots(@RequestParam String from, @RequestParam String to) {
+    @GetMapping("/browser-config")
+    public List<NameCount> browserConfig(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.browsersFetchingRobots(range.from(), range.to(), appProperties.topLimit());
+        return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/burst-ips")
