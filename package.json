@@ -8,9 +8,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@types/node": "25.9.1",
     "@vitest/coverage-v8": "^4.1.8",
+    "@types/node": "25.9.2",
     "jsdom": "^29.1.1",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   }
 }

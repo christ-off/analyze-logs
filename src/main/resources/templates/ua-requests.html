@@ -52,15 +52,16 @@
                         <th>Country</th>
                         <th>URI</th>
                         <th>Result</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(requests)}">
-                        <td colspan="5" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
+                        <td colspan="6" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
                     </tr>
                     <tr th:each="req : ${requests}">
                         <td th:text="${#temporals.format(req.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        <td th:text="${req.clientIp()}"></td>
+                        <td class="ip-cell" th:data-ip="${req.clientIp()}" th:text="${req.clientIp()}"></td>
                         <td th:text="${req.country()}"></td>
                         <td><code th:text="${req.uriStem()}"></code></td>
                         <td>
@@ -71,6 +72,14 @@
                                                                                        ' text-danger'))">
                             </span>
                         </td>
+                        <td>
+                            <span th:text="${req.scStatus()}"
+                                  th:classappend="${req.scStatus() >= 200 and req.scStatus() < 300} ? ' text-success' :
+                                                  (${req.scStatus() >= 300 and req.scStatus() < 400} ? ' text-primary' :
+                                                  (${req.scStatus() >= 400 and req.scStatus() < 500} ? ' text-warning' :
+                                                                                                       ' text-danger'))">
+                            </span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -78,5 +87,7 @@
     </div>
 
 </th:block>
-<th:block class="page-script"></th:block>
+<th:block class="page-script">
+<script type="module" th:src="@{/js/pages/ua-requests.js}"></script>
+</th:block>
 </html>

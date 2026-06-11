@@ -7,5 +7,6 @@ public record BotUaRequest(
     String clientIp,
     String uriStem,
     String resultType,
-    String country
+    String country,
+    int scStatus
 ) {}
