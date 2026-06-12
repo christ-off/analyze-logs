@@ -239,6 +239,19 @@ public class DashboardService {
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
     }
 
+    public List<CountryResultTypeCount> topCountriesByFilteredRatio(Instant from, Instant to, int limit) {
+        String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND country IS NOT NULL\n" +
+                "GROUP BY country\n" +
+                "HAVING function > 0\n" +
+                "ORDER BY CASE WHEN (hit + miss) = 0 THEN CAST(function AS REAL)\n" +
+                "              ELSE CAST(function AS REAL) / (hit + miss) END DESC\n" +
+                LIMIT_PARAM;
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
+    }
+
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
         String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +

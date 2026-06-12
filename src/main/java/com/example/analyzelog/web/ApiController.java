@@ -59,6 +59,12 @@ public class ApiController {
         return dashboardService.topCountriesByResultType(range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
+    @GetMapping("/countries-filtered-ratio")
+    public List<CountryResultTypeCount> countriesFilteredRatio(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topCountriesByFilteredRatio(range.from(), range.to(), appProperties.topLimit());
+    }
+
     @GetMapping("/top-urls-split")
     public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to,
                                                   @RequestParam(defaultValue = "false") boolean excludeBots) {

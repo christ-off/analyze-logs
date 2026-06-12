@@ -38,10 +38,16 @@
         </div>
     </div>
 
-    <!-- Most active bots (chart) -->
+    <!-- Countries with most filtered content + Most active bots -->
     <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card">
+        <div class="col-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Countries with Most Filtered Traffic</div>
+                <div class="card-body" style="position:relative;height:420px"><canvas id="chartCountriesFiltered"></canvas></div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card h-100">
                 <div class="card-header fw-semibold">Most Active Bots</div>
                 <div class="card-body" style="position:relative;height:420px"><canvas id="chartTopBots"></canvas></div>
             </div>

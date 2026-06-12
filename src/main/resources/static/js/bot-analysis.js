@@ -179,13 +179,20 @@ export function initRobotsRefresh() {
     });
 }
 
+function countryDetailUrl(d) {
+    return `/country-detail?country=${encodeURIComponent(d.code)}&from=${Charts.toDateParam(cfFrom)}&to=${Charts.toDateParam(cfTo)}`;
+}
+
 export function loadAllCharts() {
     const chart = Chart.getChart('chartBotHumanDaily');
     if (chart) chart.destroy();
     const topBotsChart = Chart.getChart('chartTopBots');
     if (topBotsChart) topBotsChart.destroy();
+    const filteredChart = Chart.getChart('chartCountriesFiltered');
+    if (filteredChart) filteredChart.destroy();
 
     const p = buildBaseParams({});
+    Charts.loadChart(`countries-filtered-ratio?${p}`, data => Charts.horizontalStackedBar('chartCountriesFiltered', data, countryDetailUrl));
     Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
     loadProbableBots();
     loadFakeBrowsers();
