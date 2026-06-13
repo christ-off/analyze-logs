@@ -355,6 +355,7 @@ public class DashboardService {
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND referer IS NOT NULL\n" +
+                "  AND " + RESULT_TYPE_EXCLUSION + "\n" +
                 andClause(selfExclusionClause) +
                 andClause(botClause) +
                 "GROUP BY referer\n" +
