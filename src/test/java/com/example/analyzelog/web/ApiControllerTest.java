@@ -321,7 +321,7 @@ class ApiControllerTest {
     @Test
     void burstIpsReturnsJson() {
         when(dashboardService.burstIps(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new BurstIp("20.203.183.116", 815, 815)));
+                .thenReturn(List.of(new BurstIp("20.203.183.116", 815, 815, "US")));
 
         assertThat(mvc.get().uri("/api/burst-ips")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

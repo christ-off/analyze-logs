@@ -107,18 +107,21 @@ public class DashboardService {
     private final List<String> excludedExtensions;
     private final List<String> selfReferers;
     private final ReloadableRefererService refererService;
+    private final IpInfoService ipInfoService;
     private final Map<String, List<String>> groupPatterns;
 
     public DashboardService(JdbcTemplate jdbc, EdgeLocationResolver edgeLocationResolver,
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
                             ReloadableRefererService refererService,
-                            UriStemGroupProperties uriStemGroupProperties) {
+                            UriStemGroupProperties uriStemGroupProperties,
+                            IpInfoService ipInfoService) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
         this.selfReferers = refererFilterProperties.selfReferers();
         this.refererService = refererService;
+        this.ipInfoService = ipInfoService;
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
                         UriStemGroupProperties.Group::name,
@@ -662,7 +665,7 @@ public class DashboardService {
 
     // IPs firing at least 60 requests inside a single minute — far beyond human browsing.
     public List<BurstIp> burstIps(Instant from, Instant to, int limit) {
-        return jdbc.query("""
+        var result = jdbc.query("""
                 WITH per_min AS (
                     SELECT client_ip, strftime('%Y-%m-%dT%H:%M', timestamp) AS minute, COUNT(*) AS c
                     FROM cloudfront_logs
@@ -679,8 +682,16 @@ public class DashboardService {
                 (rs, _) -> new BurstIp(
                         rs.getString("client_ip"),
                         rs.getLong("max_per_minute"),
-                        rs.getLong("total")),
+                        rs.getLong("total"),
+                        "?"),
                 from.toString(), to.toString(), limit);
+
+        for (var ip : result) {
+            String country = ipInfoService.lookup(ip.clientIp()).country();
+            result.set(result.indexOf(ip), new BurstIp(ip.clientIp(), ip.maxPerMinute(), ip.total(), country));
+        }
+
+        return result;
     }
 
 }

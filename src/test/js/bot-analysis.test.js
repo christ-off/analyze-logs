@@ -112,9 +112,9 @@ describe('bot signal tables', () => {
         expect(row.textContent).toContain('56');
     });
 
-    it('loadBurstIps renders IP, max per minute and total', async () => {
+    it('loadBurstIps renders IP, country, max per minute and total', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815 }]),
+            json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815, country: 'US' }]),
         }));
         loadBurstIps();
         await flushPromises();
@@ -127,7 +127,7 @@ describe('bot signal tables', () => {
 
     it('clicking a burst IP cell fetches and renders IP info', async () => {
         const fetchMock = vi.fn()
-            .mockResolvedValueOnce({ json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815 }]) })
+            .mockResolvedValueOnce({ json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815, country: 'US' }]) })
             .mockResolvedValueOnce({ json: () => Promise.resolve({ ip: '20.203.183.116', hostname: 'azure.example.com', org: 'AS8075 Microsoft', city: 'Dublin', country: 'IE' }) });
         vi.stubGlobal('fetch', fetchMock);
 

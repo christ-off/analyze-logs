@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class DashboardServiceIntegrationTest {
@@ -34,6 +37,9 @@ class DashboardServiceIntegrationTest {
         registry.add("referer-filter.self-referers[0]", () -> "https://post-tenebras-lire.net/");
         registry.add("referer-filter.self-referers[1]", () -> "http://post-tenebras-lire.net/");
     }
+
+    @MockitoBean
+    IpInfoService ipInfoService;
 
     @Autowired
     LogRepository repository;
@@ -1100,13 +1106,17 @@ class DashboardServiceIntegrationTest {
         }
         repository.saveEntries("logs/burst-ips-test.gz", entries);
 
-        var result = dashboardService.burstIps(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+        when(ipInfoService.lookup("7.7.7.7"))
+                .thenReturn(new IpInfoService.IpInfo("7.7.7.7", "?", "?", "?", "DE"));
 
-        assertEquals(1, result.size());
-        var burst = result.getFirst();
+        var burstIps = dashboardService.burstIps(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+
+        assertEquals(1, burstIps.size());
+        var burst = burstIps.getFirst();
         assertEquals("7.7.7.7", burst.clientIp());
         assertEquals(60, burst.maxPerMinute());
         assertEquals(61, burst.total());
+        assertEquals("DE", burst.country());
     }
 
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
