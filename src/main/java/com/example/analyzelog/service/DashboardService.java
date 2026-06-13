@@ -20,11 +20,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -369,7 +367,15 @@ public class DashboardService {
 
         List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
 
-        return aggregateByLabel(raw, this::normalizeReferer).stream()
+        return raw.stream()
+                .map(entry -> Map.<String, Long>entry(normalizeReferer(entry.name()), entry.count()))
+                .filter(pair -> pair.getKey() != null)
+                .collect(Collectors.groupingBy(
+                        Map.Entry<String, Long>::getKey,
+                        Collectors.summingLong(Map.Entry<String, Long>::getValue)))
+                .entrySet().stream()
+                .map(e -> new NameCount(e.getKey(), e.getValue().longValue()))
+                .sorted(Comparator.comparingLong(NameCount::count).reversed())
                 .limit(limit)
                 .toList();
     }
@@ -397,7 +403,7 @@ public class DashboardService {
                 // schemeless referer (e.g. "www.google.com/path") — prepend scheme to parse host
                 host = URI.create("https://" + referer).getHost();
             }
-            if (host == null) return referer;
+            if (host == null) return null;
             String h = host.startsWith("www.") ? host.substring(4) : host;
             for (RefererRule rule : refererService.getRules()) {
                 if ((rule.domain() != null && h.equals(rule.domain()))
@@ -408,9 +414,9 @@ public class DashboardService {
             }
             return h;
         } catch (IllegalArgumentException _) {
-            // malformed URI — return as-is
+            // malformed URI — filter out
         }
-        return referer;
+        return null;
     }
 
     public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to, boolean excludeBots) {
@@ -542,17 +548,6 @@ public class DashboardService {
         args.add(to.toString());
         args.addAll(entry.getValue());
         return queryDailyByResultType(sql, args.toArray());
-    }
-
-    private static List<NameCount> aggregateByLabel(List<NameCount> raw, UnaryOperator<String> labeler) {
-        Map<String, Long> totals = new LinkedHashMap<>();
-        for (NameCount entry : raw) {
-            totals.merge(labeler.apply(entry.name()), entry.count(), Long::sum);
-        }
-        return totals.entrySet().stream()
-                .map(e -> new NameCount(e.getKey(), e.getValue()))
-                .sorted(Comparator.comparingLong(NameCount::count).reversed())
-                .toList();
     }
 
     public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit) {
