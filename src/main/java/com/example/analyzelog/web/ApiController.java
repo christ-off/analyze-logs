@@ -1,7 +1,6 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.CountryResultTypeCount;
@@ -117,12 +116,6 @@ public class ApiController {
     public List<NameResultTypeCount> probableBots(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.probableBots(range.from(), range.to(), appProperties.topLimit());
-    }
-
-    @GetMapping("/bot-human-daily")
-    public List<BotHumanDailyCount> botHumanDaily(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.botHumanDailyCounts(range.from(), range.to());
     }
 
     @GetMapping("/fake-browsers")

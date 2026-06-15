@@ -3,7 +3,6 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
-import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.CountryResultTypeCount;
@@ -626,28 +625,6 @@ public class DashboardService {
                 ORDER BY timestamp DESC
                 """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST);
         return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, from.toString(), to.toString());
-    }
-
-    public List<BotHumanDailyCount> botHumanDailyCounts(Instant from, Instant to) {
-        return jdbc.query("""
-                SELECT date(c.timestamp) as day,
-                    SUM(CASE WHEN s.ua_group IN ('AI Bots','Search Bots','Other Bots','Apps')
-                             OR c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) as bots,
-                    SUM(CASE WHEN s.ua_group NOT IN ('AI Bots','Search Bots','Other Bots','Apps')
-                             AND s.ua_group != 'Unknown'
-                             AND c.ua_name != '(no user agent)'
-                             AND c.edge_response_result_type NOT IN (%s) THEN 1 ELSE 0 END) as humans
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE c.timestamp BETWEEN ? AND ?
-                GROUP BY day
-                ORDER BY day
-                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST, ResultTypeSql.FUNCTION_TYPE_LIST),
-                (rs, _) -> new BotHumanDailyCount(
-                        LocalDate.parse(rs.getString("day")),
-                        rs.getLong("bots"),
-                        rs.getLong("humans")),
-                from.toString(), to.toString());
     }
 
     // Browser-classified UAs active in nearly every hour of the day — humans show a
