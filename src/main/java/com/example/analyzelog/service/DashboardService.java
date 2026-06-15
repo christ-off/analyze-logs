@@ -346,6 +346,20 @@ public class DashboardService {
         return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString());
     }
 
+    public List<NameCount> protocolVersions(Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        String sql = """
+                SELECT protocol_version as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND edge_result_type NOT IN ('Error', 'FunctionGeneratedResponse')
+                """ + exclusion + """
+                GROUP BY protocol_version
+                ORDER BY count DESC
+                """;
+        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString());
+    }
+
     public List<NameCount> topReferers(Instant from, Instant to, int limit, boolean excludeBots) {
         List<String> exclusionPatterns = selfReferers.stream()
                 .flatMap(prefix -> selfExclusionPatterns(prefix).stream())

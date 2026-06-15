@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Protocol Versions', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Protocol Versions</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"      th:content="${from}"/>
+    <meta name="cf-to"        th:content="${to}"/>
+    <meta name="cf-to-date"   th:content="${toDate}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Date range bar -->
+    <div class="card mb-4 cf-toolbar">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold me-2">Range:</span>
+            <a th:href="@{/protocol-versions?range=1d}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+            <a th:href="@{/protocol-versions?range=7d}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+            <a th:href="@{/protocol-versions?range=30d}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+            <a th:href="@{/protocol-versions?range=3m}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+
+            <form th:action="@{/protocol-versions}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
+                <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                <span>&ndash;</span>
+                <input type="date" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
+                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            </form>
+
+            <div class="form-check form-switch ms-3 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" role="switch" aria-checked="true"
+                       id="toggleBots" style="width:2.5em; height:1.5em"/>
+                <label class="form-check-label" for="toggleBots">Hide bots, apps &amp; feeds &amp; noise</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Protocol Versions Chart -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Protocol Versions</div>
+        <div class="card-body"><canvas id="chartProtocolVersions"></canvas></div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/protocol-versions.js}"></script>
+</th:block>
+</html>

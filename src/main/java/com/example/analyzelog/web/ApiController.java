@@ -85,6 +85,13 @@ public class ApiController {
         return dashboardService.topEdgeLocations(range.from(), range.to(), appProperties.topLimit());
     }
 
+    @GetMapping("/protocol-versions")
+    public List<NameCount> protocolVersions(@RequestParam String from, @RequestParam String to,
+                                            @RequestParam(defaultValue = "false") boolean excludeBots) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.protocolVersions(range.from(), range.to(), excludeBots);
+    }
+
     @GetMapping("/platforms")
     public List<NameCount> platforms(@RequestParam String from, @RequestParam String to,
                                      @RequestParam(defaultValue = "false") boolean excludeBots) {
