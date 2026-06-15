@@ -7,6 +7,7 @@ import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.DailyProtocolVersionCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.NameCount;
@@ -358,6 +359,19 @@ public class DashboardService {
                 ORDER BY count DESC
                 """;
         return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString());
+    }
+
+    public List<DailyProtocolVersionCount> protocolVersionsPerDay(Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
+        String sql = "SELECT date(timestamp) as day, protocol_version as pv, COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                exclusion +
+                "GROUP BY day, protocol_version\n" +
+                "ORDER BY day, protocol_version";
+        return jdbc.query(sql, (rs, _) -> new DailyProtocolVersionCount(
+                rs.getString("day"), rs.getString("pv"), rs.getLong("count")),
+                from.toString(), to.toString());
     }
 
     public List<NameCount> topReferers(Instant from, Instant to, int limit, boolean excludeBots) {

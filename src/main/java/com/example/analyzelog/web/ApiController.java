@@ -5,6 +5,7 @@ import com.example.analyzelog.model.BotHumanDailyCount;
 import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.DailyProtocolVersionCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
@@ -85,11 +86,11 @@ public class ApiController {
         return dashboardService.topEdgeLocations(range.from(), range.to(), appProperties.topLimit());
     }
 
-    @GetMapping("/protocol-versions")
-    public List<NameCount> protocolVersions(@RequestParam String from, @RequestParam String to,
-                                            @RequestParam(defaultValue = "false") boolean excludeBots) {
+    @GetMapping("/protocol-versions-daily")
+    public List<DailyProtocolVersionCount> protocolVersionsDaily(@RequestParam String from, @RequestParam String to,
+                                                                 @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.protocolVersions(range.from(), range.to(), excludeBots);
+        return dashboardService.protocolVersionsPerDay(range.from(), range.to(), excludeBots);
     }
 
     @GetMapping("/platforms")
