@@ -33,7 +33,7 @@ public class IpInfoService {
                     nvl(response.org()),
                     nvl(response.city()),
                     nvl(response.country()));
-        } catch (Exception e) {
+        } catch (Exception _) {
             return fallback(ip);
         }
     }

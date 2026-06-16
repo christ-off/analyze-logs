@@ -39,7 +39,7 @@ const SEGMENTS = [
 export function stackedBar(row, maxTotal) {
     const total = resultTotal(row);
     if (total === 0) return '';
-    const scale = maxTotal != null ? (total / maxTotal * 100) : 100;
+    const scale = maxTotal === null ? 100 : (total / maxTotal * 100);
     const segments = SEGMENTS
         .filter(s => row[s.key] > 0)
         .map(s => {

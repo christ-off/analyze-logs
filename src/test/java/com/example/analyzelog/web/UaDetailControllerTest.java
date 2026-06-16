@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,7 +79,7 @@ class UaDetailControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.uaRequestsPerDay(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
-                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 10, 2, 0, 0)));
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/ua-detail/requests-per-day")
                 .param("ua", "Chrome / Windows")

@@ -152,12 +152,12 @@ a:hover { color: var(--cf-accent); }
 }
 
 .cf-nav-link:hover {
-  background: rgba(148,163,184,.10);
+  background: #19202f;
   color: #e2e8f0;
 }
 
 .cf-nav-link.active {
-  background: linear-gradient(135deg, rgba(13,148,136,.28), rgba(13,148,136,.12));
+  background: linear-gradient(135deg, #0c363d, #0b212c);
   border-color: rgba(45,212,191,.25);
   color: #99f6e4;
 }

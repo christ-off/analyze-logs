@@ -36,6 +36,7 @@ public class DashboardService {
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
+    private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
@@ -45,7 +46,7 @@ public class DashboardService {
     private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> {
         String iso = rs.getString("country");
         String countryName = (iso != null && !iso.isBlank())
-                ? new java.util.Locale("", iso).getDisplayCountry(java.util.Locale.ENGLISH)
+                ? Locale.of("", iso).getDisplayCountry(Locale.ENGLISH)
                 : "-";
         return new BotUaRequest(
                 Instant.parse(rs.getString("timestamp")),
@@ -229,7 +230,7 @@ public class DashboardService {
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
-        String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_COUNTRY + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
@@ -241,7 +242,7 @@ public class DashboardService {
     }
 
     public List<CountryResultTypeCount> topCountriesByFilteredRatio(Instant from, Instant to, int limit) {
-        String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_COUNTRY + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
@@ -369,7 +370,7 @@ public class DashboardService {
                 "GROUP BY day, protocol_version\n" +
                 "ORDER BY day, protocol_version";
         return jdbc.query(sql, (rs, _) -> new DailyProtocolVersionCount(
-                rs.getString("day"), rs.getString("pv"), rs.getLong("count")),
+                rs.getString("day"), rs.getString("pv"), rs.getLong(COUNT_FIELD)),
                 from.toString(), to.toString());
     }
 
@@ -534,7 +535,7 @@ public class DashboardService {
     public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
         String exclusion = excludeBots ? andClause(humanTrafficExclusionClause()) : "";
-        String sql = "SELECT country as code,\n" + RESULT_TYPE_SUMS + "\n" +
+        String sql = SQL_SELECT_COUNTRY + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +

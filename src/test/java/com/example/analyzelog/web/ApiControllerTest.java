@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,7 +150,7 @@ class ApiControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.requestsPerDay(any(Instant.class), any(Instant.class), eq(false)))
-                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, 1, 15), 80, 20, 3, 5)));
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 80, 20, 3, 5)));
 
         assertThat(mvc.get().uri("/api/requests-per-day")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

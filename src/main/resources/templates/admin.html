@@ -76,13 +76,13 @@
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.uaGroup()}"></span>
-                                    <input type="text" id="editUaGroup" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" id="editUaGroup" aria-label="UA Group" class="edit-field d-none form-control form-control-sm"
                                            name="uaGroup" th:value="${ua.uaGroup()}"
                                            th:attr="form=${'ua-lbl-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.uaLabel()}"></span>
-                                    <input type="text" id="editUaLabel" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" id="editUaLabel" aria-label="UA Label" class="edit-field d-none form-control form-control-sm"
                                            name="uaLabel" th:value="${ua.uaLabel()}"
                                            th:attr="form=${'ua-lbl-form-' + stat.index}">
                                 </td>
@@ -168,14 +168,14 @@
                                 <td th:text="${ua.uaName()}"></td>
                                 <td>
                                     <span class="view-field" th:text="${ua.pattern()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" aria-label="Pattern" class="edit-field d-none form-control form-control-sm"
                                            name="pattern" th:value="${ua.pattern()}"
                                            th:id="'editUaPattern-' + ${stat.index}"
                                            th:attr="form=${'ua-cls-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ua.sortOrder()}"></span>
-                                    <input type="number" class="edit-field d-none form-control form-control-sm"
+                                    <input type="number" aria-label="Sort Order" class="edit-field d-none form-control form-control-sm"
                                            name="sortOrder" th:value="${ua.sortOrder()}"
                                            th:id="'editUaSortOrder-' + ${stat.index}"
                                            th:attr="form=${'ua-cls-form-' + stat.index}">
@@ -217,28 +217,28 @@
                             <tr th:each="ref, stat : ${refererRules}" th:id="'ref-row-' + ${stat.index}">
                                 <td>
                                     <span class="view-field" th:text="${ref.label()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" aria-label="Label" class="edit-field d-none form-control form-control-sm"
                                            name="label" th:value="${ref.label()}" required
                                            th:id="'editRefLabel-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domain()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" aria-label="Domain" class="edit-field d-none form-control form-control-sm"
                                            name="domain" th:value="${ref.domain()}"
                                            th:id="'editRefDomain-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domainStartsWith()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" aria-label="Domain Starts With" class="edit-field d-none form-control form-control-sm"
                                            name="domainStartsWith" th:value="${ref.domainStartsWith()}"
                                            th:id="'editRefDomainStartsWith-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
                                 </td>
                                 <td>
                                     <span class="view-field" th:text="${ref.domainEndsWith()}"></span>
-                                    <input type="text" class="edit-field d-none form-control form-control-sm"
+                                    <input type="text" aria-label="Domain Ends With" class="edit-field d-none form-control form-control-sm"
                                            name="domainEndsWith" th:value="${ref.domainEndsWith()}"
                                            th:id="'editRefDomainEndsWith-' + ${stat.index}"
                                            th:attr="form=${'ref-form-' + stat.index}">
