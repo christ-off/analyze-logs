@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.0</version>
         <relativePath/>
     </parent>
 
@@ -19,7 +19,7 @@
     <properties>
         <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <aws.sdk.version>2.46.5</aws.sdk.version>
+        <aws.sdk.version>2.46.11</aws.sdk.version>
         <sqlite.version>3.53.2.0</sqlite.version>
         <jacoco.version>0.8.15</jacoco.version>
         <sonar.maven.plugin.version>5.7.0.6970</sonar.maven.plugin.version>
