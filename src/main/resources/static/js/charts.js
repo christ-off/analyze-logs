@@ -223,7 +223,7 @@ Charts.lineByDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
 
-    const days = [...new Set(data.map(d => d.day))].sort();
+    const days = [...new Set(data.map(d => d.day))].sort((a, b) => a.localeCompare(b));
     const versions = [...new Set(data.map(d => d.protocolVersion))];
 
     const datasets = versions.map((version, i) => ({
