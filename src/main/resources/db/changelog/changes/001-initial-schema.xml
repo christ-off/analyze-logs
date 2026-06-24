@@ -18,7 +18,6 @@
             <column name="referer"                     type="TEXT"/>
             <column name="user_agent"                  type="TEXT"/>
             <column name="edge_result_type"            type="TEXT"/>
-            <column name="protocol"                    type="TEXT"/>
             <column name="cs_bytes"                    type="INTEGER"/>
             <column name="time_taken"                  type="REAL"/>
             <column name="edge_response_result_type"   type="TEXT"/>
@@ -28,10 +27,18 @@
             <column name="content_type"                type="TEXT"/>
             <column name="content_length"              type="INTEGER"/>
             <column name="country"                     type="TEXT"/>
+            <column name="ua_name"                      type="TEXT"/>
+            <column name="edge_location_iata"           type="TEXT"/>
         </createTable>
 
         <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_timestamp">
             <column name="timestamp"/>
+        </createIndex>
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_ua_name">
+            <column name="ua_name"/>
+        </createIndex>
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_edge_location_iata">
+            <column name="edge_location_iata"/>
         </createIndex>
     </changeSet>
 
@@ -40,6 +47,201 @@
             <column name="s3_key"     type="TEXT"><constraints primaryKey="true"/></column>
             <column name="fetched_at" type="TEXT"><constraints nullable="false"/></column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="001-static-ua-create" author="analyze-logs">
+        <sql>
+            CREATE TABLE static_ua (
+                ua_name    TEXT NOT NULL PRIMARY KEY,
+                ua_group   TEXT NOT NULL,
+                ua_label   TEXT NOT NULL,
+                pattern    TEXT,
+                sort_order INTEGER
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-static-ua-seed-browsers" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label) VALUES
+            ('Unknown',              'Browsers', 'Unknown'),
+            ('Chrome / iPhone',      'Browsers', 'Chrome / iPhone'),
+            ('Chrome / iPad',        'Browsers', 'Chrome / iPad'),
+            ('Chrome / Android',     'Browsers', 'Chrome / Android'),
+            ('Chrome / Windows',     'Browsers', 'Chrome / Windows'),
+            ('Chrome / macOS',       'Browsers', 'Chrome / macOS'),
+            ('Chrome / Linux',       'Browsers', 'Chrome / Linux'),
+            ('Chrome / Unknown OS',  'Browsers', 'Chrome / Unknown OS'),
+            ('Firefox / iPhone',     'Browsers', 'Firefox / iPhone'),
+            ('Firefox / iPad',       'Browsers', 'Firefox / iPad'),
+            ('Firefox / Android',    'Browsers', 'Firefox / Android'),
+            ('Firefox / Windows',    'Browsers', 'Firefox / Windows'),
+            ('Firefox / macOS',      'Browsers', 'Firefox / macOS'),
+            ('Firefox / Linux',      'Browsers', 'Firefox / Linux'),
+            ('Firefox / Unknown OS', 'Browsers', 'Firefox / Unknown OS'),
+            ('Safari / iPhone',      'Browsers', 'Safari / iPhone'),
+            ('Safari / iPad',        'Browsers', 'Safari / iPad'),
+            ('Safari / Android',     'Browsers', 'Safari / Android'),
+            ('Safari / Windows',     'Browsers', 'Safari / Windows'),
+            ('Safari / macOS',       'Browsers', 'Safari / macOS'),
+            ('Safari / Linux',       'Browsers', 'Safari / Linux'),
+            ('Safari / Unknown OS',  'Browsers', 'Safari / Unknown OS'),
+            ('Edge / iPhone',        'Browsers', 'Edge / iPhone'),
+            ('Edge / iPad',          'Browsers', 'Edge / iPad'),
+            ('Edge / Android',       'Browsers', 'Edge / Android'),
+            ('Edge / Windows',       'Browsers', 'Edge / Windows'),
+            ('Edge / macOS',         'Browsers', 'Edge / macOS'),
+            ('Edge / Linux',         'Browsers', 'Edge / Linux'),
+            ('Edge / Unknown OS',    'Browsers', 'Edge / Unknown OS')
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-static-ua-seed-classified" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            -- AI crawlers
+            ('ClaudeBot',             'AI Bots',      'ClaudeBot',             'ClaudeBot',             1),
+            ('Claude-SearchBot',      'AI Bots',      'Claude-SearchBot',      'Claude-SearchBot',      2),
+            ('OAI-SearchBot',         'AI Bots',      'OAI-SearchBot',         'OAI-SearchBot',         3),
+            ('PerplexityBot',         'AI Bots',      'PerplexityBot',         'PerplexityBot',         4),
+            -- SEO crawlers
+            ('AhrefsBot',             'Other Bots',   'AhrefsBot',             'AhrefsBot',             5),
+            ('SemrushBot',            'Other Bots',   'SemrushBot',            'SemrushBot',            6),
+            ('SERankingBot',          'Other Bots',   'SERankingBot',          'SERankingBacklinksBot', 7),
+            ('Barkrowler',            'Other Bots',   'Barkrowler',            'Barkrowler',            8),
+            ('DotBot',                'Other Bots',   'DotBot',                'DotBot',                9),
+            ('MJ12bot',               'Other Bots',   'MJ12bot',               'MJ12bot',               10),
+            ('HeadlineBot',           'Other Bots',   'HeadlineBot',           'ev-crawler',            11),
+            ('PetalBot',              'Other Bots',   'PetalBot',              'PetalBot',              12),
+            ('CocCocBot',             'Other Bots',   'CocCocBot',             'coccocbot',             13),
+            ('SeznamBot',             'Other Bots',   'SeznamBot',             'SeznamBot',             14),
+            -- Search bots
+            ('Googlebot',             'Search Bots',  'Googlebot',             'Googlebot',             15),
+            ('Google ImageProxy',     'Search Bots',  'Google ImageProxy',     'GoogleImageProxy',      16),
+            ('Google FeedFetcher',    'Search Bots',  'Google FeedFetcher',    'FeedFetcher-Google',    17),
+            ('Bingbot',               'Search Bots',  'Bingbot',               'bingbot',               18),
+            ('YandexBot',             'Search Bots',  'YandexBot',             'YandexBot',             19),
+            ('Baiduspider',           'Search Bots',  'Baiduspider',           'Baiduspider',           20),
+            ('DuckDuckBot',           'Search Bots',  'DuckDuckBot',           'DuckDuckBot',           21),
+            ('Qwantbot',              'Search Bots',  'Qwantbot',              'Qwantbot',              22),
+            -- Security scanners
+            ('WellKnownBot',          'Other Bots',   'WellKnownBot',          'WellKnownBot',          23),
+            ('Censys Scanner',        'Other Bots',   'Censys Scanner',        'CensysInspect',         24),
+            ('Palo Alto Scanner',     'Other Bots',   'Palo Alto Scanner',     'Palo Alto Networks',    25),
+            ('VisionHeight Scanner',  'Other Bots',   'VisionHeight Scanner',  'visionheight.com/scan', 26),
+            ('2ip Scanner',           'Other Bots',   '2ip Scanner',           '2ip bot',               27),
+            -- Feed readers
+            ('Feedly',                'Feed Readers', 'Feedly',                'Feedly',                28),
+            ('Feedbin',               'Feed Readers', 'Feedbin',               'Feedbin',               29),
+            ('Reeder',                'Feed Readers', 'Reeder',                'Reeder/',               30),
+            ('FreshRSS',              'Feed Readers', 'FreshRSS',              'FreshRSS',              31),
+            ('NewsBlur',              'Feed Readers', 'NewsBlur',              'NewsBlur',              32),
+            ('rss-parser',            'Feed Readers', 'rss-parser',            'rss-parser',            33),
+            ('sfFeedReader',          'Feed Readers', 'sfFeedReader',          'sfFeedReader',          34),
+            ('Feeder',                'Feed Readers', 'Feeder',                'feeder.co',             35),
+            ('Flus',                  'Feed Readers', 'Flus',                  'flus/',                 36),
+            ('WP.com FeedBot',        'Feed Readers', 'WP.com FeedBot',        'wp.com feedbot',        37),
+            -- Fediverse
+            ('Fediverse',             'Fediverse',    'Fediverse',             'Mastodon',              38),
+            ('Misskey',               'Fediverse',    'Misskey',               'Misskey/',              39),
+            ('SummalyBot',            'Other Bots',   'SummalyBot',            'SummalyBot',            40),
+            ('Yumechi Proxy',         'Other Bots',   'Yumechi Proxy',         'Yumechi',               41),
+            -- Social
+            ('Facebook',              'Other',        'Facebook',              'facebookexternalhit',  42),
+            -- Apps
+            ('Obsidian',              'Apps',         'Obsidian',              'obsidian/',             43),
+            ('Google Search App',     'Apps',         'Google Search App',     'GSA/',                  44),
+            ('okhttp',                'Apps',         'okhttp',                'okhttp/',               45),
+            ('Go HTTP client',        'Apps',         'Go HTTP client',        'Go-http-client/',       46),
+            -- Headless/suspicious
+            ('HeadlessChrome',        'Other Bots',   'HeadlessChrome',        'HeadlessChrome',        47),
+            -- More feed readers
+            ('Inoreader',             'Feed Readers', 'Inoreader',             'Inoreader',             48),
+            ('KrISS feed',            'Feed Readers', 'KrISS feed',            'KrISS feed',            49),
+            ('newsboat',              'Feed Readers', 'newsboat',              'newsboat/',             50),
+            ('RSS Guard',             'Feed Readers', 'RSS Guard',             'rssguard',              51),
+            ('Gofeed',                'Feed Readers', 'Gofeed',                'Gofeed/',               52),
+            -- More search/AI bots
+            ('Amazonbot',             'Search Bots',  'Amazonbot',             'Amazonbot',             53),
+            ('GPTBot',                'AI Bots',      'GPTBot',                'GPTBot',                54),
+            ('ChatGPT-User',          'AI Bots',      'ChatGPT-User',          'ChatGPT-User',          55),
+            ('Bytespider',            'Other Bots',   'Bytespider',            'Bytespider',            56),
+            ('meta-webindexer',       'Other Bots',   'meta-webindexer',       'meta-webindexer',       57),
+            ('meta-externalagent',    'Other Bots',   'meta-externalagent',    'meta-externalagent',   58),
+            ('Applebot',              'Search Bots',  'Applebot',              'Applebot',              59),
+            -- More Fediverse + misc (duplicate sort_order values preserved as originally seeded)
+            ('Iceshrimp',             'Fediverse',    'Iceshrimp',             'Iceshrimp/',            60),
+            ('Seamus',                'Search Bots',  'Seamus',                'Seamus',                60),
+            ('xAI-SearchBot',         'AI Bots',      'xAI-SearchBot',         'xAI-SearchBot',         61),
+            ('SeekportBot',           'Search Bots',  'SeekportBot',           'SeekportBot',           61),
+            ('MistralBot',            'Search Bots',  'MistralBot',            'MistralBot',            62),
+            ('Perplexity-User',       'AI Bots',      'Perplexity-User',       'Perplexity-User',       63),
+            ('DeepSeekBot',           'AI Bots',      'DeepSeekBot',           'DeepSeekBot',           64),
+            ('YouBot',                'AI Bots',      'YouBot',                'YouBot',                65),
+            ('GoogleOther',           'Search Bots',  'GoogleOther',           'GoogleOther',           66),
+            ('Pleroma',               'Fediverse',    'Pleroma',               'Pleroma',               67),
+            ('Akkoma',                'Fediverse',    'Akkoma',                'Akkoma',                68),
+            ('Friendica',             'Fediverse',    'Friendica',             'Friendica/',            69),
+            ('OWLer',                 'Search Bots',  'OWLer',                 'OWLer',                 70),
+            ('Catodon',               'Fediverse',    'Catodon',               'Catodon',               70),
+            ('StefansTools',          'Fediverse',    'StefansTools',          'StefansTools/',         71)
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-static-referer-create" author="analyze-logs">
+        <sql>
+            CREATE TABLE static_referer (
+                label              TEXT NOT NULL,
+                domain             TEXT,
+                domain_starts_with TEXT,
+                domain_ends_with   TEXT
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-static-referer-seed" author="analyze-logs">
+        <sql>
+            INSERT INTO static_referer (label, domain, domain_starts_with, domain_ends_with) VALUES
+            ('Google',     NULL,             'google.',  NULL),
+            ('Facebook',   'facebook.com',   NULL,       NULL),
+            ('Babelio',    'babelio.com',    NULL,       NULL),
+            ('Qwant',      'qwant.com',      NULL,       NULL),
+            ('DuckDuckGo', 'duckduckgo.com', NULL,       NULL),
+            ('Bing',       'bing.com',       NULL,       NULL),
+            ('Yahoo',      NULL,             NULL,       'yahoo.com'),
+            ('Brave',      NULL,             NULL,       'brave.com'),
+            ('InoReader',  'inoreader.com',  NULL,       NULL),
+            ('Ecosia',     'ecosia.org',     NULL,       NULL),
+            ('Kagi',       'kagi.com',       NULL,       NULL),
+            ('Yandex',     NULL,             'yandex.',  NULL)
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-noise-filter" author="analyze-logs">
+        <sql>
+            CREATE TABLE noise_filter (
+                ua_name  TEXT NOT NULL,
+                uri_stem TEXT NOT NULL,
+                PRIMARY KEY (ua_name, uri_stem)
+            )
+        </sql>
+        <sql>
+            INSERT INTO noise_filter (ua_name, uri_stem) VALUES
+            ('Fediverse', '/'),
+            ('Misskey', '/'),
+            ('Feedbin', '/feed.xml'),
+            ('Feedly', '/feed.xml'),
+            ('Reeder', '/feed.xml')
+        </sql>
+    </changeSet>
+
+    <changeSet id="001-robots-disallowed" author="analyze-logs">
+        <sql>
+            CREATE TABLE robots_disallowed (
+                user_agent   TEXT NOT NULL PRIMARY KEY,
+                refreshed_at TEXT NOT NULL
+            )
+        </sql>
     </changeSet>
 
 </databaseChangeLog>

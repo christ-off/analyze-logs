@@ -6,35 +6,5 @@
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <include file="db/changelog/changes/001-initial-schema.xml"/>
-    <include file="db/changelog/changes/002-add-ua-name.xml"/>
-    <include file="db/changelog/changes/003-add-edge-location-iata.xml"/>
-    <include file="db/changelog/changes/004-drop-protocol.xml"/>
-    <include file="db/changelog/changes/005-static-ua.xml"/>
-    <include file="db/changelog/changes/006-static-ua-classifier.xml"/>
-    <include file="db/changelog/changes/007-merge-static-ua-classifier.xml"/>
-    <include file="db/changelog/changes/008-add-feed-reader-patterns.xml"/>
-    <include file="db/changelog/changes/009-static-referer.xml"/>
-    <include file="db/changelog/changes/010-noise-filter.xml"/>
-    <include file="db/changelog/changes/011-amazonbot.xml"/>
-    <include file="db/changelog/changes/012-more-bots.xml"/>
-    <include file="db/changelog/changes/013-meta-externalagent.xml"/>
-    <include file="db/changelog/changes/014-applebot.xml"/>
-    <include file="db/changelog/changes/015-iceshrimp-xai.xml"/>
-    <include file="db/changelog/changes/016-seamus-bot.xml"/>
-    <include file="db/changelog/changes/017-yandex-referer.xml"/>
-    <include file="db/changelog/changes/018-mistral-bot.xml"/>
-    <include file="db/changelog/changes/019-perplexity-user.xml"/>
-    <include file="db/changelog/changes/020-deepseekbot.xml"/>
-    <include file="db/changelog/changes/021-youbot.xml"/>
-    <include file="db/changelog/changes/022-googleother.xml"/>
-    <include file="db/changelog/changes/023-claudebot-variant.xml"/>
-    <include file="db/changelog/changes/024-owler.xml"/>
-    <include file="db/changelog/changes/025-pleroma-fediverse.xml"/>
-    <include file="db/changelog/changes/026-akkoma-fediverse.xml"/>
-    <include file="db/changelog/changes/027-mastodon-to-fediverse.xml"/>
-    <include file="db/changelog/changes/028-friendica-fediverse.xml"/>
-    <include file="db/changelog/changes/029-robots-disallowed.xml"/>
-    <include file="db/changelog/changes/030-catodon-fediverse.xml"/>
-    <include file="db/changelog/changes/031-stefanstools-fediverse.xml"/>
 
 </databaseChangeLog>
