@@ -125,7 +125,7 @@ public class ApiController {
     }
 
     @GetMapping("/browser-config")
-    public List<NameCount> browserConfig(@RequestParam String from, @RequestParam String to) {
+    public List<NameResultTypeCount> browserConfig(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }

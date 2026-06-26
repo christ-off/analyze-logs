@@ -653,19 +653,21 @@ public class DashboardService {
     }
 
     // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
-    public List<NameCount> browserConfigFetches(Instant from, Instant to, int limit) {
+    public List<NameResultTypeCount> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
-                SELECT c.user_agent AS name, COUNT(*) AS count
+                SELECT c.user_agent AS name,
+                """ + ResultTypeSql.RESULT_TYPE_SUMS + """
+
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE s.ua_group = 'Browsers'
                   AND c.uri_stem IN ('/robots.txt', '/ads.txt', '/sitemap.xml')
                   AND c.timestamp BETWEEN ? AND ?
                 GROUP BY c.user_agent
-                ORDER BY count DESC
+                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + """
                 LIMIT ?
                 """,
-                NAME_COUNT_MAPPER,
+                NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), limit);
     }
 

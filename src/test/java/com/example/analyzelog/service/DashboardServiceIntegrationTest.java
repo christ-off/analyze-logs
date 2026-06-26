@@ -1089,7 +1089,7 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(5, result.getFirst().count());
+        assertEquals(5, result.getFirst().total());
     }
 
     @Test
