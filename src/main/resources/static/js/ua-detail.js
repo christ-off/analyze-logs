@@ -22,6 +22,7 @@ async function loadAllCharts() {
 
     const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
     if (data.length) {
+        const maxTotal = Math.max(...data.map(resultTotal));
         tbody.innerHTML = data.map((row, i) => `
             <tr>
                 <td class="text-muted">${i + 1}</td>
@@ -31,7 +32,7 @@ async function loadAllCharts() {
                         : '(none)'}
                 </td>
                 <td class="text-end">${resultTotal(row).toLocaleString()}</td>
-                <td>${stackedBar(row)}</td>
+                <td>${stackedBar(row, maxTotal)}</td>
             </tr>`).join('');
         document.getElementById('uaBarLegend').style.removeProperty('display');
     } else {
