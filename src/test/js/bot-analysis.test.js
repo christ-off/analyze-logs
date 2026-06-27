@@ -101,7 +101,7 @@ describe('bot signal tables', () => {
 
     it('loadBrowserConfigFetches renders UA and count', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: 'FakeChrome/103', count: 56 }]),
+            json: () => Promise.resolve([{ name: 'FakeChrome/103', hit: 50, miss: 4, function: 1, error: 1 }]),
         }));
         loadBrowserConfigFetches();
         await flushPromises();
