@@ -56,7 +56,6 @@ class CloudFrontLogParserTest {
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
         assertEquals("Hit", e.edgeResponseResultType());
-        assertEquals("HTTP/1.1", e.protocolVersion());
         assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
@@ -76,7 +75,6 @@ class CloudFrontLogParserTest {
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
         assertEquals(1_048_576L, e.contentLength());
-        assertEquals("HTTP/2.0", e.protocolVersion());
         assertEquals("FR", e.country());
     }
 
@@ -187,7 +185,6 @@ class CloudFrontLogParserTest {
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
         assertEquals("Hit", e.edgeResponseResultType());
-        assertEquals("HTTP/1.1", e.protocolVersion());
         assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
@@ -208,7 +205,6 @@ class CloudFrontLogParserTest {
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
         assertEquals(1_048_576L, e.contentLength());
-        assertEquals("HTTP/2.0", e.protocolVersion());
         assertEquals("FR", e.country());
     }
 

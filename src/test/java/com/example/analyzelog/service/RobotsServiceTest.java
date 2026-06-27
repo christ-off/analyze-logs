@@ -140,7 +140,7 @@ class RobotsServiceTest {
                 uri, 200,
                 null, ua,
                 resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
+                resultType, 0.001, resultType,
                 null, null, "US"
         );
     }

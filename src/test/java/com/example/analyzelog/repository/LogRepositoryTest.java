@@ -72,7 +72,7 @@ class LogRepositoryTest {
             "/index.html", 200,
             null, null,
             "Hit", 128L, 0.01,
-            "Hit", "HTTP/1.1", 0.01, "Hit",
+            "Hit", 0.01, "Hit",
             null, null, "US"
         );
 
@@ -85,7 +85,7 @@ class LogRepositoryTest {
             "/index.html", status,
             null, "TestAgent/1.0",
             "Hit", 336L, 0.001,
-            "Hit", "HTTP/1.1", 0.001, "Hit",
+            "Hit", 0.001, "Hit",
             null, null, "US"
         );
     }

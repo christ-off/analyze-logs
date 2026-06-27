@@ -16,7 +16,6 @@ public record CloudFrontLogEntry(
     long csBytes,
     double timeTaken,
     String edgeResponseResultType,
-    String protocolVersion,
     double timeToFirstByte,
     String edgeDetailedResultType,
     String contentType,

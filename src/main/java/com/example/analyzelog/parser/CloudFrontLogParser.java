@@ -96,7 +96,6 @@ public class CloudFrontLogParser {
                 longVal(row, "cs-bytes"),
                 doubleVal(row, "time-taken"),
                 text(row, "x-edge-response-result-type"),
-                text(row, "cs-protocol-version"),
                 doubleVal(row, "time-to-first-byte"),
                 text(row, "x-edge-detailed-result-type"),
                 nullIfDash(row, "sc-content-type"),

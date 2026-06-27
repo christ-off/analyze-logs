@@ -70,7 +70,6 @@ class CloudFrontIntegrationTest {
         assertEquals("Hit", e.edgeResultType());
         assertEquals(336L, e.csBytes());
         assertEquals(0.001, e.timeTaken(), 1e-6);
-        assertEquals("HTTP/1.1", e.protocolVersion());
         assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
