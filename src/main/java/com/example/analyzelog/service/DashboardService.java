@@ -87,8 +87,6 @@ public class DashboardService {
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
 
-    public record QueryFilter(boolean excludeBots) {}
-
     private static String excludeClause(String clause, boolean excludeBots) {
         return excludeBots ? andClause(clause) : "";
     }
