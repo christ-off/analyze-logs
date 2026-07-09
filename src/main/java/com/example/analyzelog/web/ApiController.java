@@ -12,6 +12,8 @@ import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +25,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiController.class);
 
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
@@ -145,7 +149,8 @@ public class ApiController {
             robotsService.refresh();
             return "OK — refreshed at " + robotsService.getRefreshedAt().orElse("?");
         } catch (Exception e) {
-            return "Error: " + e.getMessage();
+            log.error("Failed to refresh robots data", e);
+            return "Error: robots refresh failed, see server logs for details";
         }
     }
 }
