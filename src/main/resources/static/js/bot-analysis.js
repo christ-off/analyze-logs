@@ -68,9 +68,10 @@ export function loadFakeBrowsers() {
 
 export function loadBrowserConfigFetches() {
     const p = buildBaseParams({});
-    loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 2, b => `<tr>
+    loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 3, b => `<tr>
         <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
-        <td class="text-end">${b.count.toLocaleString()}</td>
+        <td class="text-end">${resultTotal(b).toLocaleString()}</td>
+        <td class="align-middle px-2">${stackedBar(b, null)}</td>
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
 
@@ -84,17 +85,6 @@ export function loadBurstIps() {
     </tr>`, 'No burst IPs found for the selected date range.', initIpLookup);
 }
 
-function resultBar(b) {
-    const total = resultTotal(b) || 1;
-    const seg = (val, color, label) =>
-        val > 0
-            ? `<div style="width:${(val / total * 100).toFixed(1)}%;background:${color};height:16px;display:inline-block" title="${label}: ${val}"></div>`
-            : '';
-    return `<div class="d-flex" style="background:#dee2e6;border-radius:3px;overflow:hidden">
-        ${seg(b.hit, Charts.COLORS.green, 'Hit')}${seg(b.miss, Charts.COLORS.blue, 'Miss')}${seg(b['function'], Charts.COLORS.orange, 'Filtered')}${seg(b.error, Charts.COLORS.red, 'Error')}
-    </div>`;
-}
-
 function loadDisobedientBots(data) {
     const tbody = document.getElementById('disobedientBotsTable');
     if (!tbody) return;
@@ -105,7 +95,7 @@ function loadDisobedientBots(data) {
     tbody.innerHTML = data.map(b => `<tr>
         <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
         <td class="text-end">${b.count.toLocaleString()}</td>
-        <td class="align-middle px-2">${resultBar(b)}</td>
+        <td class="align-middle px-2">${stackedBar(b, null)}</td>
     </tr>`).join('');
 }
 

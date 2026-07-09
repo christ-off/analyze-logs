@@ -611,103 +611,51 @@ class DashboardServiceIntegrationTest {
         assertEquals(3, wpTotal);
     }
 
-    private CloudFrontLogEntry entryWithUaAndCountryAndResultType(String ua, String country, String resultType) {
+    private CloudFrontLogEntry makeEntry(Instant ts, String edgeLocation, String ip, String uriStem, String referer, String ua, String country, String resultType) {
         return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                null, ua,
+                ts, edgeLocation, 1068L, ip, "GET",
+                uriStem, 200,
+                referer, ua,
                 resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
+                resultType, 0.001, resultType,
                 null, null, country
         );
+    }
+
+    private CloudFrontLogEntry entryWithUaAndCountryAndResultType(String ua, String country, String resultType) {
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", null, ua, country, resultType);
     }
 
     private CloudFrontLogEntry entryWithUaAndCountry(String ua, String country) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                null, ua,
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, country
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", null, ua, country, "Hit");
     }
 
     private CloudFrontLogEntry entryWithUaAndUri(String ua, String uriStem) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                uriStem, 200,
-                null, ua,
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", uriStem, null, ua, "US", "Hit");
     }
 
     private CloudFrontLogEntry entry(String edgeLocation) {
-        return new CloudFrontLogEntry(
-                Instant.now(), edgeLocation, 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                null, "TestAgent/1.0",
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), edgeLocation, "1.2.3.4", "/index.html", null, "TestAgent/1.0", "US", "Hit");
     }
 
     private CloudFrontLogEntry entryWithResultType(String resultType) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                null, "TestAgent/1.0",
-                resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", null, "TestAgent/1.0", "US", resultType);
     }
 
     private CloudFrontLogEntry entryWithUri(String uriStem) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                uriStem, 200,
-                null, "TestAgent/1.0",
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", uriStem, null, "TestAgent/1.0", "US", "Hit");
     }
 
     private CloudFrontLogEntry entryWithCountryAndUriAndResultType(String country, String uriStem, String resultType) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                uriStem, 200,
-                null, "TestAgent/1.0",
-                resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
-                null, null, country
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", uriStem, null, "TestAgent/1.0", country, resultType);
     }
 
     private CloudFrontLogEntry entryWithCountryAndResultType(String country, String resultType) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                null, "TestAgent/1.0",
-                resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
-                null, null, country
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", null, "TestAgent/1.0", country, resultType);
     }
 
     private CloudFrontLogEntry entryWithUriAndResultType(String uriStem, String resultType) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                uriStem, 200,
-                null, "TestAgent/1.0",
-                resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", uriStem, null, "TestAgent/1.0", "US", resultType);
     }
 
     // --- url-detail integration tests ---
@@ -834,20 +782,13 @@ class DashboardServiceIntegrationTest {
                 "/index.html", 200,
                 null, ua,
                 resultType, 336L, 0.001,
-                resultType, "HTTP/1.1", 0.001, resultType,
+                resultType, 0.001, resultType,
                 null, null, "US"
         );
     }
 
     private CloudFrontLogEntry entryWithReferer(String referer) {
-        return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
-                "/index.html", 200,
-                referer, "TestAgent/1.0",
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, "US"
-        );
+        return makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", referer, "TestAgent/1.0", "US", "Hit");
     }
 
     // --- requestsByUserAgent integration tests ---
@@ -1089,7 +1030,7 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(5, result.getFirst().count());
+        assertEquals(5, result.getFirst().total());
     }
 
     @Test
@@ -1119,13 +1060,6 @@ class DashboardServiceIntegrationTest {
     }
 
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
-        return new CloudFrontLogEntry(
-                ts, "SFO53-P7", 1068L, ip, "GET",
-                uri, 200,
-                null, ua,
-                "Hit", 336L, 0.001,
-                "Hit", "HTTP/1.1", 0.001, "Hit",
-                null, null, "US"
-        );
+        return makeEntry(ts, "SFO53-P7", ip, uri, null, ua, "US", "Hit");
     }
 }

@@ -2,7 +2,6 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,33 +13,27 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/referer-detail")
-public class RefererDetailController {
-
-    private final DashboardService dashboardService;
-    private final AppProperties appProperties;
+class RefererDetailController extends DetailControllerBase {
 
     public RefererDetailController(DashboardService dashboardService, AppProperties appProperties) {
-        this.dashboardService = dashboardService;
-        this.appProperties = appProperties;
+        super(dashboardService, appProperties);
     }
 
     @GetMapping("/urls")
     public List<NameResultTypeCount> urls(
             @RequestParam String referer,
-            @RequestParam String from,
-            @RequestParam String to,
+            @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = DateRange.fromParams(from, to);
+        var range = requestRange(null, from, to);
         return dashboardService.refererTopUrlsByResultType(referer, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
             @RequestParam String referer,
-            @RequestParam String from,
-            @RequestParam String to,
+            @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = DateRange.fromParams(from, to);
+        var range = requestRange(null, from, to);
         return dashboardService.refererRequestsPerDay(referer, range.from(), range.to(), excludeBots);
     }
 }

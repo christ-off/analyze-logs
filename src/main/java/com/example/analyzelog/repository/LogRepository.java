@@ -39,10 +39,10 @@ public class LogRepository {
                         timestamp, edge_location, sc_bytes, client_ip, method,
                         uri_stem, status, referer, user_agent,
                         edge_result_type, cs_bytes, time_taken,
-                        edge_response_result_type, protocol_version, time_to_first_byte,
+                        edge_response_result_type, time_to_first_byte,
                         edge_detailed_result_type, content_type, content_length, country,
                         ua_name, edge_location_iata
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     entries,
                     entries.size(),
@@ -60,15 +60,14 @@ public class LogRepository {
                         stmt.setLong(11, e.csBytes());
                         stmt.setDouble(12, e.timeTaken());
                         stmt.setString(13, e.edgeResponseResultType());
-                        stmt.setString(14, e.protocolVersion());
-                        stmt.setDouble(15, e.timeToFirstByte());
-                        stmt.setString(16, e.edgeDetailedResultType());
-                        stmt.setString(17, e.contentType());
-                        if (e.contentLength() == null) stmt.setNull(18, Types.INTEGER);
-                        else stmt.setLong(18, e.contentLength());
-                        stmt.setString(19, e.country());
-                        stmt.setString(20, classifier.classify(e.userAgent()));
-                        stmt.setString(21, edgeLocationResolver.extractIata(e.edgeLocation()));
+                        stmt.setDouble(14, e.timeToFirstByte());
+                        stmt.setString(15, e.edgeDetailedResultType());
+                        stmt.setString(16, e.contentType());
+                        if (e.contentLength() == null) stmt.setNull(17, Types.INTEGER);
+                        else stmt.setLong(17, e.contentLength());
+                        stmt.setString(18, e.country());
+                        stmt.setString(19, classifier.classify(e.userAgent()));
+                        stmt.setString(20, edgeLocationResolver.extractIata(e.edgeLocation()));
                     });
         }
 
