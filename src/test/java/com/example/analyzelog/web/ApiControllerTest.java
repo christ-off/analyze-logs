@@ -288,7 +288,7 @@ class ApiControllerTest {
 
         assertThat(mvc.get().uri("/api/robots-refresh").exchange())
                 .hasStatusOk()
-                .bodyText().contains("Error: timeout");
+                .bodyText().contains("Error: robots refresh failed, see server logs for details");
     }
 
     @Test
