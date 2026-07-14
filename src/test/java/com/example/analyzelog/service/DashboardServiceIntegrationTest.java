@@ -1155,6 +1155,68 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void trafficCategories_feedRequestsCountAsOtherNotHuman() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-feed-test.gz", List.of(
+                // Otherwise-"Probable human" pair also fetches /feed.xml — that hit must land in "Other".
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/feed.xml", null, UA_CHROME_WINDOWS, "US", "Hit")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        var human = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, human.hit());
+
+        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, other.hit());
+    }
+
+    @Test
+    void categoryUrlsByResultType_scopesUrlsToCategory() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/category-urls-test.gz", List.of(
+                // Probable human pair
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Declared bots pair
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
+        ));
+
+        var human = dashboardService.categoryUrlsByResultType("Probable human", base, base.plusSeconds(10), 10, false);
+        var bots  = dashboardService.categoryUrlsByResultType("Declared bots", base, base.plusSeconds(10), 10, false);
+
+        assertEquals(2, human.size());
+        assertTrue(human.stream().map(NameResultTypeCount::name).toList().containsAll(List.of("/", "/about.html")));
+
+        assertEquals(2, bots.size());
+        assertTrue(bots.stream().map(NameResultTypeCount::name).toList().containsAll(List.of("/robots.txt", "/index.html")));
+    }
+
+    @Test
+    void categoryTopUserAgentsByResultType_scopesUserAgentsToCategory() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/category-uas-test.gz", List.of(
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
+        ));
+
+        var human = dashboardService.categoryTopUserAgentsByResultType("Probable human", base, base.plusSeconds(10), 10, false);
+        var bots  = dashboardService.categoryTopUserAgentsByResultType("Declared bots", base, base.plusSeconds(10), 10, false);
+
+        assertEquals(1, human.size());
+        assertEquals("Chrome / Windows", human.getFirst().name());
+
+        assertEquals(1, bots.size());
+        assertEquals("Googlebot", bots.getFirst().name());
+    }
+
+    @Test
     void burstIps_flagsIpsWithSixtyPlusRequestsPerMinute() {
         Instant base = Instant.now().plus(430, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MINUTES);
         List<CloudFrontLogEntry> entries = new ArrayList<>();

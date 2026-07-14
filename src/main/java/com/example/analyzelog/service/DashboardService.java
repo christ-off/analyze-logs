@@ -88,6 +88,8 @@ public class DashboardService {
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
     private static final String IMAGE_EXT_PREDICATE = buildImageExtPredicate();
+    // Feed readers auto-fetch these alongside human browsing; never let them count as "human" evidence.
+    private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
 
     private static String buildImageExtPredicate() {
         String[] exts = {"jpg","jpeg","png","gif","webp","avif","svg","ico"};
@@ -641,7 +643,7 @@ public class DashboardService {
                     %s
                     GROUP BY client_ip, user_agent
                 )
-                SELECT pc.category AS name,
+                SELECT CASE WHEN c.uri_stem IN (%s) THEN 'Other' ELSE pc.category END AS name,
                        %s,
                        %s,
                        %s,
@@ -649,14 +651,15 @@ public class DashboardService {
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
-                GROUP BY pc.category
-                ORDER BY CASE pc.category
+                GROUP BY name
+                ORDER BY CASE name
                     WHEN 'Probable human' THEN 0
                     WHEN 'Declared bots' THEN 1
                     ELSE 2 END
                 """.formatted(
                 IMAGE_EXT_PREDICATE,
                 whereAfterRange,
+                FEED_URI_LIST,
                 ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c"),
@@ -668,6 +671,50 @@ public class DashboardService {
         args.addAll(List.of(from.toString(), to.toString()));
 
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+    }
+
+    // Matches a row's effective category — same CASE used in trafficCategories(), except
+    // feed URIs are always attributed to 'Other' rather than to their pair's category
+    // (feed readers auto-fetch these alongside human browsing).
+    private static String categoryPairFilter() {
+        return """
+                (
+                    (uri_stem NOT IN (%2$s) AND (client_ip, user_agent) IN (
+                        SELECT client_ip, user_agent
+                        FROM cloudfront_logs
+                        WHERE timestamp BETWEEN ? AND ?
+                        GROUP BY client_ip, user_agent
+                        HAVING CASE
+                            WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
+                             AND MAX(CASE WHEN %1$s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
+                                THEN 'Probable human'
+                            WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
+                                THEN 'Declared bots'
+                            ELSE 'Other'
+                        END = ?
+                    ))
+                    OR (uri_stem IN (%2$s) AND ? = 'Other')
+                )""".formatted(IMAGE_EXT_PREDICATE, FEED_URI_LIST);
+    }
+
+    public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
+        return urlsByResultType(categoryPairFilter(),
+                List.of(from.toString(), to.toString(), from.toString(), to.toString(), category, category),
+                limit, excludeBots);
+    }
+
+    public List<NameResultTypeCount> categoryTopUserAgentsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
+        String exclusion = excludeClause(humanTrafficClause, excludeBots);
+        String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND " + categoryPairFilter() + "\n" +
+                exclusion +
+                GROUP_BY_UA_NAME +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
+                LIMIT_PARAM;
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
+                from.toString(), to.toString(), from.toString(), to.toString(), category, category, limit);
     }
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {
