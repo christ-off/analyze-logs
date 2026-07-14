@@ -53,16 +53,16 @@ function progress() { return document.getElementById('refreshProgress'); }
 describe('loadAllCharts', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('calls Charts.loadChart exactly 7 times', () => {
+    it('calls Charts.loadChart exactly 8 times', () => {
         loadAllCharts();
-        expect(Charts.loadChart).toHaveBeenCalledTimes(7);
+        expect(Charts.loadChart).toHaveBeenCalledTimes(8);
     });
 
     it('destroys existing charts before reloading', () => {
         const destroyFn = vi.fn();
         globalThis.Chart.getChart = vi.fn(() => ({ destroy: destroyFn }));
         loadAllCharts();
-        expect(destroyFn).toHaveBeenCalledTimes(7);
+        expect(destroyFn).toHaveBeenCalledTimes(8);
         globalThis.Chart.getChart = vi.fn(() => null);
     });
 

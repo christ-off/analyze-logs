@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -86,6 +87,14 @@ public class DashboardService {
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
+    private static final String IMAGE_EXT_PREDICATE = buildImageExtPredicate();
+
+    private static String buildImageExtPredicate() {
+        String[] exts = {"jpg","jpeg","png","gif","webp","avif","svg","ico"};
+        return Arrays.stream(exts)
+                .map(e -> "uri_stem LIKE '%." + e + "'")
+                .collect(Collectors.joining(" OR ", "(", ")"));
+    }
 
     private static String excludeClause(String clause, boolean excludeBots) {
         return excludeBots ? andClause(clause) : "";
@@ -594,6 +603,67 @@ public class DashboardService {
                 "  AND referer LIKE ?\n" +
                 exclusion + SQL_DAILY_GROUP_ORDER;
         return queryDailyByResultType(sql, from.toString(), to.toString(), "%" + refererLabel + "%");
+    }
+
+    public List<NameResultTypeCount> trafficCategories(Instant from, Instant to, boolean excludeBots) {
+        return trafficCategories("", List.of(), from, to, excludeBots);
+    }
+
+    // package-private, extra filter reserved for later reuse (e.g. "ua_name = ?", "country = ?")
+    List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
+                                                 Instant from, Instant to, boolean excludeBots) {
+        // Bot filtering applied in CTE for pair classification (table has no alias there,
+        // so humanTrafficClause references like cloudfront_logs.ua_name resolve correctly).
+        // No outer filtering needed — we count all result types from classified pairs.
+        String botClause = excludeBots ? humanTrafficClause : "";
+        String filterParts = Stream.of(additionalFilter, botClause)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" AND "));
+        String whereAfterRange = filterParts.isEmpty() ? "" : "  AND " + filterParts + "\n";
+
+        String sql = """
+                WITH pair_class AS (
+                    SELECT client_ip, user_agent,
+                        CASE
+                            WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
+                             AND MAX(CASE WHEN %s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
+                                THEN 'Probable human'
+                            WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
+                                THEN 'Declared bots'
+                            ELSE 'Other'
+                        END AS category
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    %s
+                    GROUP BY client_ip, user_agent
+                )
+                SELECT pc.category AS name,
+                       %s,
+                       %s,
+                       %s,
+                       %s
+                FROM cloudfront_logs c
+                JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
+                WHERE c.timestamp BETWEEN ? AND ?
+                GROUP BY pc.category
+                ORDER BY CASE pc.category
+                    WHEN 'Probable human' THEN 0
+                    WHEN 'Declared bots' THEN 1
+                    ELSE 2 END
+                """.formatted(
+                IMAGE_EXT_PREDICATE,
+                whereAfterRange,
+                ResultTypeSql.resultTypeSums("c"),
+                ResultTypeSql.resultTypeSums("c"),
+                ResultTypeSql.resultTypeSums("c"),
+                ResultTypeSql.resultTypeSums("c")
+        );
+
+        var args = new ArrayList<Object>(List.of(from.toString(), to.toString()));
+        args.addAll(extraArgs);
+        args.addAll(List.of(from.toString(), to.toString()));
+
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {

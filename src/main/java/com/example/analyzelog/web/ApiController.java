@@ -132,6 +132,13 @@ public class ApiController {
         return dashboardService.burstIps(range.from(), range.to(), appProperties.topLimit());
     }
 
+    @GetMapping("/traffic-categories")
+    public List<NameResultTypeCount> trafficCategories(@RequestParam String from, @RequestParam String to,
+                                                        @RequestParam(defaultValue = "false") boolean excludeBots) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.trafficCategories(range.from(), range.to(), excludeBots);
+    }
+
     @GetMapping("/robots-disobedient")
     public List<DisobedientBot> robotsDisobedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

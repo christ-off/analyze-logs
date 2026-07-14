@@ -334,6 +334,44 @@ class ApiControllerTest {
     }
 
     @Test
+    void trafficCategoriesReturnsJson() {
+        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class), eq(false)))
+                .thenReturn(List.of(
+                        new NameResultTypeCount("Probable human",  50, 10, 2, 1),
+                        new NameResultTypeCount("Declared bots",   30,  5, 0, 0),
+                        new NameResultTypeCount("Other",            5,  1, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/traffic-categories")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Probable human");
+
+        assertThat(mvc.get().uri("/api/traffic-categories")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(50);
+    }
+
+    @Test
+    void trafficCategoriesExcludeBotsPassesFlag() {
+        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class), eq(true)))
+                .thenReturn(List.of(new NameResultTypeCount("Probable human", 40, 5, 1, 0)));
+
+        assertThat(mvc.get().uri("/api/traffic-categories")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .param("excludeBots", "true")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Probable human");
+    }
+
+    @Test
     void ipInfoReturnsJson() {
         when(ipInfoService.lookup("1.2.3.4"))
                 .thenReturn(new IpInfoService.IpInfo("1.2.3.4", "host.example.com", "AS1 Acme", "Paris", "FR"));

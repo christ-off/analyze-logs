@@ -5,6 +5,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.repository.LogRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -45,6 +48,14 @@ class DashboardServiceIntegrationTest {
 
     @Autowired
     DashboardService dashboardService;
+
+    @Autowired
+    JdbcTemplate testJdbc;
+
+    @BeforeEach
+    void clearLogs() {
+        testJdbc.update("DELETE FROM cloudfront_logs");
+    }
 
     @Test
     void countryTopUserAgentsByResultType_filtersToCountryAndCountsPerResultType() {
@@ -1031,6 +1042,95 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
         assertEquals(5, result.getFirst().total());
+    }
+
+    @Test
+    void trafficCategories_classifiesPairsIntoThreeCategories() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-test.gz", List.of(
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.2.3.4", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(6), "SFO53-P7", "3.4.5.6", "/index.html", null, UA_FIREFOX_LINUX, "US", "Hit")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        assertEquals(3, result.size());
+
+        var human = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(3, human.hit());
+
+        var bot = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, bot.hit());
+
+        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, other.hit());
+    }
+
+    @Test
+    void trafficCategories_excludeBots_removesBotPair() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-bots-test.gz", List.of(
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_CLAUDEBOT, "US", "Hit")
+        ));
+
+        var withBots    = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var withoutBots = dashboardService.trafficCategories(base, base.plusSeconds(10), true);
+
+        assertEquals(2, withBots.size());
+        assertEquals(1, withoutBots.size());
+        assertEquals("Probable human", withoutBots.getFirst().name());
+    }
+
+    @Test
+    void trafficCategories_imagesWithVariousExtensions() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-images-test.gz", List.of(
+                // Pair A: requests "/" + .avif image → Probable human
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Pair B: requests "/" + .ico → Probable human
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/favicon.ico", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                // Pair C: requests "/" + .js (no image) → Declared bots (only has robots.txt)
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "3.3.3.3", "/", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        var names = result.stream().map(r -> r.name()).toList();
+        assertTrue(names.contains("Probable human"));
+        assertTrue(names.contains("Declared bots"));
+
+        var probableHuman = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(4, probableHuman.hit());
+
+        var declaredBots = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, declaredBots.hit());
+    }
+
+    @Test
+    void trafficCategories_probableHumanWinsOverDeclaredBots() {
+        // Pair with "/" + JS + "/robots.txt" → Probable human (higher priority, wins)
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-js-test.gz", List.of(
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/js/bundle.js", null, UA_CLAUDEBOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        var names = result.stream().map(r -> r.name()).toList();
+        assertTrue(names.contains("Probable human"));
+        assertFalse(names.contains("Declared bots"));
     }
 
     @Test

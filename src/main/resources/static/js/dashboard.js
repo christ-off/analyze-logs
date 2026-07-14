@@ -6,7 +6,7 @@ const to   = readMeta('cf-to');
 
 const CHART_IDS = [
     'chartUaGroups', 'chartPlatforms', 'chartUaNames', 'chartCountries',
-    'chartTopUrls', 'chartReferers', 'chartRequestsPerDay',
+    'chartTopUrls', 'chartReferers', 'chartRequestsPerDay', 'chartTrafficCategories',
 ];
 
 export function loadAllCharts() {
@@ -23,6 +23,7 @@ export function loadAllCharts() {
     Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers', data,
         d => `/referer-detail?referer=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
     Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
+    Charts.loadChart(`traffic-categories?${p}`, data => Charts.horizontalStackedBar('chartTrafficCategories', data));
 }
 
 initToggleBots(loadAllCharts);
