@@ -605,6 +605,10 @@ public class DashboardService {
         return queryDailyByResultType(sql, from.toString(), to.toString(), "%" + refererLabel + "%");
     }
 
+    public List<NameResultTypeCount> trafficCategories(String country, Instant from, Instant to, boolean excludeBots) {
+        return trafficCategories("country = ?", List.of(country), from, to, excludeBots);
+    }
+
     public List<NameResultTypeCount> trafficCategories(Instant from, Instant to, boolean excludeBots) {
         return trafficCategories("", List.of(), from, to, excludeBots);
     }

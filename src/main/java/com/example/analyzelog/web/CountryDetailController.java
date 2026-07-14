@@ -30,6 +30,15 @@ class CountryDetailController extends DetailControllerBase {
         return dashboardService.countryTopUserAgentsByResultType(country, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
+    @GetMapping("/traffic-categories")
+    public List<NameResultTypeCount> trafficCategories(
+            @RequestParam String country,
+            @RequestParam String from, @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
+        var range = requestRange(null, from, to);
+        return dashboardService.trafficCategories(country, range.from(), range.to(), excludeBots);
+    }
+
     @GetMapping("/result-types")
     public List<NameCount> resultTypes(
             @RequestParam String country,

@@ -1134,6 +1134,27 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void trafficCategories_countryFiltersToSpecifiedCountry() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-country-test.gz", List.of(
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/logo.png", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/photo.avif", null, UA_FIREFOX_LINUX, "US", "Hit")
+        ));
+
+        var frResult = dashboardService.trafficCategories("FR", base, base.plusSeconds(10), false);
+        var usResult = dashboardService.trafficCategories("US", base, base.plusSeconds(10), false);
+
+        assertEquals(1, frResult.size());
+        assertEquals(1, usResult.size());
+        assertEquals("Probable human", frResult.getFirst().name());
+        assertEquals("Probable human", usResult.getFirst().name());
+        assertEquals(2, frResult.getFirst().hit());
+        assertEquals(2, usResult.getFirst().hit());
+    }
+
+    @Test
     void burstIps_flagsIpsWithSixtyPlusRequestsPerMinute() {
         Instant base = Instant.now().plus(430, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MINUTES);
         List<CloudFrontLogEntry> entries = new ArrayList<>();
