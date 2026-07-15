@@ -90,7 +90,7 @@ public class DashboardService {
     // .ico deliberately excluded: scanners routinely probe favicon.ico alongside "/",
     // so .ico alone must not count as "Probable human" evidence.
     private static final String HUMAN_EVIDENCE_EXT_PREDICATE = buildHumanEvidenceExtPredicate();
-    // Feed readers auto-fetch these alongside human browsing; never let them count as "human" evidence.
+    // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
 
     private static String buildHumanEvidenceExtPredicate() {
@@ -633,6 +633,8 @@ public class DashboardService {
                 WITH pair_class AS (
                     SELECT client_ip, user_agent,
                         CASE
+                            WHEN MAX(CASE WHEN uri_stem IN (%s) THEN 1 ELSE 0 END) = 1
+                                THEN 'Feeds'
                             WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
                              AND MAX(CASE WHEN %s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
                                 THEN 'Probable human'
@@ -645,7 +647,7 @@ public class DashboardService {
                     %s
                     GROUP BY client_ip, user_agent
                 )
-                SELECT CASE WHEN c.uri_stem IN (%s) THEN 'Other' ELSE pc.category END AS name,
+                SELECT pc.category AS name,
                        %s,
                        %s,
                        %s,
@@ -657,11 +659,12 @@ public class DashboardService {
                 ORDER BY CASE name
                     WHEN 'Probable human' THEN 0
                     WHEN 'Declared bots' THEN 1
-                    ELSE 2 END
+                    WHEN 'Feeds' THEN 2
+                    ELSE 3 END
                 """.formatted(
+                FEED_URI_LIST,
                 HUMAN_EVIDENCE_EXT_PREDICATE,
                 whereAfterRange,
-                FEED_URI_LIST,
                 ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c"),
@@ -675,33 +678,30 @@ public class DashboardService {
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
-    // Matches a row's effective category — same CASE used in trafficCategories(), except
-    // feed URIs are always attributed to 'Other' rather than to their pair's category
-    // (feed readers auto-fetch these alongside human browsing).
+    // Matches a row's effective category — same pair classification used in trafficCategories().
     private static String categoryPairFilter() {
         return """
-                (
-                    (uri_stem NOT IN (%2$s) AND (client_ip, user_agent) IN (
-                        SELECT client_ip, user_agent
-                        FROM cloudfront_logs
-                        WHERE timestamp BETWEEN ? AND ?
-                        GROUP BY client_ip, user_agent
-                        HAVING CASE
-                            WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
-                             AND MAX(CASE WHEN %1$s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
-                                THEN 'Probable human'
-                            WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
-                                THEN 'Declared bots'
-                            ELSE 'Other'
-                        END = ?
-                    ))
-                    OR (uri_stem IN (%2$s) AND ? = 'Other')
+                (client_ip, user_agent) IN (
+                    SELECT client_ip, user_agent
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, user_agent
+                    HAVING CASE
+                        WHEN MAX(CASE WHEN uri_stem IN (%2$s) THEN 1 ELSE 0 END) = 1
+                            THEN 'Feeds'
+                        WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
+                         AND MAX(CASE WHEN %1$s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
+                            THEN 'Probable human'
+                        WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
+                            THEN 'Declared bots'
+                        ELSE 'Other'
+                    END = ?
                 )""".formatted(HUMAN_EVIDENCE_EXT_PREDICATE, FEED_URI_LIST);
     }
 
     public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
         return urlsByResultType(categoryPairFilter(),
-                List.of(from.toString(), to.toString(), from.toString(), to.toString(), category, category),
+                List.of(from.toString(), to.toString(), from.toString(), to.toString(), category),
                 limit, excludeBots);
     }
 
@@ -716,7 +716,7 @@ public class DashboardService {
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(), from.toString(), to.toString(), category, category, limit);
+                from.toString(), to.toString(), from.toString(), to.toString(), category, limit);
     }
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {

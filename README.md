@@ -193,6 +193,21 @@ Agents hitting `.php` or `/wp*` URLs 10+ times per day, with no legitimate traff
 
 ---
 
+## Known limitations
+
+### "Probable human" traffic category can include bots
+
+The **Traffic Categories** chart classifies each `(client_ip, user_agent)` pair as
+**Probable human** if it ever requests a trailing-slash path (e.g. `/`) *and* ever
+requests a static asset (image extension or `/js/*`) — regardless of the HTTP
+result type. A scanner that pads its probe sequence with a fake `/` request and a
+spoofed browser user agent can still qualify, even if every single request
+(including `/`) comes back as `Error`. This lets burst scanners (dozens of
+favicon/logo/admin-panel probes within a few seconds, all erroring) slip into the
+human bucket. Known limitation, not currently fixed.
+
+---
+
 ## Database
 
 Logs are stored in a SQLite file (`logs.db` by default, relative to the working directory).

@@ -1159,22 +1159,24 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void trafficCategories_feedRequestsCountAsOtherNotHuman() {
+    void trafficCategories_feedRequestsClassifyPairAsFeeds() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-feed-test.gz", List.of(
-                // Otherwise-"Probable human" pair also fetches /feed.xml — that hit must land in "Other".
+                // Pair otherwise qualifying as "Probable human" also fetches /feed.xml — the whole
+                // pair (all 3 hits) is reclassified as "Feeds" instead.
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/feed.xml", null, UA_CHROME_WINDOWS, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/feed.xml", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Pair fetching /rss.xml alone is also classified as "Feeds".
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/rss.xml", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
         var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
 
-        var human = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, human.hit());
+        assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
 
-        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(1, other.hit());
+        var feeds = result.stream().filter(r -> "Feeds".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(4, feeds.hit());
     }
 
     @Test
