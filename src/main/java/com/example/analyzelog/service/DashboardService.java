@@ -87,12 +87,14 @@ public class DashboardService {
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
-    private static final String IMAGE_EXT_PREDICATE = buildImageExtPredicate();
+    // .ico deliberately excluded: scanners routinely probe favicon.ico alongside "/",
+    // so .ico alone must not count as "Probable human" evidence.
+    private static final String HUMAN_EVIDENCE_EXT_PREDICATE = buildHumanEvidenceExtPredicate();
     // Feed readers auto-fetch these alongside human browsing; never let them count as "human" evidence.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
 
-    private static String buildImageExtPredicate() {
-        String[] exts = {"jpg","jpeg","png","gif","webp","avif","svg","ico"};
+    private static String buildHumanEvidenceExtPredicate() {
+        String[] exts = {"jpg","jpeg","png","gif","webp","avif","svg"};
         return Arrays.stream(exts)
                 .map(e -> "uri_stem LIKE '%." + e + "'")
                 .collect(Collectors.joining(" OR ", "(", ")"));
@@ -657,7 +659,7 @@ public class DashboardService {
                     WHEN 'Declared bots' THEN 1
                     ELSE 2 END
                 """.formatted(
-                IMAGE_EXT_PREDICATE,
+                HUMAN_EVIDENCE_EXT_PREDICATE,
                 whereAfterRange,
                 FEED_URI_LIST,
                 ResultTypeSql.resultTypeSums("c"),
@@ -694,7 +696,7 @@ public class DashboardService {
                         END = ?
                     ))
                     OR (uri_stem IN (%2$s) AND ? = 'Other')
-                )""".formatted(IMAGE_EXT_PREDICATE, FEED_URI_LIST);
+                )""".formatted(HUMAN_EVIDENCE_EXT_PREDICATE, FEED_URI_LIST);
     }
 
     public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {

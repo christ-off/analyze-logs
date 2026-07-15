@@ -1095,7 +1095,7 @@ class DashboardServiceIntegrationTest {
                 // Pair A: requests "/" + .avif image → Probable human
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                // Pair B: requests "/" + .ico → Probable human
+                // Pair B: requests "/" + .ico only → Other (favicon.ico alone is scanner noise, not human evidence)
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/favicon.ico", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 // Pair C: requests "/" + .js (no image) → Declared bots (only has robots.txt)
@@ -1108,12 +1108,16 @@ class DashboardServiceIntegrationTest {
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
         assertTrue(names.contains("Declared bots"));
+        assertTrue(names.contains("Other"));
 
         var probableHuman = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(4, probableHuman.hit());
+        assertEquals(2, probableHuman.hit());
 
         var declaredBots = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, declaredBots.hit());
+
+        var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, other.hit());
     }
 
     @Test
