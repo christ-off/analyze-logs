@@ -33,6 +33,6 @@ class CategoryDetailController extends DetailControllerBase {
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = requestRange(null, from, to);
-        return dashboardService.categoryTopUserAgentsByResultType(category, range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.categoryTopUserAgentsByResultType(category, range.from(), range.to(), appProperties.topDetailLimit(), excludeBots);
     }
 }
