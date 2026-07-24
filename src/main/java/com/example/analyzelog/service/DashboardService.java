@@ -134,8 +134,6 @@ public class DashboardService {
             """;
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
-    private final List<String> excludedExtensions;
-    private final List<String> selfReferers;
     private final ReloadableRefererService refererService;
     private final IpInfoService ipInfoService;
     private final Map<String, List<String>> groupPatterns;
@@ -153,8 +151,8 @@ public class DashboardService {
                             IpInfoService ipInfoService) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
-        this.excludedExtensions = uriStemFilterProperties.excludedExtensions();
-        this.selfReferers = refererFilterProperties.selfReferers();
+        List<String> excludedExtensions = uriStemFilterProperties.excludedExtensions();
+        List<String> selfReferers = refererFilterProperties.selfReferers();
         this.refererService = refererService;
         this.ipInfoService = ipInfoService;
         this.groupPatterns = uriStemGroupProperties.groups().stream()
