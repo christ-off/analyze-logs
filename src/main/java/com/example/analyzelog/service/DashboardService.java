@@ -4,7 +4,6 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
-import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
@@ -135,7 +134,6 @@ public class DashboardService {
     private final JdbcTemplate jdbc;
     private final EdgeLocationResolver edgeLocationResolver;
     private final ReloadableRefererService refererService;
-    private final IpInfoService ipInfoService;
     private final Map<String, List<String>> groupPatterns;
     private final String uriStemExclusionClause;
     private final List<String> extensionArgs;
@@ -147,14 +145,12 @@ public class DashboardService {
                             UriStemFilterProperties uriStemFilterProperties,
                             RefererFilterProperties refererFilterProperties,
                             ReloadableRefererService refererService,
-                            UriStemGroupProperties uriStemGroupProperties,
-                            IpInfoService ipInfoService) {
+                            UriStemGroupProperties uriStemGroupProperties) {
         this.jdbc = jdbc;
         this.edgeLocationResolver = edgeLocationResolver;
         List<String> excludedExtensions = uriStemFilterProperties.excludedExtensions();
         List<String> selfReferers = refererFilterProperties.selfReferers();
         this.refererService = refererService;
-        this.ipInfoService = ipInfoService;
         this.groupPatterns = uriStemGroupProperties.groups().stream()
                 .collect(Collectors.toMap(
                         UriStemGroupProperties.Group::name,
@@ -741,35 +737,6 @@ public class DashboardService {
                 """,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), limit);
-    }
-
-    // IPs firing at least 60 requests inside a single minute — far beyond human browsing.
-    public List<BurstIp> burstIps(Instant from, Instant to, int limit) {
-        var result = jdbc.query("""
-                WITH per_min AS (
-                    SELECT client_ip, strftime('%Y-%m-%dT%H:%M', timestamp) AS minute, COUNT(*) AS c
-                    FROM cloudfront_logs
-                    WHERE timestamp BETWEEN ? AND ?
-                    GROUP BY client_ip, minute
-                )
-                SELECT client_ip, MAX(c) AS max_per_minute, SUM(c) AS total
-                FROM per_min
-                GROUP BY client_ip
-                HAVING max_per_minute >= 60
-                ORDER BY max_per_minute DESC
-                LIMIT ?
-                """,
-                (rs, _) -> new BurstIp(
-                        rs.getString("client_ip"),
-                        rs.getLong("max_per_minute"),
-                        rs.getLong("total"),
-                        "?"),
-                from.toString(), to.toString(), limit);
-
-        return result.stream()
-                .map(ip -> new BurstIp(ip.clientIp(), ip.maxPerMinute(), ip.total(),
-                        ipInfoService.lookup(ip.clientIp()).country()))
-                .toList();
     }
 
 }

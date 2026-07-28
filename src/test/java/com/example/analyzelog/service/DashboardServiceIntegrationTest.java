@@ -1222,32 +1222,6 @@ class DashboardServiceIntegrationTest {
         assertEquals("Googlebot", bots.getFirst().name());
     }
 
-    @Test
-    void burstIps_flagsIpsWithSixtyPlusRequestsPerMinute() {
-        Instant base = Instant.now().plus(430, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MINUTES);
-        List<CloudFrontLogEntry> entries = new ArrayList<>();
-        for (int i = 0; i < 60; i++) {
-            entries.add(entryAt(base.plusMillis(i * 500L), "7.7.7.7", UA_CHROME_WINDOWS, "/index.html"));
-        }
-        entries.add(entryAt(base.plus(5, ChronoUnit.MINUTES), "7.7.7.7", UA_CHROME_WINDOWS, "/index.html"));
-        for (int i = 0; i < 10; i++) {
-            entries.add(entryAt(base.plusSeconds(i), "8.8.8.8", UA_CHROME_WINDOWS, "/index.html"));
-        }
-        repository.saveEntries("logs/burst-ips-test.gz", entries);
-
-        when(ipInfoService.lookup("7.7.7.7"))
-                .thenReturn(new IpInfoService.IpInfo("7.7.7.7", "?", "?", "?", "DE"));
-
-        var burstIps = dashboardService.burstIps(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
-
-        assertEquals(1, burstIps.size());
-        var burst = burstIps.getFirst();
-        assertEquals("7.7.7.7", burst.clientIp());
-        assertEquals(60, burst.maxPerMinute());
-        assertEquals(61, burst.total());
-        assertEquals("DE", burst.country());
-    }
-
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
         return makeEntry(ts, "SFO53-P7", ip, uri, null, ua, "US", "Hit");
     }

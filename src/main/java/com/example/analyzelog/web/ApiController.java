@@ -1,7 +1,6 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -126,13 +125,7 @@ public class ApiController {
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }
 
-    @GetMapping("/burst-ips")
-    public List<BurstIp> burstIps(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.burstIps(range.from(), range.to(), appProperties.topLimit());
-    }
-
-    @GetMapping("/traffic-categories")
+@GetMapping("/traffic-categories")
     public List<NameResultTypeCount> trafficCategories(@RequestParam String from, @RequestParam String to,
                                                         @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);

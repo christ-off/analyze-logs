@@ -1,7 +1,6 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { initIpLookup } from './ip-info.js';
 import { buildBaseParams, escapeHtml, initToggleBots, readMeta, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
 const cfFrom = readMeta('cf-from');
@@ -75,16 +74,6 @@ export function loadBrowserConfigFetches() {
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
 
-export function loadBurstIps() {
-    const p = buildBaseParams({});
-    loadSimpleTable('/api/burst-ips?' + p, 'burstIpsTable', 4, b => `<tr>
-        <td class="ip-cell" data-ip="${escapeHtml(b.clientIp)}"><code>${escapeHtml(b.clientIp)}</code></td>
-        <td>${escapeHtml(b.country)}</td>
-        <td class="text-end">${b.maxPerMinute.toLocaleString()}</td>
-        <td class="text-end">${b.total.toLocaleString()}</td>
-    </tr>`, 'No burst IPs found for the selected date range.', initIpLookup);
-}
-
 function loadDisobedientBots(data) {
     const tbody = document.getElementById('disobedientBotsTable');
     if (!tbody) return;
@@ -150,7 +139,6 @@ export function loadAllCharts() {
     loadProbableBots();
     loadFakeBrowsers();
     loadBrowserConfigFetches();
-    loadBurstIps();
     loadDisobedientSection();
 }
 

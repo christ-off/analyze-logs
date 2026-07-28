@@ -1,7 +1,6 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.BurstIp;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -319,19 +318,6 @@ class ApiControllerTest {
                 .extractingPath("$[0].hit").isEqualTo(40);
     }
 
-    @Test
-    void burstIpsReturnsJson() {
-        when(dashboardService.burstIps(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new BurstIp("20.203.183.116", 815, 815, "US")));
-
-        assertThat(mvc.get().uri("/api/burst-ips")
-                .param("from", "2026-01-01").param("to", "2026-01-31")
-                .exchange())
-                .hasStatusOk()
-                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                .bodyJson()
-                .extractingPath("$[0].clientIp").isEqualTo("20.203.183.116");
-    }
 
     @Test
     void trafficCategoriesReturnsJson() {

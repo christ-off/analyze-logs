@@ -19,7 +19,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
-import { loadDisobedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches, loadBurstIps } from '../../main/resources/static/js/bot-analysis.js';
+import { loadDisobedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
 
 async function flushPromises() {
     for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -80,7 +80,6 @@ describe('bot signal tables', () => {
         document.body.innerHTML = `
             <table><tbody id="fakeBrowsersTable"></tbody></table>
             <table><tbody id="browserConfigTable"></tbody></table>
-            <table><tbody id="burstIpsTable"></tbody></table>
         `;
         vi.clearAllMocks();
     });
@@ -112,38 +111,6 @@ describe('bot signal tables', () => {
         expect(row.textContent).toContain('56');
     });
 
-    it('loadBurstIps renders IP, country, max per minute and total', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815, country: 'US' }]),
-        }));
-        loadBurstIps();
-        await flushPromises();
-
-        const row = document.querySelector('#burstIpsTable tr');
-        expect(fetch.mock.calls[0][0]).toContain('/api/burst-ips?');
-        expect(row.textContent).toContain('20.203.183.116');
-        expect(row.textContent).toContain('815');
-    });
-
-    it('clicking a burst IP cell fetches and renders IP info', async () => {
-        const fetchMock = vi.fn()
-            .mockResolvedValueOnce({ json: () => Promise.resolve([{ clientIp: '20.203.183.116', maxPerMinute: 815, total: 815, country: 'US' }]) })
-            .mockResolvedValueOnce({ json: () => Promise.resolve({ ip: '20.203.183.116', hostname: 'azure.example.com', org: 'AS8075 Microsoft', city: 'Dublin', country: 'IE' }) });
-        vi.stubGlobal('fetch', fetchMock);
-
-        loadBurstIps();
-        await flushPromises();
-
-        const cell = document.querySelector('#burstIpsTable .ip-cell');
-        expect(cell).not.toBeNull();
-        cell.click();
-        await flushPromises();
-
-        expect(fetchMock.mock.calls[1][0]).toBe('/api/ip-info/20.203.183.116');
-        expect(cell.textContent).toContain('AS8075 Microsoft');
-        expect(cell.textContent).toContain('azure.example.com');
-    });
-
     it('shows empty state when no rows', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
             json: () => Promise.resolve([]),
@@ -157,10 +124,10 @@ describe('bot signal tables', () => {
 
     it('shows error state on fetch failure', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
-        loadBurstIps();
+        loadFakeBrowsers();
         await flushPromises();
 
-        expect(document.getElementById('burstIpsTable').textContent)
+        expect(document.getElementById('fakeBrowsersTable').textContent)
             .toContain('Failed to load');
     });
 });
