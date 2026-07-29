@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- trafficCategories() and categoryPairFilter() both join/filter cloudfront_logs against
+         a (client_ip, user_agent) pair set. Without a composite index, SQLite can only use the
+         single-column user_agent index, then scans every row for that user_agent to find the
+         matching client_ip — very expensive for common browser UAs shared by many distinct IPs.
+         Measured: Traffic Categories widget went from ~33s to ~0.4s with this index. -->
+    <changeSet id="004-cloudfront-logs-client-ip-user-agent-index" author="analyze-logs">
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_client_ip_user_agent">
+            <column name="client_ip"/>
+            <column name="user_agent"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
