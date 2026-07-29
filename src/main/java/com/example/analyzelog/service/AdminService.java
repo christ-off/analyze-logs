@@ -109,7 +109,8 @@ public class AdminService {
                 "SELECT DISTINCT user_agent FROM cloudfront_logs", String.class);
         for (String ua : userAgents) {
             String newName = classifierService.classify(ua);
-            jdbc.update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ?", newName, ua);
+            jdbc.update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ? AND ua_name != ?",
+                    newName, ua, newName);
         }
         return userAgents.size();
     }

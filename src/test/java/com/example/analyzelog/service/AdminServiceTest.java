@@ -164,8 +164,8 @@ class AdminServiceTest {
         int count = service.reclassifyLogs();
 
         assertEquals(0, count);
-        verify(jdbc, never()).update(eq("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ?"),
-                anyString(), anyString());
+        verify(jdbc, never()).update(eq("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ? AND ua_name != ?"),
+                anyString(), anyString(), anyString());
     }
 
     @Test
@@ -178,9 +178,9 @@ class AdminServiceTest {
         int count = service.reclassifyLogs();
 
         assertEquals(2, count);
-        verify(jdbc).update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ?",
-                "Chrome / Windows", "Mozilla/5.0");
-        verify(jdbc).update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ?",
-                "ClaudeBot", "ClaudeBot/1.0");
+        verify(jdbc).update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ? AND ua_name != ?",
+                "Chrome / Windows", "Mozilla/5.0", "Chrome / Windows");
+        verify(jdbc).update("UPDATE cloudfront_logs SET ua_name = ? WHERE user_agent = ? AND ua_name != ?",
+                "ClaudeBot", "ClaudeBot/1.0", "ClaudeBot");
     }
 }

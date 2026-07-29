@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- AdminService.reclassifyLogs() runs one UPDATE ... WHERE user_agent = ? per distinct
+         user_agent (thousands of them). Without this index each UPDATE is a full table scan,
+         making reclassification effectively O(distinct_uas * rows). -->
+    <changeSet id="003-cloudfront-logs-user-agent-index" author="analyze-logs">
+        <createIndex tableName="cloudfront_logs" indexName="idx_cloudfront_logs_user_agent">
+            <column name="user_agent"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
