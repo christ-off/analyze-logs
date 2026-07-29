@@ -69,6 +69,16 @@ public class DashboardController extends DateRangeController {
         return "url-detail";
     }
 
+    @GetMapping("/ai-bots")
+    public String aiBots(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "ai-bots";
+    }
+
     @GetMapping("/category-detail")
     public String categoryDetail(
             @RequestParam String category,

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- "llms.txt crawler bot" (llmstxtscan.org) fetches /llms.txt to audit AI-crawler
+         discovery files but was previously unclassified (falling into 'Unknown'). -->
+    <changeSet id="002-static-ua-add-llmstxt-crawler" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('llms.txt crawler bot', 'AI Bots', 'llms.txt crawler bot', 'llms.txt crawler bot', 72)
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

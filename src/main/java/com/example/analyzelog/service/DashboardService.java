@@ -673,6 +673,22 @@ public class DashboardService {
                 )""".formatted(CATEGORY_CASE_EXPR);
     }
 
+    private static final String AI_BOTS_FILTER =
+            "ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = 'AI Bots')";
+
+    public List<NameResultTypeCount> aiBotsUserAgents(Instant from, Instant to, int limit) {
+        return uaResultTypesByFilter(AI_BOTS_FILTER, List.of(), from, to, limit, false);
+    }
+
+    public List<NameResultTypeCount> aiBotsUrls(Instant from, Instant to, int limit) {
+        return urlsByResultType(AI_BOTS_FILTER, List.of(from.toString(), to.toString()), limit, false);
+    }
+
+    public List<DailyResultTypeCount> aiBotsRequestsPerDay(Instant from, Instant to) {
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + AI_BOTS_FILTER + "\n" + SQL_DAILY_GROUP_ORDER,
+                from.toString(), to.toString());
+    }
+
     public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
         return urlsByResultType(categoryPairFilter(),
                 List.of(from.toString(), to.toString(), from.toString(), to.toString(), category),
