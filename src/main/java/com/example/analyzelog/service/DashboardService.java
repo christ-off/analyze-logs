@@ -34,6 +34,7 @@ public class DashboardService {
     private static final String FIELD_ERROR = "error";
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
+    private static final String COUNTRY_FILTER = "country = ?";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
@@ -315,7 +316,7 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
-        return uaResultTypesByFilter("country = ?", List.of(countryCode), from, to, limit, excludeBots);
+        return uaResultTypesByFilter(COUNTRY_FILTER, List.of(countryCode), from, to, limit, excludeBots);
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
@@ -331,7 +332,7 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
-        return urlsByResultType("country = ?", List.of(from.toString(), to.toString(), countryCode), limit, excludeBots);
+        return urlsByResultType(COUNTRY_FILTER, List.of(from.toString(), to.toString(), countryCode), limit, excludeBots);
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to, boolean excludeBots) {
@@ -603,7 +604,7 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> trafficCategories(String country, Instant from, Instant to, boolean excludeBots) {
-        return trafficCategories("country = ?", List.of(country), from, to, excludeBots);
+        return trafficCategories(COUNTRY_FILTER, List.of(country), from, to, excludeBots);
     }
 
     public List<NameResultTypeCount> trafficCategories(Instant from, Instant to, boolean excludeBots) {
@@ -619,8 +620,8 @@ public class DashboardService {
         String botClause = excludeBots ? humanTrafficClause : "";
         String filterParts = Stream.of(additionalFilter, botClause)
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.joining(" AND "));
-        String whereAfterRange = filterParts.isEmpty() ? "" : "  AND " + filterParts + "\n";
+                .collect(Collectors.joining(AND_SEPARATOR));
+        String whereAfterRange = filterParts.isEmpty() ? "" : SQL_AND_INDENT + filterParts + "\n";
 
         String sql = """
                 WITH pair_class AS (
@@ -748,9 +749,7 @@ public class DashboardService {
                   AND c.uri_stem IN ('/robots.txt', '/ads.txt', '/sitemap.xml')
                   AND c.timestamp BETWEEN ? AND ?
                 GROUP BY c.user_agent
-                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + """
-                LIMIT ?
-                """,
+                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), limit);
     }

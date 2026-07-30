@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.Month;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -113,7 +113,7 @@ class FetchServiceTest {
     @Test
     void sinceConvertedToInstant() {
         stubFetcher();
-        fetchService.fetch(LocalDate.of(2026, 1, 1), false);
+        fetchService.fetch(LocalDate.of(2026, Month.JANUARY, 1), false);
 
         verify(fetcher).streamLogKeys(eq("my-bucket"), eq("logs/"),
                 eq(Instant.parse("2026-01-01T00:00:00Z")), any());

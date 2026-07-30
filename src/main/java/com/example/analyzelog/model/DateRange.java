@@ -8,13 +8,13 @@ public record DateRange(Instant from, Instant to) {
 
     public static DateRange lastDays(int n) {
         Instant to = Instant.now();
-        Instant from = LocalDate.now().minusDays(n - 1L).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant from = LocalDate.now(ZoneOffset.UTC).minusDays(n - 1L).atStartOfDay(ZoneOffset.UTC).toInstant();
         return new DateRange(from, to);
     }
 
     public static DateRange lastMonths(int n) {
         Instant to = Instant.now();
-        Instant from = LocalDate.now().minusMonths(n).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant from = LocalDate.now(ZoneOffset.UTC).minusMonths(n).atStartOfDay(ZoneOffset.UTC).toInstant();
         return new DateRange(from, to);
     }
 

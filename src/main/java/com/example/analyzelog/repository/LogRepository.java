@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -75,7 +76,7 @@ public class LogRepository {
 
         jdbc.update(
                 "INSERT OR IGNORE INTO fetched_files (s3_key, fetched_at) VALUES (?, ?)",
-                s3Key, ZonedDateTime.now().toString());
+                s3Key, ZonedDateTime.now(ZoneOffset.UTC).toString());
     }
 
     public Stats getStats() {
@@ -94,7 +95,7 @@ public class LogRepository {
     @Transactional
     public int deleteOldLogs(int nbMonthsToKeep) {
         Instant cutoff = Instant.from(
-                ZonedDateTime.now().minus(nbMonthsToKeep, ChronoUnit.MONTHS));
+                ZonedDateTime.now(ZoneOffset.UTC).minus(nbMonthsToKeep, ChronoUnit.MONTHS));
         String cutoffStr = cutoff.toString();
         return jdbc.update(
                 "DELETE FROM cloudfront_logs WHERE timestamp < ?",

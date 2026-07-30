@@ -3,9 +3,9 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,12 +26,7 @@ class AdminServiceTest {
     @Mock ReloadableClassifierService classifierService;
     @Mock ReloadableRefererService refererService;
 
-    AdminService service;
-
-    @BeforeEach
-    void setUp() {
-        service = new AdminService(jdbc, classifierService, refererService);
-    }
+    @InjectMocks AdminService service;
 
     @Test
     @SuppressWarnings("unchecked")

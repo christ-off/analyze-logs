@@ -34,7 +34,8 @@
                     <label for="fromDateCategory" class="form-label mb-0 fw-semibold">Custom:</label>
                     <input type="date" id="fromDateCategory" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
                     <span>&ndash;</span>
-                    <input type="date" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
+                    <label for="toDateCategory" class="visually-hidden">To date</label>
+                    <input type="date" id="toDateCategory" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
                     <button type="submit" class="btn btn-sm btn-primary">Apply</button>
                 </form>
 
