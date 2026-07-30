@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Repository
@@ -88,4 +90,14 @@ public class LogRepository {
     }
 
     public record Stats(long totalEntries, String earliest, String latest) {}
+
+    @Transactional
+    public int deleteOldLogs(int nbMonthsToKeep) {
+        Instant cutoff = Instant.from(
+                ZonedDateTime.now().minus(nbMonthsToKeep, ChronoUnit.MONTHS));
+        String cutoffStr = cutoff.toString();
+        return jdbc.update(
+                "DELETE FROM cloudfront_logs WHERE timestamp < ?",
+                cutoffStr);
+    }
 }

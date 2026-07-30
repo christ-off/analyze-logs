@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -37,6 +38,7 @@ class FetchServiceTest {
         when(props.aws()).thenReturn(awsProps);
         when(awsProps.bucket()).thenReturn("my-bucket");
         when(awsProps.prefix()).thenReturn("logs/");
+        when(props.nbMonthsToKeep()).thenReturn(3);
     }
 
     private void stubFetcher(String... keys) {
@@ -127,5 +129,19 @@ class FetchServiceTest {
 
         verify(repository, never()).isAlreadyFetched(any());
         verify(repository).saveEntries(eq("key1.log"), anyList());
+    }
+
+    @Test
+    void prunesOldLogsAfterFetch() {
+        stubFetcher("key1.log");
+        when(repository.isAlreadyFetched("key1.log")).thenReturn(false);
+        when(fetcher.downloadLogFile("my-bucket", "key1.log")).thenReturn("content");
+        when(parser.parse("content")).thenReturn(List.of(mock(CloudFrontLogEntry.class)));
+        when(repository.deleteOldLogs(3)).thenReturn(5);
+
+        var result = fetchService.fetch(null, true);
+
+        assertEquals(1, result.fetched());
+        verify(repository).deleteOldLogs(3);
     }
 }

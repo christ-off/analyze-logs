@@ -92,6 +92,12 @@ public class FetchService {
                 result.fetched(), result.skipped(), result.failed(), true, null));
         log.info("Done. Fetched: {}, Skipped: {}, Failed: {}",
                 result.fetched(), result.skipped(), result.failed());
+
+        int deleted = repository.deleteOldLogs(props.nbMonthsToKeep());
+        if (deleted > 0) {
+            log.info("Pruned {} old log entries (older than {} months)", deleted, props.nbMonthsToKeep());
+        }
+
         return result;
     }
 
