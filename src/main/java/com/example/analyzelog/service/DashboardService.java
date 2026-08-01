@@ -7,6 +7,7 @@ import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
+import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -703,6 +704,21 @@ public class DashboardService {
     public List<NameResultTypeCount> categoryTopUserAgentsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
         return uaResultTypesByFilter(categoryPairFilter(),
                 List.of(from.toString(), to.toString(), category), from, to, limit, excludeBots);
+    }
+
+    // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
+    public HumanTrafficStats humanTrafficStats(String ua, Instant from, Instant to) {
+        List<NameResultTypeCount> categories = trafficCategories("user_agent = ?", List.of(ua), from, to, false);
+        long total = categories.stream().mapToLong(DashboardService::totalCount).sum();
+        long human = categories.stream()
+                .filter(c -> "Probable human".equals(c.name()))
+                .mapToLong(DashboardService::totalCount)
+                .sum();
+        return new HumanTrafficStats(human, total);
+    }
+
+    private static long totalCount(NameResultTypeCount c) {
+        return c.hit() + c.miss() + c.function() + c.error();
     }
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {

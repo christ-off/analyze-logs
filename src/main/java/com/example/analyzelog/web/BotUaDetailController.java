@@ -25,6 +25,7 @@ public class BotUaDetailController extends DateRangeController {
         var dateRange = resolveRange(range, from, to);
         addDateAttributes(model, dateRange, resolveActiveRange(range, from, to));
         model.addAttribute("ua", ua);
+        model.addAttribute("humanTrafficStats", dashboardService.humanTrafficStats(ua, dateRange.from(), dateRange.to()));
         model.addAttribute("requests", dashboardService.requestsByUserAgent(ua, dateRange.from(), dateRange.to()));
         return "ua-requests";
     }
