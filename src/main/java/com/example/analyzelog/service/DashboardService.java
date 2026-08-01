@@ -88,8 +88,9 @@ public class DashboardService {
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
-    // .ico deliberately excluded: scanners routinely probe favicon.ico alongside "/",
-    // so .ico alone must not count as "Probable human" evidence.
+    // Only Hit/Miss responses count as "Probable human" evidence — Error, RefreshHit and
+    // FunctionGeneratedResponse rows (scanners, edge retries) must not qualify a pair.
+    private static final String HUMAN_EVIDENCE_RESULT_TYPES = "edge_response_result_type IN ('Hit','Miss')";
     private static final String HUMAN_EVIDENCE_EXT_PREDICATE = buildHumanEvidenceExtPredicate();
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
@@ -99,19 +100,22 @@ public class DashboardService {
             CASE
                 WHEN MAX(CASE WHEN uri_stem IN (%s) THEN 1 ELSE 0 END) = 1
                     THEN 'Feeds'
-                WHEN MAX(CASE WHEN uri_stem LIKE '%%/' THEN 1 ELSE 0 END) = 1
-                 AND MAX(CASE WHEN %s OR uri_stem LIKE '/js/%%' THEN 1 ELSE 0 END) = 1
+                WHEN MAX(CASE WHEN uri_stem LIKE '%%/' AND %s THEN 1 ELSE 0 END) = 1
+                 AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
                     THEN 'Probable human'
                 WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
                     THEN 'Declared bots'
                 ELSE 'Other'
-            END""".formatted(FEED_URI_LIST, HUMAN_EVIDENCE_EXT_PREDICATE);
+            END""".formatted(FEED_URI_LIST, HUMAN_EVIDENCE_RESULT_TYPES,
+            HUMAN_EVIDENCE_EXT_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
 
+    // Evidence of a real browser fetching a rendered page: its stylesheet or an image format
+    // browsers request inline but bots/scanners rarely bother probing individually.
     private static String buildHumanEvidenceExtPredicate() {
-        String[] exts = {"jpg","jpeg","png","gif","webp","avif","svg"};
+        String[] exts = {"avif","svg","gif","webp"};
         return Arrays.stream(exts)
                 .map(e -> "uri_stem LIKE '%." + e + "'")
-                .collect(Collectors.joining(" OR ", "(", ")"));
+                .collect(Collectors.joining(" OR ", "(uri_stem LIKE '%main.css' OR ", ")"));
     }
 
     private static String excludeClause(String clause, boolean excludeBots) {

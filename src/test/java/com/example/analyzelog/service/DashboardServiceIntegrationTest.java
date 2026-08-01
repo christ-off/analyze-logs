@@ -1048,7 +1048,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.2.3.4", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_GOOGLEBOT, "US", "Hit"),
@@ -1074,7 +1074,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-bots-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/logo.png", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_CLAUDEBOT, "US", "Hit")
         ));
@@ -1120,13 +1120,28 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void trafficCategories_evidenceMustBeHitOrMiss() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-error-evidence-test.gz", List.of(
+                // "/" is only ever an Error and main.css is only ever a FunctionGeneratedResponse →
+                // neither counts as Hit/Miss evidence, so the pair is not "Probable human".
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Error"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CHROME_WINDOWS, "US", "FunctionGeneratedResponse")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
+    }
+
+    @Test
     void trafficCategories_probableHumanWinsOverDeclaredBots() {
-        // Pair with "/" + JS + "/robots.txt" → Probable human (higher priority, wins)
+        // Pair with "/" + main.css + "/robots.txt" → Probable human (higher priority, wins)
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-js-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/js/bundle.js", null, UA_CLAUDEBOT, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
         var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
@@ -1141,7 +1156,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-country-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "FR", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/logo.png", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CHROME_WINDOWS, "FR", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/photo.avif", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
