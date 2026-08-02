@@ -2,7 +2,9 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.BotUaRequest;
+import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.service.DashboardService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -30,6 +32,12 @@ class BotUaDetailControllerTest {
     DashboardService dashboardService;
 
     private static final String UA = "Googlebot/2.1";
+
+    @BeforeEach
+    void stubHumanTrafficStats() {
+        when(dashboardService.humanTrafficStats(eq(UA), any(Instant.class), any(Instant.class)))
+                .thenReturn(new HumanTrafficStats(0, 0));
+    }
 
     @Test
     void defaultRangeRendersPage() {
