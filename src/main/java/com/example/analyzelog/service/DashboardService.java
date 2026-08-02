@@ -717,6 +717,17 @@ public class DashboardService {
         return new HumanTrafficStats(human, total);
     }
 
+    // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one country.
+    public HumanTrafficStats countryHumanTrafficStats(String country, Instant from, Instant to) {
+        List<NameResultTypeCount> categories = trafficCategories(country, from, to, false);
+        long total = categories.stream().mapToLong(DashboardService::totalCount).sum();
+        long human = categories.stream()
+                .filter(c -> "Probable human".equals(c.name()))
+                .mapToLong(DashboardService::totalCount)
+                .sum();
+        return new HumanTrafficStats(human, total);
+    }
+
     private static long totalCount(NameResultTypeCount c) {
         return c.hit() + c.miss() + c.function() + c.error();
     }
