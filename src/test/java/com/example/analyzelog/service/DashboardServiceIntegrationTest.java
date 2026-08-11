@@ -373,6 +373,63 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, functionWithout, "Function rows must remain when filter is inactive");
     }
 
+    // ai-bots page tests — Error/Filtered rows must never surface, since tools impersonating
+    // AI bots generate a lot of that noise.
+
+    @Test
+    void aiBotsUserAgents_excludesErrorAndFilteredResultTypes() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ai-bots-ua-test.gz", List.of(
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Error"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "FunctionGeneratedResponse")
+        ));
+
+        var result = dashboardService.aiBotsUserAgents(from, Instant.now().plusSeconds(5), 10);
+
+        var claudeBot = result.stream().filter(r -> "ClaudeBot".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, claudeBot.hit());
+        assertEquals(0, claudeBot.error());
+        assertEquals(0, claudeBot.function());
+    }
+
+    @Test
+    void aiBotsUrls_excludesErrorAndFilteredResultTypes() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ai-bots-urls-test.gz", List.of(
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Error"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "FunctionExecutionError")
+        ));
+
+        var result = dashboardService.aiBotsUrls(from, Instant.now().plusSeconds(5), 10);
+
+        var index = result.stream().filter(r -> "/index.html".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, index.hit());
+        assertEquals(0, index.error());
+        assertEquals(0, index.function());
+    }
+
+    @Test
+    void aiBotsRequestsPerDay_excludesErrorAndFilteredResultTypes() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ai-bots-rpd-test.gz", List.of(
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Hit"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "Error"),
+                entryWithUaAndResultType(UA_CLAUDEBOT, "FunctionGeneratedResponse")
+        ));
+
+        var result = dashboardService.aiBotsRequestsPerDay(from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        long totalError = result.stream().mapToLong(DailyResultTypeCount::error).sum();
+        long totalFunction = result.stream().mapToLong(DailyResultTypeCount::function).sum();
+        long totalHit = result.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        assertEquals(0, totalError, "Error rows must be excluded from ai-bots requests-per-day");
+        assertEquals(0, totalFunction, "Filtered rows must be excluded from ai-bots requests-per-day");
+        assertEquals(1, totalHit);
+    }
+
     @Test
     void topUserAgentsByResultType_excludeBots_excludesFediverseRootRequests() {
         Instant from = Instant.now();

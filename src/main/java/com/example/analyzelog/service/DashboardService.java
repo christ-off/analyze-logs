@@ -681,17 +681,19 @@ public class DashboardService {
 
     private static final String AI_BOTS_FILTER =
             "ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = 'AI Bots')";
+    // Tools pretending to be AI bots generate a lot of Error/Filtered noise — excluded from all ai-bots graphs.
+    private static final String AI_BOTS_FILTER_NO_ERROR_FILTERED = AI_BOTS_FILTER + AND_SEPARATOR + RESULT_TYPE_EXCLUSION;
 
     public List<NameResultTypeCount> aiBotsUserAgents(Instant from, Instant to, int limit) {
-        return uaResultTypesByFilter(AI_BOTS_FILTER, List.of(), from, to, limit, false);
+        return uaResultTypesByFilter(AI_BOTS_FILTER_NO_ERROR_FILTERED, List.of(), from, to, limit, false);
     }
 
     public List<NameResultTypeCount> aiBotsUrls(Instant from, Instant to, int limit) {
-        return urlsByResultType(AI_BOTS_FILTER, List.of(from.toString(), to.toString()), limit, false);
+        return urlsByResultType(AI_BOTS_FILTER_NO_ERROR_FILTERED, List.of(from.toString(), to.toString()), limit, false);
     }
 
     public List<DailyResultTypeCount> aiBotsRequestsPerDay(Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + AI_BOTS_FILTER + "\n" + SQL_DAILY_GROUP_ORDER,
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + AI_BOTS_FILTER_NO_ERROR_FILTERED + "\n" + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString());
     }
 
