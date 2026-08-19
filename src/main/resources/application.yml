@@ -39,14 +39,12 @@ referer-filter:
 
 uri-stem-groups:
   groups:
-    - name: "WordPress"
+    - name: "PHP/WordPress"
       patterns:
         - "/wp-%"
         - "//wp-%"
         - "/wordpress/%"
         - "/wp/%"
-    - name: "PHP"
-      patterns:
         - "%.php"
         - "%.php7"
     - name: "Feeds"

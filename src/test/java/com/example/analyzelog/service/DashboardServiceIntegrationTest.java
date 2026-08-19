@@ -123,8 +123,7 @@ class DashboardServiceIntegrationTest {
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
-        assertTrue(names.contains("PHP"));
-        assertTrue(names.contains("WordPress"));
+        assertTrue(names.contains("PHP/WordPress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
 
@@ -132,13 +131,10 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, index.hit());
         assertEquals(1, index.miss());
 
-        var php = result.stream().filter(r -> "PHP".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(1, php.hit());
-        assertEquals(1, php.error());
-
-        var wp = result.stream().filter(r -> "WordPress".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(1, wp.hit());
-        assertEquals(1, wp.miss());
+        var phpWp = result.stream().filter(r -> "PHP/WordPress".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, phpWp.hit());
+        assertEquals(1, phpWp.error());
+        assertEquals(1, phpWp.miss());
     }
 
     @Test
@@ -157,7 +153,7 @@ class DashboardServiceIntegrationTest {
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
-        assertTrue(names.contains("PHP"));
+        assertTrue(names.contains("PHP/WordPress"));
         assertFalse(names.contains("/style.css"), "static extensions must be excluded");
 
         var index = result.stream().filter(r -> "/index.html".equals(r.name())).findFirst().orElseThrow();
@@ -554,7 +550,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void uaUrlsByResultType_aggregatesPhpUrlsUnderPhpLabel() {
+    void uaUrlsByResultType_aggregatesPhpUrlsUnderPhpWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-php-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
@@ -569,19 +565,19 @@ class DashboardServiceIntegrationTest {
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
         assertFalse(names.contains("/other.php"), "individual .php URLs must not appear");
-        assertTrue(names.contains("PHP"), "PHP label must be present");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
-        assertEquals(3, phpCount);
+        assertTrue(names.contains("PHP/WordPress"), "PHP/WordPress label must be present");
+        var phpWpCount = result.stream().filter(n -> "PHP/WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
+        assertEquals(3, phpWpCount);
     }
 
     @Test
-    void uaUrlsByResultType_aggregatesWpUrlsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesWpUrlsUnderPhpWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-test.gz", List.of(
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → WordPress, not PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-login.php"),    // matches /wp-% → PHP/WordPress
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-admin.php"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp-content/themes/style"),
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-login.php"),   // matches //wp-% → also WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-login.php"),   // matches //wp-% → also PHP/WordPress
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "//wp-admin/"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
@@ -595,21 +591,20 @@ class DashboardServiceIntegrationTest {
         assertFalse(names.contains("/wp-content/themes/style"), "individual /wp- URLs must not appear");
         assertFalse(names.contains("//wp-login.php"), "individual //wp- URLs must not appear");
         assertFalse(names.contains("//wp-admin/"), "individual //wp- URLs must not appear");
-        assertTrue(names.contains("WordPress"), "WordPress label must be present");
-        assertFalse(names.contains("PHP"), "/wp-*.php must go to WordPress, not PHP");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
-        assertEquals(5, wpCount);
+        assertTrue(names.contains("PHP/WordPress"), "PHP/WordPress label must be present");
+        var phpWpCount = result.stream().filter(n -> "PHP/WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
+        assertEquals(5, phpWpCount);
     }
 
     @Test
-    void uaUrlsByResultType_aggregatesNewWordPressPatternsUnderWordPressLabel() {
+    void uaUrlsByResultType_aggregatesNewWordPressPatternsUnderPhpWordPressLabel() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-wp-new-test.gz", List.of(
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/page"),    // /wordpress/% → WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/page"),    // /wordpress/% → PHP/WordPress
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/wordpress/admin"),
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp/api"),            // /wp/% → WordPress
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php7"),         // .php7 → PHP
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/PAGE.PHP7"),         // case-insensitive → PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/wp/api"),            // /wp/% → PHP/WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php7"),         // .php7 → PHP/WordPress
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/PAGE.PHP7"),         // case-insensitive → PHP/WordPress
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")
         ));
 
@@ -617,13 +612,9 @@ class DashboardServiceIntegrationTest {
                 "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
-        assertTrue(names.contains("WordPress"), "WordPress label must be present");
-        var wpCount = result.stream().filter(n -> "WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
-        assertEquals(3, wpCount);
-
-        assertTrue(names.contains("PHP"), "PHP label must be present for .php7");
-        var phpCount = result.stream().filter(n -> "PHP".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
-        assertEquals(2, phpCount);
+        assertTrue(names.contains("PHP/WordPress"), "PHP/WordPress label must be present");
+        var phpWpCount = result.stream().filter(n -> "PHP/WordPress".equals(n.name())).mapToLong(NameResultTypeCount::total).sum();
+        assertEquals(5, phpWpCount);
 
         assertTrue(names.contains("/index.html"));
     }
@@ -656,26 +647,22 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html"),
                 entryWithUri("/page.php"),
                 entryWithUri("/other.php"),
-                entryWithUri("/wp-login.php"),   // /wp-% wins over .php
+                entryWithUri("/wp-login.php"),
                 entryWithUri("/wp-content/themes/style"),
-                entryWithUri("//wp-admin/")      // //wp-% also maps to WordPress
+                entryWithUri("//wp-admin/")      // //wp-% also maps to PHP/WordPress
         ));
 
         var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
-        assertTrue(names.contains("PHP"));
-        assertTrue(names.contains("WordPress"));
+        assertTrue(names.contains("PHP/WordPress"));
         assertFalse(names.contains("/page.php"));
         assertFalse(names.contains("/wp-login.php"));
         assertFalse(names.contains("//wp-admin/"));
-        var phpTotal = result.stream().filter(r -> "PHP".equals(r.name()))
+        var phpWpTotal = result.stream().filter(r -> "PHP/WordPress".equals(r.name()))
                 .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
-        assertEquals(2, phpTotal);
-        var wpTotal = result.stream().filter(r -> "WordPress".equals(r.name()))
-                .mapToLong(r -> r.hit() + r.miss() + r.function() + r.error()).sum();
-        assertEquals(3, wpTotal);
+        assertEquals(5, phpWpTotal);
     }
 
     private CloudFrontLogEntry makeEntry(Instant ts, String edgeLocation, String ip, String uriStem, String referer, String ua, String country, String resultType) {
@@ -744,16 +731,16 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void urlMatchingUriStems_phpGroup_aggregatesPhpStems() {
+    void urlMatchingUriStems_phpWordPressGroup_aggregatesPhpStems() {
         Instant from = Instant.now();
         repository.saveEntries("logs/url-stems-php-test.gz", List.of(
                 entryWithUri("/page.php"),
                 entryWithUri("/page.php"),
                 entryWithUri("/other.php"),
-                entryWithUri("/index.html")   // not PHP — must not appear
+                entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP", from, Instant.now().plusSeconds(5), false);
+        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("/page.php"));
@@ -764,16 +751,16 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void urlMatchingUriStems_wordPressGroup_aggregatesWpStems() {
+    void urlMatchingUriStems_phpWordPressGroup_aggregatesWpStems() {
         Instant from = Instant.now();
         repository.saveEntries("logs/url-stems-wp-test.gz", List.of(
                 entryWithUri("/wp-login.php"),
                 entryWithUri("/wp-content/themes/style"),
                 entryWithUri("//wp-admin/"),
-                entryWithUri("/index.html")   // not WordPress — must not appear
+                entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("WordPress", from, Instant.now().plusSeconds(5), false);
+        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("/wp-login.php"));
@@ -803,16 +790,16 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void urlTopUserAgentsByResultType_phpGroup_aggregatesAllPhpStems() {
+    void urlTopUserAgentsByResultType_phpWordPressGroup_aggregatesAllPhpStems() {
         Instant from = Instant.now();
         repository.saveEntries("logs/url-ua-php-test.gz", List.of(
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/page.php"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/other.php"),
                 entryWithUaAndUri(UA_FIREFOX_LINUX,  "/page.php"),
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")  // not PHP
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")  // not PHP/WordPress
         ));
 
-        var result = dashboardService.urlTopUserAgentsByResultType("PHP", from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.urlTopUserAgentsByResultType("PHP/WordPress", from, Instant.now().plusSeconds(5), 10, false);
 
         var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, chrome.hit());
