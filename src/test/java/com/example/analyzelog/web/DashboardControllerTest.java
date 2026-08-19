@@ -148,4 +148,17 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "custom");
     }
 
+    @Test
+    void securityReturns200() {
+        assertThat(mvc.get().uri("/security").exchange())
+                .hasStatusOk()
+                .hasViewName("security");
+    }
+
+    @Test
+    void securityDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/security").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
 }

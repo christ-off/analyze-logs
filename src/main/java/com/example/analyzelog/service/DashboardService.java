@@ -4,7 +4,9 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
+import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.DailyCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.HumanTrafficStats;
@@ -31,6 +33,7 @@ import java.util.stream.Stream;
 public class DashboardService {
 
     private static final String COUNT_FIELD = "count";
+    private static final String SECURITY_PHP_WORDPRESS = "PHP/WordPress";
     private static final String FIELD_FUNCTION = "function";
     private static final String FIELD_ERROR = "error";
     private static final String AND_SEPARATOR = " AND ";
@@ -75,6 +78,13 @@ public class DashboardService {
                         rs.getLong("hit"), rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
             };
+    private static final RowMapper<CountryCount> COUNTRY_COUNT_MAPPER =
+            (rs, _) -> {
+                String iso = rs.getString("code");
+                return new CountryCount(iso, resolveCountryLabel(iso), rs.getLong(COUNT_FIELD));
+            };
+    private static final RowMapper<DailyCount> DAILY_COUNT_MAPPER =
+            (rs, _) -> new DailyCount(LocalDate.parse(rs.getString("day")), rs.getLong(COUNT_FIELD));
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
     private static final String RESULT_TYPE_SUMS = ResultTypeSql.RESULT_TYPE_SUMS;
     private static final String NOISE_EXCLUSION_CLAUSE =
@@ -665,6 +675,52 @@ public class DashboardService {
         args.addAll(List.of(from.toString(), to.toString()));
 
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+    }
+
+    public List<NameCount> securityTrafficCategories(Instant from, Instant to) {
+        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
+        String sql = "SELECT '" + SECURITY_PHP_WORDPRESS + "' as name, COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND " + entry.getKey() + "\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
+    }
+
+    public List<CountryCount> securityTopCountries(Instant from, Instant to, int limit) {
+        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
+        String sql = SQL_SELECT_COUNTRY + "COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND country IS NOT NULL\n" +
+                "  AND " + entry.getKey() + "\n" +
+                "GROUP BY country\n" +
+                "ORDER BY count DESC\n" +
+                LIMIT_PARAM;
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        args.add(limit);
+        return jdbc.query(sql, COUNTRY_COUNT_MAPPER, args.toArray());
+    }
+
+    public List<DailyCount> securityRequestsPerDay(Instant from, Instant to) {
+        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
+        String sql = "SELECT date(timestamp) as day, COUNT(*) as count\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND " + entry.getKey() + "\n" +
+                "GROUP BY day\n" +
+                "ORDER BY day\n";
+        var args = new ArrayList<>();
+        args.add(from.toString());
+        args.add(to.toString());
+        args.addAll(entry.getValue());
+        return jdbc.query(sql, DAILY_COUNT_MAPPER, args.toArray());
     }
 
     // Matches a row's effective category — same pair classification used in trafficCategories().

@@ -18,6 +18,10 @@ Charts.RESULT_TYPE_COLORS = {
     'Error':                     Charts.COLORS.red,
 };
 
+Charts.SECURITY_CATEGORY_COLORS = {
+    'PHP/WordPress': 'rgba(99, 102, 241, 0.85)',
+};
+
 Charts.PALETTE = [
     'rgba(13, 148, 136, 0.85)',
     'rgba(99, 102, 241, 0.85)',
@@ -71,7 +75,7 @@ Charts.loadChart = async function (endpoint, render) {
     }
 };
 
-Charts.horizontalBar = function (canvasId, data, urlFn) {
+Charts.horizontalBar = function (canvasId, data, urlFn, color = Charts.ACCENT) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     const MAX = 35;
@@ -83,7 +87,7 @@ Charts.horizontalBar = function (canvasId, data, urlFn) {
             datasets: [{
                 label: 'Requests',
                 data: data.map(d => d.count),
-                backgroundColor: Charts.ACCENT,
+                backgroundColor: color,
             }]
         },
         options: {
@@ -214,6 +218,26 @@ Charts.stackedBarByDay = function (canvasId, data) {
             scales: {
                 x: { stacked: true },
                 y: { stacked: true, beginAtZero: true }
+            }
+        }
+    });
+};
+
+Charts.barByDay = function (canvasId, data, color, label) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.day),
+            datasets: [{ label, data: data.map(d => d.count), backgroundColor: color }]
+        },
+        options: {
+            responsive: true,
+            datasets: { bar: { maxBarThickness: 44 } },
+            scales: {
+                x: {},
+                y: { beginAtZero: true }
             }
         }
     });

@@ -1,6 +1,7 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import com.example.analyzelog.model.DailyCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -828,6 +829,57 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, today.hit());
         assertEquals(1, today.miss());
         assertEquals(0, today.error());
+    }
+
+    // --- security page integration tests ---
+
+    @Test
+    void securityTrafficCategories_countsOnlyPhpWordpressUris() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/security-traffic-categories-test.gz", List.of(
+                entryWithUri("/wp-login.php"),
+                entryWithUri("/index.html")
+        ));
+
+        var result = dashboardService.securityTrafficCategories(from, Instant.now().plusSeconds(5));
+
+        assertEquals(1, result.size());
+        assertEquals("PHP/WordPress", result.getFirst().name());
+        assertEquals(1, result.getFirst().count());
+    }
+
+    @Test
+    void securityTopCountries_filtersToPhpWordpressUris() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/security-top-countries-test.gz", List.of(
+                entryWithCountryAndUriAndResultType("FR", "/wp-login.php", "Hit"),
+                entryWithCountryAndUriAndResultType("FR", "/wp-login.php", "Hit"),
+                entryWithCountryAndUriAndResultType("US", "/index.html", "Hit")
+        ));
+
+        var result = dashboardService.securityTopCountries(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(1, result.size());
+        assertEquals("FR", result.getFirst().code());
+        assertEquals(2, result.getFirst().count());
+    }
+
+    @Test
+    void securityRequestsPerDay_filtersToPhpWordpressUris() {
+        Instant now = Instant.now();
+        Instant yesterday = now.minus(1, ChronoUnit.DAYS);
+        repository.saveEntries("logs/security-rpd-test.gz", List.of(
+                makeEntry(now, "SFO53-P7", "1.2.3.4", "/wp-login.php", null, "TestAgent/1.0", "US", "Hit"),
+                makeEntry(now, "SFO53-P7", "1.2.3.4", "/index.html", null, "TestAgent/1.0", "US", "Hit"),
+                makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/page.php", null, "TestAgent/1.0", "US", "Hit"),
+                makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/about.html", null, "TestAgent/1.0", "US", "Hit")
+        ));
+
+        var result = dashboardService.securityRequestsPerDay(yesterday.minusSeconds(5), now.plusSeconds(5));
+
+        assertEquals(2, result.size());
+        long total = result.stream().mapToLong(DailyCount::count).sum();
+        assertEquals(2, total);
     }
 
     private CloudFrontLogEntry entryWithUaAndResultType(String ua, String resultType) {
