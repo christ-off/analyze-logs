@@ -773,7 +773,7 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> aiBotsRequestsPerDay(Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + AI_BOTS_FILTER_NO_ERROR_FILTERED + "\n" + SQL_DAILY_GROUP_ORDER,
+        return queryDailyByResultType(SQL_DAILY_SELECT + SQL_AND_INDENT + AI_BOTS_FILTER_NO_ERROR_FILTERED + "\n" + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString());
     }
 
