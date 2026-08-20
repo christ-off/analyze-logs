@@ -21,7 +21,7 @@ function loadAllCharts() {
             Charts.SECURITY_TOTAL_COLOR));
 
     Charts.loadChart(`security/requests-per-day?${p}`, data =>
-        Charts.stackedBarByDay('chartRequestsPerDay', data, Charts.SECURITY_CATEGORY_COLORS));
+        Charts.stackedBarByDayCategory('chartRequestsPerDay', data, Charts.SECURITY_CATEGORY_COLORS));
 }
 
 loadAllCharts();

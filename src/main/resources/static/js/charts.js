@@ -230,7 +230,7 @@ Charts.stackedBarByDay = function (canvasId, data) {
     });
 };
 
-Charts.stackedBarByDay = function (canvasId, data, colorMap) {
+Charts.stackedBarByDayCategory = function (canvasId, data, colorMap) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     const days = [...new Set(data.map(d => d.day))].sort();
