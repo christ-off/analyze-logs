@@ -849,7 +849,7 @@ class DashboardServiceIntegrationTest {
         var byName = result.stream().collect(Collectors.toMap(NameCount::name, NameCount::count));
         assertEquals(1L, byName.get("PHP/WordPress"));
         assertEquals(1L, byName.get("Env/credential file probing"));
-        assertEquals(0L, byName.get("Generic admin-panel probing"));
+        assertEquals(0L, byName.get("Java/Spring exploit probing"));
     }
 
     @Test

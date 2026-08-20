@@ -48,6 +48,11 @@ uri-stem-groups:
         - "/wp/%"
         - "%.php"
         - "%.php7"
+        - "%/admin%"
+        - "%/administrator%"
+        - "%/manager/html%"
+        - "%/console%"
+        - "%phpmyadmin%"
     - name: "Env/credential file probing"
       security: true
       patterns:
@@ -76,14 +81,6 @@ uri-stem-groups:
       security: true
       patterns:
         - "/ip"
-    - name: "Generic admin-panel probing"
-      security: true
-      patterns:
-        - "%/admin%"
-        - "%/administrator%"
-        - "%/manager/html%"
-        - "%/console%"
-        - "%phpmyadmin%"
     - name: "Java/Spring exploit probing"
       security: true
       patterns:
