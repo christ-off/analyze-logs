@@ -40,6 +40,7 @@ referer-filter:
 uri-stem-groups:
   groups:
     - name: "PHP/WordPress"
+      security: true
       patterns:
         - "/wp-%"
         - "//wp-%"
@@ -47,6 +48,57 @@ uri-stem-groups:
         - "/wp/%"
         - "%.php"
         - "%.php7"
+    - name: "Env/credential file probing"
+      security: true
+      patterns:
+        - "%.env%"
+        - "%/.git%"
+        - "%/.svn%"
+        - "%/.aws%"
+        - "%/.vscode%"
+        - "%/.ssh%"
+        - "%/.docker%"
+        - "%/.npmrc%"
+    - name: "Config/backup dump probing"
+      security: true
+      patterns:
+        - "%.sql"
+        - "%.bak"
+        - "%.zip"
+        - "%.tar.gz"
+        - "%.tar"
+        - "%backup%"
+        - "%.old"
+        - "%config.json%"
+        - "%.yml"
+        - "%.ini"
+    - name: "Open-proxy / IP-echo probing"
+      security: true
+      patterns:
+        - "/ip"
+    - name: "Generic admin-panel probing"
+      security: true
+      patterns:
+        - "%/admin%"
+        - "%/administrator%"
+        - "%/manager/html%"
+        - "%/console%"
+        - "%phpmyadmin%"
+    - name: "Java/Spring exploit probing"
+      security: true
+      patterns:
+        - "%/actuator%"
+        - "%struts%"
+        - "%jndi%"
+        - "%/s2-%"
+        - "%.action"
+    - name: "CGI-bin / router-IoT probing"
+      security: true
+      patterns:
+        - "%/cgi-bin%"
+        - "%/boaform%"
+        - "%/goform%"
+        - "%setup.cgi%"
     - name: "Feeds"
       patterns:
         - "/feed.xml"

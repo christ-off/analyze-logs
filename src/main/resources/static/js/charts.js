@@ -19,8 +19,16 @@ Charts.RESULT_TYPE_COLORS = {
 };
 
 Charts.SECURITY_CATEGORY_COLORS = {
-    'PHP/WordPress': 'rgba(99, 102, 241, 0.85)',
+    'PHP/WordPress':                 'rgba(99, 102, 241, 0.85)',
+    'Env/credential file probing':   'rgba(225, 29, 72, 0.85)',
+    'Config/backup dump probing':    'rgba(245, 158, 11, 0.85)',
+    'Open-proxy / IP-echo probing':  'rgba(14, 165, 233, 0.85)',
+    'Generic admin-panel probing':   'rgba(132, 204, 22, 0.85)',
+    'Java/Spring exploit probing':   'rgba(168, 85, 247, 0.85)',
+    'CGI-bin / router-IoT probing':  'rgba(249, 115, 22, 0.85)',
 };
+
+Charts.SECURITY_TOTAL_COLOR = 'rgba(100, 116, 139, 0.85)';
 
 Charts.PALETTE = [
     'rgba(13, 148, 136, 0.85)',

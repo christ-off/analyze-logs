@@ -5,7 +5,6 @@ const from = readMeta('cf-from');
 const to   = readMeta('cf-to');
 
 const CHART_IDS = ['chartTrafficCategories', 'chartCountries', 'chartRequestsPerDay'];
-const PHP_WORDPRESS_COLOR = Charts.SECURITY_CATEGORY_COLORS['PHP/WordPress'];
 
 function loadAllCharts() {
     CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
@@ -19,10 +18,10 @@ function loadAllCharts() {
     Charts.loadChart(`security/top-countries?${p}`, data =>
         Charts.horizontalBar('chartCountries', data,
             item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`,
-            PHP_WORDPRESS_COLOR));
+            Charts.SECURITY_TOTAL_COLOR));
 
     Charts.loadChart(`security/requests-per-day?${p}`, data =>
-        Charts.barByDay('chartRequestsPerDay', data, PHP_WORDPRESS_COLOR, 'PHP/WordPress'));
+        Charts.barByDay('chartRequestsPerDay', data, Charts.SECURITY_TOTAL_COLOR, 'All security scans'));
 }
 
 loadAllCharts();

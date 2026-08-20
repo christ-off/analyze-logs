@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -834,18 +835,21 @@ class DashboardServiceIntegrationTest {
     // --- security page integration tests ---
 
     @Test
-    void securityTrafficCategories_countsOnlyPhpWordpressUris() {
+    void securityTrafficCategories_returnsOneRowPerSecurityGroup() {
         Instant from = Instant.now();
         repository.saveEntries("logs/security-traffic-categories-test.gz", List.of(
                 entryWithUri("/wp-login.php"),
+                entryWithUri("/.env"),
                 entryWithUri("/index.html")
         ));
 
         var result = dashboardService.securityTrafficCategories(from, Instant.now().plusSeconds(5));
 
-        assertEquals(1, result.size());
-        assertEquals("PHP/WordPress", result.getFirst().name());
-        assertEquals(1, result.getFirst().count());
+        assertTrue(result.size() > 1, "expected a row per configured security group");
+        var byName = result.stream().collect(Collectors.toMap(NameCount::name, NameCount::count));
+        assertEquals(1L, byName.get("PHP/WordPress"));
+        assertEquals(1L, byName.get("Env/credential file probing"));
+        assertEquals(0L, byName.get("Generic admin-panel probing"));
     }
 
     @Test

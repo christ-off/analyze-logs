@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 public class DashboardService {
 
     private static final String COUNT_FIELD = "count";
-    private static final String SECURITY_PHP_WORDPRESS = "PHP/WordPress";
     private static final String FIELD_FUNCTION = "function";
     private static final String FIELD_ERROR = "error";
     private static final String AND_SEPARATOR = " AND ";
@@ -151,6 +150,7 @@ public class DashboardService {
     private final EdgeLocationResolver edgeLocationResolver;
     private final ReloadableRefererService refererService;
     private final Map<String, List<String>> groupPatterns;
+    private final List<String> securityGroupNames;
     private final String uriStemExclusionClause;
     private final List<String> extensionArgs;
     private final String humanTrafficClause;
@@ -171,6 +171,10 @@ public class DashboardService {
                 .collect(Collectors.toMap(
                         UriStemGroupProperties.Group::name,
                         UriStemGroupProperties.Group::patterns));
+        this.securityGroupNames = uriStemGroupProperties.groups().stream()
+                .filter(UriStemGroupProperties.Group::security)
+                .map(UriStemGroupProperties.Group::name)
+                .toList();
         this.sqlUriByResultType = "SELECT \n" +
                 buildUriStemNameCase(uriStemGroupProperties.groups()) +
                 RESULT_TYPE_SUMS + "\n" +
@@ -213,6 +217,17 @@ public class DashboardService {
             return Map.entry(pred, List.copyOf(patterns));
         }
         return Map.entry("uri_stem = ?", List.of(urlName));
+    }
+
+    // Union of every uri-stem-groups entry flagged security: true — used to filter overall security-scan traffic.
+    private Map.Entry<String, List<Object>> securityPredicate() {
+        List<String> patterns = securityGroupNames.stream()
+                .flatMap(name -> groupPatterns.get(name).stream())
+                .toList();
+        String pred = patterns.stream()
+                .map(_ -> "LOWER(uri_stem) LIKE LOWER(?)")
+                .collect(Collectors.joining(" OR ", "(", ")"));
+        return Map.entry(pred, List.copyOf(patterns));
     }
 
     private static String andClause(String clause) {
@@ -678,20 +693,25 @@ public class DashboardService {
     }
 
     public List<NameCount> securityTrafficCategories(Instant from, Instant to) {
-        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
-        String sql = "SELECT '" + SECURITY_PHP_WORDPRESS + "' as name, COUNT(*) as count\n" +
-                "FROM cloudfront_logs\n" +
-                "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND " + entry.getKey() + "\n";
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.addAll(entry.getValue());
+        String sql = securityGroupNames.stream()
+                .map(name -> {
+                    var entry = uriStemPredicate(name);
+                    args.add(from.toString());
+                    args.add(to.toString());
+                    args.addAll(entry.getValue());
+                    return "SELECT '" + name + "' as name, COUNT(*) as count\n" +
+                            "FROM cloudfront_logs\n" +
+                            "WHERE timestamp BETWEEN ? AND ?\n" +
+                            "  AND " + entry.getKey() + "\n";
+                })
+                .collect(Collectors.joining("UNION ALL\n")) +
+                "ORDER BY count DESC\n";
         return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
     }
 
     public List<CountryCount> securityTopCountries(Instant from, Instant to, int limit) {
-        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
+        var entry = securityPredicate();
         String sql = SQL_SELECT_COUNTRY + "COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
@@ -709,7 +729,7 @@ public class DashboardService {
     }
 
     public List<DailyCount> securityRequestsPerDay(Instant from, Instant to) {
-        var entry = uriStemPredicate(SECURITY_PHP_WORDPRESS);
+        var entry = securityPredicate();
         String sql = "SELECT date(timestamp) as day, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
