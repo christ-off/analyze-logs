@@ -69,7 +69,6 @@ uri-stem-groups:
       patterns:
         - "%.sql"
         - "%.bak"
-        - "%.zip"
         - "%.tar.gz"
         - "%.tar"
         - "%backup%"
