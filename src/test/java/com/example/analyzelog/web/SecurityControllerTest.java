@@ -2,7 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryCount;
-import com.example.analyzelog.model.DailyCount;
+import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class SecurityControllerTest {
     @Test
     void requestsPerDayReturnsJson() {
         when(dashboardService.securityRequestsPerDay(any(Instant.class), any(Instant.class)))
-                .thenReturn(List.of(new DailyCount(LocalDate.parse("2026-01-05"), 7)));
+                .thenReturn(List.of(new DailyNameCount(LocalDate.parse("2026-01-05"), "PHP/WordPress", 7)));
 
         assertThat(mvc.get().uri("/api/security/requests-per-day")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

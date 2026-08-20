@@ -231,21 +231,28 @@ Charts.stackedBarByDay = function (canvasId, data) {
     });
 };
 
-Charts.barByDay = function (canvasId, data, color, label) {
+Charts.stackedBarByDay = function (canvasId, data, colorMap) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    const days = [...new Set(data.map(d => d.day))].sort();
+    const names = [...new Set(data.map(d => d.name))];
+    const countByDayAndName = new Map(data.map(d => [`${d.day} ${d.name}`, d.count]));
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.map(d => d.day),
-            datasets: [{ label, data: data.map(d => d.count), backgroundColor: color }]
+            labels: days,
+            datasets: names.map((name, i) => ({
+                label: name,
+                data: days.map(day => countByDayAndName.get(`${day} ${name}`) ?? 0),
+                backgroundColor: colorMap?.[name] ?? Charts.PALETTE[i % Charts.PALETTE.length],
+            })),
         },
         options: {
             responsive: true,
             datasets: { bar: { maxBarThickness: 44 } },
             scales: {
-                x: {},
-                y: { beginAtZero: true }
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
             }
         }
     });

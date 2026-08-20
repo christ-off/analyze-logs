@@ -1,7 +1,7 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
-import com.example.analyzelog.model.DailyCount;
+import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -869,11 +869,12 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void securityRequestsPerDay_filtersToPhpWordpressUris() {
+    void securityRequestsPerDay_breaksDownByCategory() {
         Instant now = Instant.now();
         Instant yesterday = now.minus(1, ChronoUnit.DAYS);
         repository.saveEntries("logs/security-rpd-test.gz", List.of(
                 makeEntry(now, "SFO53-P7", "1.2.3.4", "/wp-login.php", null, "TestAgent/1.0", "US", "Hit"),
+                makeEntry(now, "SFO53-P7", "1.2.3.4", "/.env", null, "TestAgent/1.0", "US", "Hit"),
                 makeEntry(now, "SFO53-P7", "1.2.3.4", "/index.html", null, "TestAgent/1.0", "US", "Hit"),
                 makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/page.php", null, "TestAgent/1.0", "US", "Hit"),
                 makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/about.html", null, "TestAgent/1.0", "US", "Hit")
@@ -881,9 +882,12 @@ class DashboardServiceIntegrationTest {
 
         var result = dashboardService.securityRequestsPerDay(yesterday.minusSeconds(5), now.plusSeconds(5));
 
-        assertEquals(2, result.size());
-        long total = result.stream().mapToLong(DailyCount::count).sum();
-        assertEquals(2, total);
+        assertEquals(3, result.size(), "one row per (day, category) with at least one match");
+        long total = result.stream().mapToLong(DailyNameCount::count).sum();
+        assertEquals(3, total);
+        assertTrue(result.stream().anyMatch(r -> "Env/credential file probing".equals(r.name())));
+        assertEquals(2, result.stream().filter(r -> "PHP/WordPress".equals(r.name())).count(),
+                "PHP/WordPress hits on both days");
     }
 
     private CloudFrontLogEntry entryWithUaAndResultType(String ua, String resultType) {

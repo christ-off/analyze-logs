@@ -6,7 +6,7 @@ import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
-import com.example.analyzelog.model.DailyCount;
+import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.HumanTrafficStats;
@@ -82,8 +82,8 @@ public class DashboardService {
                 String iso = rs.getString("code");
                 return new CountryCount(iso, resolveCountryLabel(iso), rs.getLong(COUNT_FIELD));
             };
-    private static final RowMapper<DailyCount> DAILY_COUNT_MAPPER =
-            (rs, _) -> new DailyCount(LocalDate.parse(rs.getString("day")), rs.getLong(COUNT_FIELD));
+    private static final RowMapper<DailyNameCount> DAILY_NAME_COUNT_MAPPER =
+            (rs, _) -> new DailyNameCount(LocalDate.parse(rs.getString("day")), rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
     private static final String RESULT_TYPE_SUMS = ResultTypeSql.RESULT_TYPE_SUMS;
     private static final String NOISE_EXCLUSION_CLAUSE =
@@ -728,19 +728,23 @@ public class DashboardService {
         return jdbc.query(sql, COUNTRY_COUNT_MAPPER, args.toArray());
     }
 
-    public List<DailyCount> securityRequestsPerDay(Instant from, Instant to) {
-        var entry = securityPredicate();
-        String sql = "SELECT date(timestamp) as day, COUNT(*) as count\n" +
-                "FROM cloudfront_logs\n" +
-                "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND " + entry.getKey() + "\n" +
-                "GROUP BY day\n" +
-                "ORDER BY day\n";
+    public List<DailyNameCount> securityRequestsPerDay(Instant from, Instant to) {
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-        args.addAll(entry.getValue());
-        return jdbc.query(sql, DAILY_COUNT_MAPPER, args.toArray());
+        String sql = securityGroupNames.stream()
+                .map(name -> {
+                    var entry = uriStemPredicate(name);
+                    args.add(from.toString());
+                    args.add(to.toString());
+                    args.addAll(entry.getValue());
+                    return "SELECT date(timestamp) as day, '" + name + "' as name, COUNT(*) as count\n" +
+                            "FROM cloudfront_logs\n" +
+                            "WHERE timestamp BETWEEN ? AND ?\n" +
+                            "  AND " + entry.getKey() + "\n" +
+                            "GROUP BY day\n";
+                })
+                .collect(Collectors.joining("UNION ALL\n")) +
+                "ORDER BY day\n";
+        return jdbc.query(sql, DAILY_NAME_COUNT_MAPPER, args.toArray());
     }
 
     // Matches a row's effective category — same pair classification used in trafficCategories().

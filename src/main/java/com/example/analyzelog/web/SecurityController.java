@@ -2,7 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryCount;
-import com.example.analyzelog.model.DailyCount;
+import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +33,7 @@ class SecurityController extends DetailControllerBase {
     }
 
     @GetMapping("/requests-per-day")
-    public List<DailyCount> requestsPerDay(@RequestParam String from, @RequestParam String to) {
+    public List<DailyNameCount> requestsPerDay(@RequestParam String from, @RequestParam String to) {
         var range = requestRange(null, from, to);
         return dashboardService.securityRequestsPerDay(range.from(), range.to());
     }
