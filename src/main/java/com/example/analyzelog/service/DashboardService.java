@@ -106,18 +106,21 @@ public class DashboardService {
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
     // Pair classification used both to label rows (trafficCategories) and to filter rows
     // belonging to a given category (categoryPairFilter) — kept as one expression so the two stay in sync.
-    private static final String CATEGORY_CASE_EXPR = """
+    // Built per-instance (rather than a static constant) because the 'Security' branch depends on the
+    // configured uri-stem-groups flagged security: true.
+    private static final String CATEGORY_CASE_EXPR_TEMPLATE = """
             CASE
                 WHEN MAX(CASE WHEN uri_stem IN (%s) THEN 1 ELSE 0 END) = 1
                     THEN 'Feeds'
+                WHEN MAX(CASE WHEN %s THEN 1 ELSE 0 END) = 1
+                    THEN 'Security'
                 WHEN MAX(CASE WHEN uri_stem LIKE '%%/' AND %s THEN 1 ELSE 0 END) = 1
                  AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
                     THEN 'Probable human'
                 WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
                     THEN 'Declared bots'
                 ELSE 'Other'
-            END""".formatted(FEED_URI_LIST, HUMAN_EVIDENCE_RESULT_TYPES,
-            HUMAN_EVIDENCE_EXT_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
+            END""";
 
     // Evidence of a real browser fetching a rendered page: its stylesheet or an image format
     // browsers request inline but bots/scanners rarely bother probing individually.
@@ -151,6 +154,7 @@ public class DashboardService {
     private final ReloadableRefererService refererService;
     private final Map<String, List<String>> groupPatterns;
     private final List<String> securityGroupNames;
+    private final String categoryCaseExpr;
     private final String uriStemExclusionClause;
     private final List<String> extensionArgs;
     private final String humanTrafficClause;
@@ -175,6 +179,8 @@ public class DashboardService {
                 .filter(UriStemGroupProperties.Group::security)
                 .map(UriStemGroupProperties.Group::name)
                 .toList();
+        this.categoryCaseExpr = CATEGORY_CASE_EXPR_TEMPLATE.formatted(FEED_URI_LIST, securityUriStemWhenClause(),
+                HUMAN_EVIDENCE_RESULT_TYPES, HUMAN_EVIDENCE_EXT_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
         this.sqlUriByResultType = "SELECT \n" +
                 buildUriStemNameCase(uriStemGroupProperties.groups()) +
                 RESULT_TYPE_SUMS + "\n" +
@@ -217,6 +223,15 @@ public class DashboardService {
             return Map.entry(pred, List.copyOf(patterns));
         }
         return Map.entry("uri_stem = ?", List.of(urlName));
+    }
+
+    // Inline (not parameterized) equivalent of securityPredicate(), for embedding into CATEGORY_CASE_EXPR_TEMPLATE
+    // alongside other literal patterns (FEED_URI_LIST) — same trusted-config style as buildUriStemNameCase().
+    private String securityUriStemWhenClause() {
+        return securityGroupNames.stream()
+                .flatMap(name -> groupPatterns.get(name).stream())
+                .map(pattern -> "LOWER(uri_stem) LIKE LOWER('" + pattern + "')")
+                .collect(Collectors.joining(" OR "));
     }
 
     // Union of every uri-stem-groups entry flagged security: true — used to filter overall security-scan traffic.
@@ -675,9 +690,10 @@ public class DashboardService {
                     WHEN 'Probable human' THEN 0
                     WHEN 'Declared bots' THEN 1
                     WHEN 'Feeds' THEN 2
-                    ELSE 3 END
+                    WHEN 'Security' THEN 3
+                    ELSE 4 END
                 """.formatted(
-                CATEGORY_CASE_EXPR,
+                categoryCaseExpr,
                 whereAfterRange,
                 ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c"),
@@ -748,7 +764,7 @@ public class DashboardService {
     }
 
     // Matches a row's effective category — same pair classification used in trafficCategories().
-    private static String categoryPairFilter() {
+    private String categoryPairFilter() {
         return """
                 (client_ip, user_agent) IN (
                     SELECT client_ip, user_agent
@@ -756,7 +772,7 @@ public class DashboardService {
                     WHERE timestamp BETWEEN ? AND ?
                     GROUP BY client_ip, user_agent
                     HAVING %s = ?
-                )""".formatted(CATEGORY_CASE_EXPR);
+                )""".formatted(categoryCaseExpr);
     }
 
     private static final String AI_BOTS_FILTER =

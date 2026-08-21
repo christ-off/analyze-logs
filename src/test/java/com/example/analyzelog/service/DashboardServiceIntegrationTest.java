@@ -1298,6 +1298,31 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void trafficCategories_securityProbeClassifiesPairAsSecurityInsteadOfOther() {
+        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
+        repository.saveEntries("logs/traffic-categories-security-test.gz", List.of(
+                // Pair only probes a security-flagged uri (/wp-login.php matches the "/wp-%" pattern) —
+                // would otherwise fall into "Other".
+                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/wp-login.php", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Pair otherwise qualifying as "Probable human" (and having fetched /robots.txt) also
+                // probes /.env — the whole pair is reclassified as "Security", not "Probable human".
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/main.css", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/.env", null, UA_FIREFOX_LINUX, "US", "Hit")
+        ));
+
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+
+        assertFalse(result.stream().anyMatch(r -> "Other".equals(r.name())));
+        assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
+        assertFalse(result.stream().anyMatch(r -> "Declared bots".equals(r.name())));
+
+        var security = result.stream().filter(r -> "Security".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(5, security.hit());
+    }
+
+    @Test
     void categoryUrlsByResultType_scopesUrlsToCategory() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/category-urls-test.gz", List.of(
