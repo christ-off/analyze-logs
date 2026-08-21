@@ -62,6 +62,7 @@ Key properties:
 | `uri-stem-filter.excluded-extensions` | `.css`, `.js`, `.png`, … | File extensions excluded from all URL charts (static assets) |
 | `referer-filter.self-referers` | `[]` | Referer prefixes to exclude from Top Referers (your own domain). Matched with and without trailing slash, and as a bare domain without scheme. |
 | `referer-normalizer.rules` | Google, Bing, Yahoo, … | Rules to group referer URLs into a single label. Each rule has `label` and one of `domain` (exact), `domain-starts-with`, or `domain-ends-with`. |
+| `uri-stem-groups.groups` | PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing | Groups of `uri_stem` LIKE patterns collapsed into one label on the **Top URLs** chart. A group with `security: true` also feeds the **Security** traffic category and the [Security page](#security-page). |
 
 ### `application-local.yml` (gitignored — your secrets)
 
@@ -113,22 +114,36 @@ Date range presets and custom date picker are shared with the main dashboard.
 
 ### Main dashboard
 
-Six charts, all scoped to the selected date range:
+Eight charts, all scoped to the selected date range:
 
 | Chart | Description |
 |-------|-------------|
+| Traffic Categories | Horizontal stacked bar — each `(client_ip, user_agent)` pair classified as **Probable human**, **Declared bots** (fetched `/robots.txt`), **Feeds** (`/feed.xml`, `/rss.xml`), **Security** (probed a `uri-stem-groups` pattern flagged `security: true`), or **Other**. Click a bar to open the category detail page. |
 | Top User Agents | Horizontal stacked bar — classified UA names by request count, coloured by edge result type. Click a bar to open the UA detail page. |
-| Top Blocked Countries (403) | Horizontal bar — countries blocked with HTTP 403. Click a bar to open the country detail page. |
-| Top Allowed URLs | Horizontal bar — most-requested paths with status < 400; static assets (`.css`, `.js`, images, etc.) excluded. |
-| Top Blocked URLs | Horizontal bar — most-requested paths across all statuses; `.php` files grouped as **PHP**, `/wp-*` paths grouped as **Wordpress**. |
+| Top Countries | Horizontal stacked bar — request volume by country, coloured by edge result type. Click a bar to open the country detail page. |
+| Top URLs | Horizontal stacked bar — most-requested paths, coloured by edge result type; static assets excluded, and `uri-stem-groups` patterns (PHP/WordPress, `.env`/`.git` probing, backup dumps, actuator/Struts, cgi-bin, etc.) collapsed into one label each. |
 | Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. Known search engines and social sites (Google, Bing, Yahoo, DuckDuckGo, Qwant, Facebook, Babelio) are grouped under a single label. Configurable via `referer-normalizer.rules`. |
+| User Agent Groups | Pie — request share by UA group (Browsers, AI Bots, Search Bots, Other Bots, Apps, Feed Readers). |
+| Platforms | Pie — request share by OS/platform detected from the user agent (iOS, Android, Windows, Mac, Linux, Other). |
 | Requests per Day | Stacked bar — daily breakdown by edge result type: Hit, Miss, Function, Redirect, Error. |
 
 Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
 
-**Hide bots & apps** toggle removes traffic from the *AI Bots*, *Search Bots*, *Other Bots*, and *Apps* UA groups — as well as entries with no user agent — from all six charts simultaneously. State is persisted in `localStorage`.
+**Hide bots & apps** toggle removes traffic from the *AI Bots*, *Search Bots*, *Other Bots*, and *Apps* UA groups — as well as entries with no user agent — from all charts simultaneously. State is persisted in `localStorage`.
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
+
+### Security page
+
+Focuses on the traffic flagged by `uri-stem-groups` entries with `security: true` (scanner/exploit probing), scoped to the selected date range:
+
+| Chart | Description |
+|-------|-------------|
+| Traffic Categories | Horizontal bar — request count per security scan category (PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing). |
+| Top Countries | Horizontal bar — countries the security-flagged requests originate from. |
+| Requests per Day | Stacked bar — daily breakdown by scan category. |
+
+Date range presets are shared with the main dashboard.
 
 ### UA detail page
 
