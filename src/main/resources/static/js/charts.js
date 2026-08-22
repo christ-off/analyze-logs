@@ -85,6 +85,7 @@ Charts.loadChart = async function (endpoint, render) {
 Charts.horizontalBar = function (canvasId, data, urlFn, color = Charts.ACCENT) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    Chart.getChart(canvasId)?.destroy();
     const MAX = 35;
     const truncate = s => s.length > MAX ? s.slice(0, MAX) + '…' : s;
     new Chart(ctx, {
@@ -119,6 +120,7 @@ Charts.horizontalBar = function (canvasId, data, urlFn, color = Charts.ACCENT) {
 Charts.pie = function (canvasId, data, colorMap) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    Chart.getChart(canvasId)?.destroy();
     new Chart(ctx, {
         type: 'pie',
         data: {
@@ -180,6 +182,7 @@ Charts.resultTypeDatasets = function (data) {
 Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    Chart.getChart(canvasId)?.destroy();
     const container = ctx.parentElement;
     container.style.position = 'relative';
     container.style.height = Math.max(200, data.length * 32) + 'px';
@@ -213,6 +216,7 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
 Charts.stackedBarByDay = function (canvasId, data) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    Chart.getChart(canvasId)?.destroy();
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -233,6 +237,7 @@ Charts.stackedBarByDay = function (canvasId, data) {
 Charts.stackedBarByDayCategory = function (canvasId, data, colorMap) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    Chart.getChart(canvasId)?.destroy();
     const days = [...new Set(data.map(d => d.day))].sort((a, b) => a.localeCompare(b));
     const names = [...new Set(data.map(d => d.name))];
     const countByDayAndName = new Map(data.map(d => [`${d.day} ${d.name}`, d.count]));

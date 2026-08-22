@@ -1,7 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.CountryCount;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.service.DashboardService;
@@ -49,7 +49,7 @@ class SecurityControllerTest {
     @Test
     void topCountriesReturnsJson() {
         when(dashboardService.securityTopCountries(any(Instant.class), any(Instant.class), org.mockito.ArgumentMatchers.anyInt()))
-                .thenReturn(List.of(new CountryCount("US", "United States", 10)));
+                .thenReturn(List.of(new CountryResultTypeCount("US", "United States", 5, 2, 2, 1)));
 
         assertThat(mvc.get().uri("/api/security/top-countries")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

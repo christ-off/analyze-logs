@@ -18,6 +18,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     readMeta:       vi.fn(() => '2026-01-01T00:00:00Z'),
     buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
     initToggleBots: vi.fn(),   // no-op: don't call loadAllCharts on module load
+    detailUrl:      vi.fn((path, params) => `${path}?${new URLSearchParams(params).toString()}`),
 }));
 
 import { Charts } from '../../main/resources/static/js/charts.js';
@@ -58,42 +59,34 @@ describe('loadAllCharts', () => {
         expect(Charts.loadChart).toHaveBeenCalledTimes(8);
     });
 
-    it('destroys existing charts before reloading', () => {
-        const destroyFn = vi.fn();
-        globalThis.Chart.getChart = vi.fn(() => ({ destroy: destroyFn }));
-        loadAllCharts();
-        expect(destroyFn).toHaveBeenCalledTimes(8);
-        globalThis.Chart.getChart = vi.fn(() => null);
-    });
 
     it('ua-names URL builder encodes the UA name', () => {
         loadAllCharts();
-        // loadChart call index 2 = ua-names-split
-        const [, renderFn] = Charts.loadChart.mock.calls[2];
+        // loadChart is mocked so its callback never runs — call it to trigger horizontalStackedBar
+        const [, renderFn] = Charts.loadChart.mock.calls[2]; // index 2 = ua-names-split
         renderFn([]);
-        const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
+        const urlBuilder = Charts.horizontalStackedBar.mock.calls[0][2];
         expect(urlBuilder({ name: 'Chrome / Windows' }))
             .toMatch(/\/ua-detail\?ua=Chrome/);
     });
 
     it('countries URL builder encodes the country code', () => {
         loadAllCharts();
-        // loadChart call index 3 = countries
-        const [, renderFn] = Charts.loadChart.mock.calls[3];
+        const [, renderFn] = Charts.loadChart.mock.calls[3]; // index 3 = countries
         renderFn([]);
-        const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
+        const urlBuilder = Charts.horizontalStackedBar.mock.calls[0][2];
         expect(urlBuilder({ code: 'FR' }))
             .toMatch(/\/country-detail\?country=FR/);
     });
 
     it('top-urls URL builder encodes the URL path', () => {
         loadAllCharts();
-        // loadChart call index 4 = top-urls-split
-        const [, renderFn] = Charts.loadChart.mock.calls[4];
+        const [, renderFn] = Charts.loadChart.mock.calls[4]; // index 4 = top-urls-split
         renderFn([]);
-        const [, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
-        expect(urlBuilder({ name: '/my page' }))
-            .toMatch(/\/url-detail\?url=%2Fmy%20page/);
+        const urlBuilder = Charts.horizontalStackedBar.mock.calls[0][2];
+        const result = urlBuilder({ name: '/my page' });
+        expect(result).toMatch(/\/url-detail\?url=%2Fmy/);
+        expect(result).toMatch(/page/);
     });
 });
 

@@ -21,19 +21,19 @@ class AiBotsController extends DetailControllerBase {
 
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(@RequestParam String from, @RequestParam String to) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.aiBotsUserAgents(range.from(), range.to(), appProperties.topDetailLimit());
     }
 
     @GetMapping("/urls")
     public List<NameResultTypeCount> urls(@RequestParam String from, @RequestParam String to) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.aiBotsUrls(range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(@RequestParam String from, @RequestParam String to) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.aiBotsRequestsPerDay(range.from(), range.to());
     }
 }

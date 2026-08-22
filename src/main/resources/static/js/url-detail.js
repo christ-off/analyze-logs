@@ -1,9 +1,7 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, detailUrl } from './utils.js';
 
 const urlName = readMeta('cf-url');
-
-const CHART_IDS = ['chartCountries', 'chartUserAgents', 'chartRequestsPerDay'];
 
 async function loadUrlsTable() {
     const tbody = document.getElementById('tbodyUrls');
@@ -29,18 +27,15 @@ async function loadUrlsTable() {
 }
 
 function loadAllCharts() {
-    CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
-    const from = readMeta('cf-from');
-    const to   = readMeta('cf-to');
     const p = buildBaseParams({ url: urlName });
 
     Charts.loadChart(`url-detail/countries?${p}`,
         data => Charts.horizontalStackedBar('chartCountries', data,
-            item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+            item => detailUrl('/country-detail', { country: item.code })));
 
     Charts.loadChart(`url-detail/user-agents?${p}`,
         data => Charts.horizontalStackedBar('chartUserAgents', data,
-            d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+            d => detailUrl('/ua-detail', { ua: d.name })));
 
     Charts.loadChart(`url-detail/requests-per-day?${p}`,
         data => Charts.stackedBarByDay('chartRequestsPerDay', data));

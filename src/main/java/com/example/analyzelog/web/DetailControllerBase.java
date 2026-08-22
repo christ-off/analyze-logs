@@ -14,13 +14,7 @@ abstract class DetailControllerBase {
         this.appProperties = appProperties;
     }
 
-    protected DateRange requestRange(String range, String from, String to) {
-        if (from != null && to != null) return DateRange.fromParams(from, to);
-        return switch (range != null ? range : "7d") {
-            case "1d"  -> DateRange.lastDays(1);
-            case "30d" -> DateRange.lastDays(30);
-            case "3m"  -> DateRange.lastMonths(3);
-            default    -> DateRange.lastDays(7);
-        };
+    protected DateRange range(String from, String to) {
+        return DateRange.fromParams(from, to);
     }
 }

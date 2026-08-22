@@ -1,30 +1,21 @@
 import { Charts } from './charts.js';
-import { readMeta, buildBaseParams, initToggleBots } from './utils.js';
-
-const from = readMeta('cf-from');
-const to   = readMeta('cf-to');
-
-const CHART_IDS = [
-    'chartUaGroups', 'chartPlatforms', 'chartUaNames', 'chartCountries',
-    'chartTopUrls', 'chartReferers', 'chartRequestsPerDay', 'chartTrafficCategories',
-];
+import { readMeta, buildBaseParams, initToggleBots, detailUrl } from './utils.js';
 
 export function loadAllCharts() {
-    CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
     const p = buildBaseParams({});
     Charts.loadChart(`ua-groups?${p}`,        data => Charts.pie('chartUaGroups',     data, null));
     Charts.loadChart(`platforms?${p}`,        data => Charts.pie('chartPlatforms',    data, null));
     Charts.loadChart(`ua-names-split?${p}`,   data => Charts.horizontalStackedBar('chartUaNames', data,
-        d => `/ua-detail?ua=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+        d => detailUrl('/ua-detail', { ua: d.name })));
     Charts.loadChart(`countries?${p}`,        data => Charts.horizontalStackedBar('chartCountries', data,
-        item => `/country-detail?country=${encodeURIComponent(item.code)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+        item => detailUrl('/country-detail', { country: item.code })));
     Charts.loadChart(`top-urls-split?${p}`,   data => Charts.horizontalStackedBar('chartTopUrls',  data,
-        d => `/url-detail?url=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+        d => detailUrl('/url-detail', { url: d.name })));
     Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers', data,
-        d => `/referer-detail?referer=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+        d => detailUrl('/referer-detail', { referer: d.name })));
     Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
     Charts.loadChart(`traffic-categories?${p}`, data => Charts.horizontalStackedBar('chartTrafficCategories', data,
-        d => `/category-detail?category=${encodeURIComponent(d.name)}&from=${Charts.toDateParam(from)}&to=${Charts.toDateParam(to)}`));
+        d => detailUrl('/category-detail', { category: d.name })));
 }
 
 initToggleBots(loadAllCharts);

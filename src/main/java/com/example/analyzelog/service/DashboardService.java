@@ -366,14 +366,7 @@ public class DashboardService {
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(humanTrafficClause, excludeBots);
-        String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
-                + "FROM cloudfront_logs\n"
-                + "WHERE timestamp BETWEEN ? AND ?\n"
-                + "  AND country = ?\n"
-                + exclusion
-                + "GROUP BY name\n"
-                + "ORDER BY count DESC\n";
-        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), countryCode);
+        return queryResultTypesByFilter("country", countryCode, from, to, exclusion);
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
@@ -678,9 +671,6 @@ public class DashboardService {
                     GROUP BY client_ip, user_agent
                 )
                 SELECT pc.category AS name,
-                       %s,
-                       %s,
-                       %s,
                        %s
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
@@ -695,9 +685,6 @@ public class DashboardService {
                 """.formatted(
                 categoryCaseExpr,
                 whereAfterRange,
-                ResultTypeSql.resultTypeSums("c"),
-                ResultTypeSql.resultTypeSums("c"),
-                ResultTypeSql.resultTypeSums("c"),
                 ResultTypeSql.resultTypeSums("c")
         );
 
@@ -710,58 +697,57 @@ public class DashboardService {
 
     public List<NameCount> securityTrafficCategories(Instant from, Instant to) {
         var args = new ArrayList<>();
-        String sql = securityGroupNames.stream()
+        String sql = buildSecurityUnionSql(securityGroupNames, from, to, args,
+                name -> "SELECT '" + name + "' as name, COUNT(*) as count\n"
+                        + "FROM cloudfront_logs\n"
+                        + "WHERE timestamp BETWEEN ? AND ?\n"
+                        + "  AND %s\n");
+        return jdbc.query(sql + "ORDER BY count DESC\n", NAME_COUNT_MAPPER, args.toArray());
+    }
+
+    public List<DailyNameCount> securityRequestsPerDay(Instant from, Instant to) {
+        var args = new ArrayList<>();
+        String sql = buildSecurityUnionSql(securityGroupNames, from, to, args,
+                name -> "SELECT date(timestamp) as day, '" + name + "' as name, COUNT(*) as count\n"
+                        + "FROM cloudfront_logs\n"
+                        + "WHERE timestamp BETWEEN ? AND ?\n"
+                        + "  AND %s\n"
+                        + "GROUP BY day\n");
+        return jdbc.query(sql + "ORDER BY day\n", DAILY_NAME_COUNT_MAPPER, args.toArray());
+    }
+
+    private String buildSecurityUnionSql(List<String> names, Instant from, Instant to,
+                                          List<Object> args,
+                                          java.util.function.Function<String, String> selectFmt) {
+        return names.stream()
                 .map(name -> {
                     var entry = uriStemPredicate(name);
                     args.add(from.toString());
                     args.add(to.toString());
                     args.addAll(entry.getValue());
-                    return "SELECT '" + name + "' as name, COUNT(*) as count\n" +
-                            "FROM cloudfront_logs\n" +
-                            "WHERE timestamp BETWEEN ? AND ?\n" +
-                            "  AND " + entry.getKey() + "\n";
+                    return selectFmt.apply(name).formatted(entry.getKey());
                 })
-                .collect(Collectors.joining("UNION ALL\n")) +
-                "ORDER BY count DESC\n";
-        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
+                .collect(Collectors.joining("UNION ALL\n"));
     }
 
-    public List<CountryCount> securityTopCountries(Instant from, Instant to, int limit) {
+    public List<CountryResultTypeCount> securityTopCountries(Instant from, Instant to, int limit) {
         var entry = securityPredicate();
-        String sql = SQL_SELECT_COUNTRY + "COUNT(*) as count\n" +
+        String sql = SQL_SELECT_COUNTRY + ResultTypeSql.RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
                 "  AND " + entry.getKey() + "\n" +
                 "GROUP BY country\n" +
-                "ORDER BY count DESC\n" +
+                ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
         args.add(limit);
-        return jdbc.query(sql, COUNTRY_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
-    public List<DailyNameCount> securityRequestsPerDay(Instant from, Instant to) {
-        var args = new ArrayList<>();
-        String sql = securityGroupNames.stream()
-                .map(name -> {
-                    var entry = uriStemPredicate(name);
-                    args.add(from.toString());
-                    args.add(to.toString());
-                    args.addAll(entry.getValue());
-                    return "SELECT date(timestamp) as day, '" + name + "' as name, COUNT(*) as count\n" +
-                            "FROM cloudfront_logs\n" +
-                            "WHERE timestamp BETWEEN ? AND ?\n" +
-                            "  AND " + entry.getKey() + "\n" +
-                            "GROUP BY day\n";
-                })
-                .collect(Collectors.joining("UNION ALL\n")) +
-                "ORDER BY day\n";
-        return jdbc.query(sql, DAILY_NAME_COUNT_MAPPER, args.toArray());
-    }
 
     // Matches a row's effective category — same pair classification used in trafficCategories().
     private String categoryPairFilter() {
@@ -807,17 +793,16 @@ public class DashboardService {
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
     public HumanTrafficStats humanTrafficStats(String ua, Instant from, Instant to) {
         List<NameResultTypeCount> categories = trafficCategories("user_agent = ?", List.of(ua), from, to, false);
-        long total = categories.stream().mapToLong(DashboardService::totalCount).sum();
-        long human = categories.stream()
-                .filter(c -> "Probable human".equals(c.name()))
-                .mapToLong(DashboardService::totalCount)
-                .sum();
-        return new HumanTrafficStats(human, total);
+        return toHumanTrafficStats(categories);
     }
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one country.
     public HumanTrafficStats countryHumanTrafficStats(String country, Instant from, Instant to) {
         List<NameResultTypeCount> categories = trafficCategories(country, from, to, false);
+        return toHumanTrafficStats(categories);
+    }
+
+    private static HumanTrafficStats toHumanTrafficStats(List<NameResultTypeCount> categories) {
         long total = categories.stream().mapToLong(DashboardService::totalCount).sum();
         long human = categories.stream()
                 .filter(c -> "Probable human".equals(c.name()))

@@ -24,7 +24,7 @@ class RefererDetailController extends DetailControllerBase {
             @RequestParam String referer,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.refererTopUrlsByResultType(referer, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
@@ -33,7 +33,7 @@ class RefererDetailController extends DetailControllerBase {
             @RequestParam String referer,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.refererRequestsPerDay(referer, range.from(), range.to(), excludeBots);
     }
 }

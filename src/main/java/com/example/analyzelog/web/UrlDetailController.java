@@ -26,7 +26,7 @@ class UrlDetailController extends DetailControllerBase {
             @RequestParam String url,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.urlMatchingUriStems(url, range.from(), range.to(), excludeBots);
     }
 
@@ -35,7 +35,7 @@ class UrlDetailController extends DetailControllerBase {
             @RequestParam String url,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
@@ -44,7 +44,7 @@ class UrlDetailController extends DetailControllerBase {
             @RequestParam String url,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
@@ -53,7 +53,7 @@ class UrlDetailController extends DetailControllerBase {
             @RequestParam String url,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.urlRequestsPerDay(url, range.from(), range.to(), excludeBots);
     }
 }

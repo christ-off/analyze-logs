@@ -3,6 +3,7 @@ import { Charts } from '../../main/resources/static/js/charts.js';
 
 // Stub the Chart.js constructor (loaded via CDN/webjars in browser, not available in tests)
 globalThis.Chart = vi.fn();
+Chart.getChart = vi.fn(() => null);
 
 beforeEach(() => {
     vi.clearAllMocks();

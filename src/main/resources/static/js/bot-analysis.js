@@ -1,13 +1,10 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, initToggleBots, readMeta, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
-
-const cfFrom = readMeta('cf-from');
-const cfTo   = readMeta('cf-to');
+import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, detailUrl } from './utils.js';
 
 function uaDetailUrl(uaName) {
-    return `/ua-detail?ua=${encodeURIComponent(uaName)}&from=${Charts.toDateParam(cfFrom)}&to=${Charts.toDateParam(cfTo)}`;
+    return detailUrl('/ua-detail', { ua: uaName });
 }
 
 function loadBotTable(url, tbodyId, emptyMsg) {
@@ -124,14 +121,10 @@ export function initRobotsRefresh() {
 }
 
 function countryDetailUrl(d) {
-    return `/country-detail?country=${encodeURIComponent(d.code)}&from=${Charts.toDateParam(cfFrom)}&to=${Charts.toDateParam(cfTo)}`;
+    return detailUrl('/country-detail', { country: d.code });
 }
 
 export function loadAllCharts() {
-    const topBotsChart = Chart.getChart('chartTopBots');
-    if (topBotsChart) topBotsChart.destroy();
-    const filteredChart = Chart.getChart('chartCountriesFiltered');
-    if (filteredChart) filteredChart.destroy();
 
     const p = buildBaseParams({});
     Charts.loadChart(`countries-filtered-ratio?${p}`, data => Charts.horizontalStackedBar('chartCountriesFiltered', data, countryDetailUrl));

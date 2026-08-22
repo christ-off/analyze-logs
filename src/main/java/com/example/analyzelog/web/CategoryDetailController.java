@@ -23,7 +23,7 @@ class CategoryDetailController extends DetailControllerBase {
             @RequestParam String category,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.categoryUrlsByResultType(category, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
@@ -32,7 +32,7 @@ class CategoryDetailController extends DetailControllerBase {
             @RequestParam String category,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.categoryTopUserAgentsByResultType(category, range.from(), range.to(), appProperties.topDetailLimit(), excludeBots);
     }
 }

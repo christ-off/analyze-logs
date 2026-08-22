@@ -865,7 +865,7 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(1, result.size());
         assertEquals("FR", result.getFirst().code());
-        assertEquals(2, result.getFirst().count());
+        assertEquals(2, result.getFirst().hit() + result.getFirst().miss() + result.getFirst().function() + result.getFirst().error());
     }
 
     @Test

@@ -25,7 +25,7 @@ class CountryDetailController extends DetailControllerBase {
             @RequestParam String country,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.countryTopUserAgentsByResultType(country, range.from(), range.to(), appProperties.topLimit(), excludeBots);
     }
 
@@ -34,7 +34,7 @@ class CountryDetailController extends DetailControllerBase {
             @RequestParam String country,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.trafficCategories(country, range.from(), range.to(), excludeBots);
     }
 
@@ -43,7 +43,7 @@ class CountryDetailController extends DetailControllerBase {
             @RequestParam String country,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.countryResultTypes(country, range.from(), range.to(), excludeBots);
     }
 
@@ -52,7 +52,7 @@ class CountryDetailController extends DetailControllerBase {
             @RequestParam String country,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.countryUrlsByResultType(country, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
@@ -61,7 +61,7 @@ class CountryDetailController extends DetailControllerBase {
             @RequestParam String country,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.countryRequestsPerDay(country, range.from(), range.to(), excludeBots);
     }
 }

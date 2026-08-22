@@ -1,14 +1,9 @@
 import { Charts } from './charts.js';
 import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
-const from = readMeta('cf-from');
-const to   = readMeta('cf-to');
 const ua   = readMeta('cf-ua');
 
-const CHART_IDS = ['chartResultTypes', 'chartCountries', 'chartUriStems', 'chartRequestsPerDay'];
-
 async function loadAllCharts() {
-    CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
     const p = buildBaseParams({ ua });
 
     Charts.loadChart(`ua-detail/result-types?${p}`,     d => Charts.pie('chartResultTypes',          d, Charts.RESULT_TYPE_COLORS));

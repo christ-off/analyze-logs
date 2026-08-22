@@ -25,7 +25,7 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam String ua,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.uaRawUserAgents(ua, range.from(), range.to(), excludeBots);
     }
 
@@ -34,7 +34,7 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam String ua,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.uaResultTypes(ua, range.from(), range.to(), excludeBots);
     }
 
@@ -43,7 +43,7 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam String ua,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.uaCountries(ua, range.from(), range.to(), excludeBots);
     }
 
@@ -52,7 +52,7 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam String ua,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
     }
 
@@ -61,7 +61,7 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam String ua,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {
-        var range = requestRange(null, from, to);
+        var range = range(from, to);
         return dashboardService.uaRequestsPerDay(ua, range.from(), range.to(), excludeBots);
     }
 }

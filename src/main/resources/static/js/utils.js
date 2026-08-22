@@ -29,6 +29,12 @@ export function uaRequestsUrl(ua) {
     return '/ua-requests?' + new URLSearchParams({ ua, from, to }).toString();
 }
 
+export function detailUrl(path, params) {
+    const from = Charts.toDateParam(readMeta('cf-from'));
+    const to   = Charts.toDateParam(readMeta('cf-to'));
+    return path + '?' + new URLSearchParams({ ...params, from, to }).toString();
+}
+
 const SEGMENTS = [
     { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
     { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },

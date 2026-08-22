@@ -3,8 +3,6 @@ import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, sta
 
 const refererName = readMeta('cf-referer');
 
-const CHART_IDS = ['chartRequestsPerDay'];
-
 async function loadUrlsTable() {
     const tbody = document.getElementById('tbodyUrls');
     const p = buildBaseParams({ referer: refererName });
@@ -31,7 +29,6 @@ async function loadUrlsTable() {
 }
 
 function loadAllCharts() {
-    CHART_IDS.forEach(id => Chart.getChart(id)?.destroy());
     const p = buildBaseParams({ referer: refererName });
     Charts.loadChart(`referer-detail/requests-per-day?${p}`,
         data => Charts.stackedBarByDay('chartRequestsPerDay', data));
