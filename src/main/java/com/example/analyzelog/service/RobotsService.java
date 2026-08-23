@@ -8,8 +8,10 @@ import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @SuppressWarnings("java:S2077") // SQL is fully parameterized — dynamic parts are trusted Java constants
 @Service
@@ -41,14 +43,14 @@ public class RobotsService {
 
     static List<String> parseDisallowedAgents(String robotsTxt) {
         if (robotsTxt == null || robotsTxt.isBlank()) return List.of();
-        List<String> result = new ArrayList<>();
+        LinkedHashSet<String> result = new LinkedHashSet<>();
         for (String block : robotsTxt.split("\\r?\\n\\s*\\r?\\n")) {
             collectDisallowedAgents(block, result);
         }
-        return result;
+        return new ArrayList<>(result);
     }
 
-    private static void collectDisallowedAgents(String block, List<String> result) {
+    private static void collectDisallowedAgents(String block, Set<String> result) {
         List<String> agents = new ArrayList<>();
         boolean hasDisallow = false;
         for (String raw : block.lines().toList()) {
