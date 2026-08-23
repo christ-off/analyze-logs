@@ -440,11 +440,11 @@ class DashboardServiceIntegrationTest {
         var withFilter    = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
         var withoutFilter = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, false);
 
-        // Without filter: Fediverse appears (2 requests)
-        assertTrue(withoutFilter.stream().anyMatch(r -> "Fediverse".equals(r.name())));
+        // Without filter: Mastodon appears (2 requests)
+        assertTrue(withoutFilter.stream().anyMatch(r -> "Mastodon".equals(r.name())));
 
-        // With filter: Fediverse "/" excluded, Fediverse "/blog/post" kept → count = 1
-        var fediverse = withFilter.stream().filter(r -> "Fediverse".equals(r.name())).findFirst();
+        // With filter: Mastodon "/" excluded, Mastodon "/blog/post" kept → count = 1
+        var fediverse = withFilter.stream().filter(r -> "Mastodon".equals(r.name())).findFirst();
         assertTrue(fediverse.isPresent(), "Fediverse to /blog/post must survive noise filter");
         assertEquals(1, fediverse.get().hit(), "only /blog/post hit must remain");
 

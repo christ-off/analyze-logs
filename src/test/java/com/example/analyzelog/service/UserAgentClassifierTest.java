@@ -80,7 +80,7 @@ class UserAgentClassifierTest {
         "'flus/2.3.1 (https://app.flus.fr/about)', Flus",
         "'wp.com feedbot/1.0', WP.com FeedBot",
         // Fediverse
-        "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Fediverse",
+        "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
         "'Friendica/2026.05 DatabaseVersion/1595 Request/SiteInfo/1 https://friendica.me', Friendica",
         "'Catodon/26.5.0-dev.0 ( https://social.agnos.is)', Catodon",

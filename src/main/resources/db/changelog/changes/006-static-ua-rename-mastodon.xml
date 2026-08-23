@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- The 'Mastodon' pattern was seeded with ua_name 'Fediverse' instead of its own
+         software name, unlike every other Fediverse platform (Akkoma, Pleroma, Misskey, ...).
+         This made raw Mastodon requests show up as "Fediverse" in the per-agent breakdown
+         instead of being grouped under it. Rename it for consistency, and reclassify
+         already-ingested log rows that carry the old name. -->
+    <changeSet id="006-static-ua-rename-mastodon" author="analyze-logs">
+        <sql>
+            UPDATE static_ua SET ua_name = 'Mastodon', ua_label = 'Mastodon'
+            WHERE ua_name = 'Fediverse' AND pattern = 'Mastodon';
+
+            UPDATE cloudfront_logs SET ua_name = 'Mastodon' WHERE ua_name = 'Fediverse';
+
+            UPDATE noise_filter SET ua_name = 'Mastodon' WHERE ua_name = 'Fediverse';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

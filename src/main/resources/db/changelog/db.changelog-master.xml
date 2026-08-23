@@ -9,5 +9,7 @@
     <include file="db/changelog/changes/002-ai-bots-llmstxt-crawler.xml"/>
     <include file="db/changelog/changes/003-cloudfront-logs-user-agent-index.xml"/>
     <include file="db/changelog/changes/004-cloudfront-logs-client-ip-user-agent-index.xml"/>
+    <include file="db/changelog/changes/005-static-ua-add-catstodon.xml"/>
+    <include file="db/changelog/changes/006-static-ua-rename-mastodon.xml"/>
 
 </databaseChangeLog>
