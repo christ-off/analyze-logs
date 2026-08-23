@@ -11,5 +11,6 @@
     <include file="db/changelog/changes/004-cloudfront-logs-client-ip-user-agent-index.xml"/>
     <include file="db/changelog/changes/005-static-ua-add-catstodon.xml"/>
     <include file="db/changelog/changes/006-static-ua-rename-mastodon.xml"/>
+    <include file="db/changelog/changes/007-reclassify-catstodon-logs.xml"/>
 
 </databaseChangeLog>

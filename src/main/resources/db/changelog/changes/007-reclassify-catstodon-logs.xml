@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Changeset 005 taught the classifier about Catstodon, but log rows ingested
+         before that point were already stamped ua_name='Unknown' and never
+         re-evaluated. Reclassify those rows now that the pattern exists. -->
+    <changeSet id="007-reclassify-catstodon-logs" author="analyze-logs">
+        <sql>
+            UPDATE cloudfront_logs SET ua_name = 'Catstodon'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%Catstodon%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
