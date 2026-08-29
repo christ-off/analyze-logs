@@ -5,6 +5,7 @@
 <th:block class="extra-head">
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
+    <meta name="cf-ua"   th:content="${ua}"/>
 </th:block>
 <th:block class="page-content">
 
@@ -49,14 +50,16 @@
 
     <!-- Requests table -->
     <div class="card mb-4">
-        <div class="card-header fw-semibold">
-            All Requests
-            <span class="text-muted fw-normal small ms-2" th:text="'(' + ${#lists.size(requests)} + ' rows)'"></span>
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>All Requests</span>
+            <span class="text-muted fw-normal small" th:text="'(' + ${#lists.size(requests)} + ' rows)'"></span>
+            <button type="button" id="bulkReportBtn" class="btn btn-sm btn-outline-danger ms-auto d-none">Report to Google</button>
         </div>
         <div class="card-body p-0">
             <table class="table table-sm table-hover table-striped mb-0">
                 <thead class="table-dark">
                     <tr>
+                        <th th:if="${not #lists.isEmpty(requests)}"><input type="checkbox" id="selectAllRows" class="form-check-input" aria-label="Select all rows"/></th>
                         <th>Date / Time (UTC)</th>
                         <th>IP</th>
                         <th>Country</th>
@@ -67,9 +70,15 @@
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(requests)}">
-                        <td colspan="6" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
+                        <td colspan="7" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
                     </tr>
-                    <tr th:each="req : ${requests}">
+                    <tr th:each="req : ${requests}"
+                        th:data-timestamp="${req.timestamp()}"
+                        th:data-uri="${req.uriStem()}"
+                        th:data-result="${req.resultType()}"
+                        th:data-status="${req.scStatus()}"
+                        th:data-country="${req.country()}">
+                        <td><input type="checkbox" class="form-check-input row-select" aria-label="Select row"/></td>
                         <td th:text="${#temporals.format(req.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
                         <td class="ip-cell" th:data-ip="${req.clientIp()}" th:text="${req.clientIp()}"></td>
                         <td th:text="${req.country()}"></td>
