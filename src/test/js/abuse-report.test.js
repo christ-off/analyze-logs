@@ -12,6 +12,7 @@ const GOOGLE_INFO = {
     country: 'US',
 };
 const OTHER_INFO = { ip: '1.2.3.4', hostname: 'host.example.com', org: 'AS1 Acme', city: 'Paris', country: 'FR' };
+const MICROSOFT_INFO = { ip: '20.1.2.3', hostname: 'host.microsoft.com', org: 'AS8075 Microsoft Corporation', city: 'Santiago de Querétaro', country: 'MX' };
 
 let abuseReport;
 beforeEach(async () => {
@@ -25,7 +26,11 @@ describe('findHelpers', () => {
         expect(abuseReport.findHelpers(GOOGLE_INFO).map(h => h.id)).toEqual(['google']);
     });
 
-    it('matches nothing for a non-Google org', () => {
+    it('matches Microsoft org strings', () => {
+        expect(abuseReport.findHelpers(MICROSOFT_INFO).map(h => h.id)).toEqual(['microsoft']);
+    });
+
+    it('matches nothing for an unknown org', () => {
         expect(abuseReport.findHelpers(OTHER_INFO)).toEqual([]);
     });
 });
@@ -51,6 +56,19 @@ describe('per-row report button', () => {
         const btn = cell.querySelector('button');
         expect(btn).not.toBeNull();
         expect(btn.textContent).toBe('Report to Google');
+    });
+
+    it('adds a Report to Microsoft button for a Microsoft IP', () => {
+        document.body.innerHTML += rowHtml(MICROSOFT_INFO.ip);
+        abuseReport.initAbuseReportButtons();
+
+        const cell = document.querySelector('.ip-cell');
+        cell.insertAdjacentHTML('beforeend', '<div class="ip-info-block"></div>');
+        cell.dispatchEvent(new CustomEvent('ip-info:loaded', { bubbles: true, detail: { cell, ip: MICROSOFT_INFO.ip, info: MICROSOFT_INFO } }));
+
+        const btn = cell.querySelector('button');
+        expect(btn).not.toBeNull();
+        expect(btn.textContent).toBe('Report to Microsoft');
     });
 
     it('does not add a button for a non-Google IP', () => {
@@ -94,7 +112,7 @@ describe('bulk report toolbar', () => {
     function bulkPageHtml() {
         return `
         <input type="checkbox" id="selectAllRows">
-        <button id="bulkReportBtn" class="d-none">Report to Google</button>
+        <button id="bulkReportBtn" class="d-none">Report selected</button>
         <table><tbody>
           <tr data-timestamp="2026-08-29T08:47:02Z" data-uri="/i.php" data-result="Miss" data-status="200" data-country="United States">
             <td><input type="checkbox" class="row-select"></td>
@@ -118,7 +136,7 @@ describe('bulk report toolbar', () => {
 
         document.querySelectorAll('.row-select')[0].click();
         expect(btn.classList.contains('d-none')).toBe(false);
-        expect(btn.textContent).toBe('Report 1 selected to Google');
+        expect(btn.textContent).toBe('Report 1 selected');
     });
 
     it('select-all checks every row', () => {
@@ -152,6 +170,54 @@ describe('bulk report toolbar', () => {
         expect(writeText.mock.calls[0][0]).toBe('2026-08-29 08:47:02 UTC  34.73.59.67  /i.php\n');
     });
 
+    it('warns and does nothing when selected rows span multiple providers', async () => {
+        document.querySelector('table').remove();
+        document.body.insertAdjacentHTML('beforeend', `
+        <table><tbody>
+          <tr data-timestamp="2026-08-29T08:47:02Z" data-uri="/i.php" data-result="Miss" data-status="200">
+            <td><input type="checkbox" class="row-select" checked></td>
+            <td class="ip-cell" data-ip="${GOOGLE_INFO.ip}"></td>
+          </tr>
+          <tr data-timestamp="2026-08-29T09:00:00Z" data-uri="/wp-login.php" data-result="Miss" data-status="404">
+            <td><input type="checkbox" class="row-select" checked></td>
+            <td class="ip-cell" data-ip="${MICROSOFT_INFO.ip}"></td>
+          </tr>
+        </tbody></table>`);
+        vi.stubGlobal('fetch', vi.fn((url) => {
+            const info = url.includes(encodeURIComponent(GOOGLE_INFO.ip)) ? GOOGLE_INFO : MICROSOFT_INFO;
+            return Promise.resolve({ json: () => Promise.resolve(info) });
+        }));
+        const writeText = vi.fn().mockResolvedValue();
+        vi.stubGlobal('navigator', { clipboard: { writeText } });
+        vi.stubGlobal('open', vi.fn());
+        const alertMock = vi.fn();
+        vi.stubGlobal('alert', alertMock);
+
+        abuseReport.initBulkAbuseReport();
+        document.querySelector('#bulkReportBtn').click();
+        await flushPromises();
+
+        expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('multiple providers'));
+        expect(writeText).not.toHaveBeenCalled();
+    });
+
+    it('builds a report and opens the Microsoft form for selected Microsoft rows', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(MICROSOFT_INFO) }));
+        const writeText = vi.fn().mockResolvedValue();
+        vi.stubGlobal('navigator', { clipboard: { writeText } });
+        const openMock = vi.fn();
+        vi.stubGlobal('open', openMock);
+        vi.stubGlobal('alert', vi.fn());
+
+        abuseReport.initBulkAbuseReport();
+        document.querySelectorAll('.row-select')[0].click();
+        document.querySelector('#bulkReportBtn').click();
+        await flushPromises();
+
+        expect(writeText).toHaveBeenCalledTimes(1);
+        expect(openMock).toHaveBeenCalledWith('https://msrc.microsoft.com/report/abuse?ThreatType=IpAddress&IncidentType=BruteForce', '_blank', 'noopener');
+    });
+
     it('truncates the report and warns when it would exceed the form limit', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(GOOGLE_INFO) }));
         const writeText = vi.fn().mockResolvedValue();
@@ -183,7 +249,7 @@ describe('bulk report toolbar', () => {
 describe('select same IP', () => {
     function threeRowPageHtml() {
         return `
-        <button id="bulkReportBtn" class="d-none">Report to Google</button>
+        <button id="bulkReportBtn" class="d-none">Report selected</button>
         <table><tbody>
           <tr><td><input type="checkbox" class="row-select"></td><td class="ip-cell" data-ip="${GOOGLE_INFO.ip}">${GOOGLE_INFO.ip}</td></tr>
           <tr><td><input type="checkbox" class="row-select"></td><td class="ip-cell" data-ip="${GOOGLE_INFO.ip}">${GOOGLE_INFO.ip}</td></tr>
@@ -221,6 +287,6 @@ describe('select same IP', () => {
 
         const btn = document.querySelector('#bulkReportBtn');
         expect(btn.classList.contains('d-none')).toBe(false);
-        expect(btn.textContent).toBe('Report 2 selected to Google');
+        expect(btn.textContent).toBe('Report 2 selected');
     });
 });

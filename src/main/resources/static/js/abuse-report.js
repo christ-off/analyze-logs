@@ -13,6 +13,13 @@ const HELPERS = [
         matches: (info) => /google/i.test(info?.org || ''),
         buildReport: buildGoogleReportText,
     },
+    {
+        id: 'microsoft',
+        label: 'Report to Microsoft',
+        formUrl: 'https://msrc.microsoft.com/report/abuse?ThreatType=IpAddress&IncidentType=BruteForce',
+        matches: (info) => /microsoft/i.test(info?.org || ''),
+        buildReport: buildPlainReportText,
+    },
 ];
 
 export function findHelpers(info) {
@@ -41,6 +48,12 @@ function buildGoogleReportText(entries) {
         text = (kept > 0 ? lines.slice(0, kept).join('\n') + '\n' : '') + note + '\n';
     }
     return { text, omitted: lines.length - kept };
+}
+
+// MSRC's abuse form has no known single-field length cap (IPs/URLs go into their own
+// fields), so this just lists the requests with no truncation.
+function buildPlainReportText(entries) {
+    return { text: entries.map(formatRequestLine).join('\n') + '\n', omitted: 0 };
 }
 
 export async function copyAndOpen(text, url) {
@@ -104,7 +117,7 @@ export function initBulkAbuseReport(root = document) {
     const updateToolbar = () => {
         const n = checkboxes().filter(c => c.checked).length;
         bulkBtn.classList.toggle('d-none', n === 0);
-        bulkBtn.textContent = n > 0 ? `Report ${n} selected to Google` : 'Report to Google';
+        bulkBtn.textContent = n > 0 ? `Report ${n} selected` : 'Report selected';
     };
 
     checkboxes().forEach(cb => cb.addEventListener('change', updateToolbar));
@@ -127,20 +140,35 @@ export function initBulkAbuseReport(root = document) {
             return entry;
         }));
 
-        const google = HELPERS.find(h => h.id === 'google');
-        const matched = entries.filter(e => google.matches(e.info));
-        if (matched.length === 0) {
-            alert('None of the selected rows appear to originate from Google.');
+        // Group by the first helper each entry matches, so a mixed selection (e.g. some
+        // Google IPs, some Microsoft IPs) doesn't get silently merged into one report.
+        const groups = new Map();
+        const unmatched = [];
+        entries.forEach(entry => {
+            const helper = findHelpers(entry.info)[0];
+            if (!helper) { unmatched.push(entry); return; }
+            if (!groups.has(helper.id)) groups.set(helper.id, { helper, entries: [] });
+            groups.get(helper.id).entries.push(entry);
+        });
+
+        if (groups.size === 0) {
+            alert('None of the selected rows originate from a provider with a known abuse-report form.');
             return;
         }
-        if (matched.length < entries.length) {
-            alert(`${entries.length - matched.length} selected row(s) do not look like Google traffic and were left out of the report.`);
+        if (groups.size > 1) {
+            const names = Array.from(groups.values()).map(g => `${g.entries.length} ${g.helper.label.replace('Report to ', '')}`).join(', ');
+            alert(`Selected rows span multiple providers (${names}). Select rows for one provider at a time.`);
+            return;
         }
-        const { text, omitted } = google.buildReport(matched);
+        const { helper, entries: matched } = groups.values().next().value;
+        if (unmatched.length > 0) {
+            alert(`${unmatched.length} selected row(s) do not match ${helper.label.replace('Report to ', '')} and were left out of the report.`);
+        }
+        const { text, omitted } = helper.buildReport(matched);
         if (omitted > 0) {
-            alert(`${omitted} more request(s) left out: Google's form is limited to ${MAX_REPORT_CHARS} characters.`);
+            alert(`${omitted} more request(s) left out: ${helper.label.replace('Report to ', '')}'s form is limited to ${MAX_REPORT_CHARS} characters.`);
         }
-        copyAndOpen(text, google.formUrl);
+        copyAndOpen(text, helper.formUrl);
     });
 
     updateToolbar();
