@@ -4,7 +4,6 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
-import com.example.analyzelog.model.CountryCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -76,11 +75,6 @@ public class DashboardService {
                 return new CountryResultTypeCount(iso, resolveCountryLabel(iso),
                         rs.getLong("hit"), rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
-            };
-    private static final RowMapper<CountryCount> COUNTRY_COUNT_MAPPER =
-            (rs, _) -> {
-                String iso = rs.getString("code");
-                return new CountryCount(iso, resolveCountryLabel(iso), rs.getLong(COUNT_FIELD));
             };
     private static final RowMapper<DailyNameCount> DAILY_NAME_COUNT_MAPPER =
             (rs, _) -> new DailyNameCount(LocalDate.parse(rs.getString("day")), rs.getString("name"), rs.getLong(COUNT_FIELD));
@@ -759,24 +753,6 @@ public class DashboardService {
                     GROUP BY client_ip, user_agent
                     HAVING %s = ?
                 )""".formatted(categoryCaseExpr);
-    }
-
-    private static final String AI_BOTS_FILTER =
-            "ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = 'AI Bots')";
-    // Tools pretending to be AI bots generate a lot of Error/Filtered noise — excluded from all ai-bots graphs.
-    private static final String AI_BOTS_FILTER_NO_ERROR_FILTERED = AI_BOTS_FILTER + AND_SEPARATOR + RESULT_TYPE_EXCLUSION;
-
-    public List<NameResultTypeCount> aiBotsUserAgents(Instant from, Instant to, int limit) {
-        return uaResultTypesByFilter(AI_BOTS_FILTER_NO_ERROR_FILTERED, List.of(), from, to, limit, false);
-    }
-
-    public List<NameResultTypeCount> aiBotsUrls(Instant from, Instant to, int limit) {
-        return urlsByResultType(AI_BOTS_FILTER_NO_ERROR_FILTERED, List.of(from.toString(), to.toString()), limit, false);
-    }
-
-    public List<DailyResultTypeCount> aiBotsRequestsPerDay(Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + SQL_AND_INDENT + AI_BOTS_FILTER_NO_ERROR_FILTERED + "\n" + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString());
     }
 
     public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit, boolean excludeBots) {
