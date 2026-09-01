@@ -12,13 +12,20 @@ async function loadAllCharts() {
     Charts.loadChart(`ua-detail/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
 
     const tbody = document.getElementById('tbodyUserAgents');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>';
     document.getElementById('uaBarLegend').style.setProperty('display', 'none', 'important');
 
-    const data = await (await fetch(`/api/ua-detail/user-agents?${p}`)).json();
+    const [data, humanStats] = await Promise.all([
+        fetch(`/api/ua-detail/user-agents?${p}`).then(r => r.json()),
+        fetch(`/api/ua-detail/human-traffic?${p}`).then(r => r.json()),
+    ]);
+    const humanByName = new Map(humanStats.map(h => [h.name, h]));
     if (data.length) {
         const maxTotal = Math.max(...data.map(resultTotal));
-        tbody.innerHTML = data.map((row, i) => `
+        tbody.innerHTML = data.map((row, i) => {
+            const h = humanByName.get(row.name);
+            const humanPct = h && h.totalRequests > 0 ? `${(100 * h.humanRequests / h.totalRequests).toFixed(1)}%` : '–';
+            return `
             <tr>
                 <td class="text-muted">${i + 1}</td>
                 <td class="font-monospace small text-break">
@@ -27,11 +34,13 @@ async function loadAllCharts() {
                         : '(none)'}
                 </td>
                 <td class="text-end">${resultTotal(row).toLocaleString()}</td>
+                <td class="text-end">${humanPct}</td>
                 <td>${stackedBar(row, maxTotal)}</td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
         document.getElementById('uaBarLegend').style.removeProperty('display');
     } else {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No data</td></tr>';
     }
 }
 

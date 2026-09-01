@@ -5,6 +5,7 @@ import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -1056,6 +1057,32 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, chrome.hit());
         assertEquals(1, chrome.miss());
         assertTrue(result.stream().noneMatch(r -> UA_FIREFOX_LINUX.equals(r.name())));
+    }
+
+    @Test
+    void uaHumanTrafficByUserAgent_computesPerRawUaStringPercentage() {
+        // Two distinct raw UA strings that both classify to ua_name "Chrome / Windows".
+        String uaChromeV1 = UA_CHROME_WINDOWS;
+        String uaChromeV2 = UA_CHROME_WINDOWS.replace("120.0.0.0", "119.0.0.0");
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-human-by-raw-ua-test.gz", List.of(
+                entryAt(Instant.now(), "1.2.3.4", uaChromeV1, "/"),               // human evidence (page hit)
+                entryAt(Instant.now(), "1.2.3.4", uaChromeV1, "/css/main.css"),   // human evidence (stylesheet)
+                entryAt(Instant.now(), "5.6.7.8", uaChromeV2, "/api/data")        // no human evidence
+        ));
+
+        List<NameHumanTrafficStats> result = dashboardService.uaHumanTrafficByUserAgent(
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+
+        var v1 = result.stream().filter(r -> uaChromeV1.equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, v1.totalRequests());
+        assertEquals(2, v1.humanRequests());
+        assertEquals(100.0, v1.percentage());
+
+        var v2 = result.stream().filter(r -> uaChromeV2.equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, v2.totalRequests());
+        assertEquals(0, v2.humanRequests());
+        assertEquals(0.0, v2.percentage());
     }
 
     // Future time bases keep these datasets out of other tests' [now, now+5s] query windows.

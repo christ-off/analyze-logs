@@ -3,6 +3,7 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
@@ -105,6 +106,21 @@ class UaDetailControllerTest {
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson()
                 .extractingPath("$[0].name").isEqualTo("Mozilla/5.0 (Windows NT 10.0)");
+    }
+
+    @Test
+    void humanTrafficReturnsJson() {
+        when(dashboardService.uaHumanTrafficByUserAgent(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(new NameHumanTrafficStats("Mozilla/5.0 (Windows NT 10.0)", 8, 10)));
+
+        assertThat(mvc.get().uri("/api/ua-detail/human-traffic")
+                .param("ua", "Chrome / Windows")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].humanRequests").isEqualTo(8);
     }
 
     @Test

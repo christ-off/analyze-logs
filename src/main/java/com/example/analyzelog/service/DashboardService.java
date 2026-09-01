@@ -10,6 +10,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -503,6 +504,33 @@ public class DashboardService {
                 ResultTypeSql.ORDER_BY_TOTAL_DESC,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), uaName);
+    }
+
+    // Per raw user_agent string, proportion of requests whose (client_ip, user_agent) pair
+    // classifies as "Probable human" — same categoryCaseExpr used by humanTrafficStats()/trafficCategories(),
+    // just grouped per user_agent instead of aggregated to one total.
+    public List<NameHumanTrafficStats> uaHumanTrafficByUserAgent(String uaName, Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
+        String sql = """
+                WITH pair_class AS (
+                    SELECT client_ip, user_agent,
+                        %s AS category
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, user_agent
+                )
+                SELECT c.user_agent AS name,
+                       SUM(CASE WHEN pc.category = 'Probable human' THEN 1 ELSE 0 END) AS human,
+                       COUNT(*) AS total
+                FROM cloudfront_logs c
+                JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
+                WHERE c.timestamp BETWEEN ? AND ?
+                  AND c.ua_name = ?
+                %sGROUP BY c.user_agent
+                """.formatted(categoryCaseExpr, exclusion);
+        return jdbc.query(sql,
+                (rs, _) -> new NameHumanTrafficStats(rs.getString("name"), rs.getLong("human"), rs.getLong("total")),
+                from.toString(), to.toString(), from.toString(), to.toString(), uaName);
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to, boolean excludeBots) {

@@ -3,6 +3,7 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,15 @@ class UaDetailController extends DetailControllerBase {
             @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = range(from, to);
         return dashboardService.uaRawUserAgents(ua, range.from(), range.to(), excludeBots);
+    }
+
+    @GetMapping("/human-traffic")
+    public List<NameHumanTrafficStats> humanTraffic(
+            @RequestParam String ua,
+            @RequestParam String from, @RequestParam String to,
+            @RequestParam(defaultValue = "false") boolean excludeBots) {
+        var range = range(from, to);
+        return dashboardService.uaHumanTrafficByUserAgent(ua, range.from(), range.to(), excludeBots);
     }
 
     @GetMapping("/result-types")
