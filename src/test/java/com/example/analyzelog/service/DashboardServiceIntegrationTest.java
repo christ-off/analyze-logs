@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.repository.LogRepository;
@@ -585,6 +586,23 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void humanTrafficStats_excludesWebpDownloadsFromCounts() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/human-traffic-webp-test.gz", List.of(
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/"),                // qualifies as human evidence (page hit)
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/css/main.css"),    // qualifies as human evidence (stylesheet)
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/hero.webp"),
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/hero.webp")
+        ));
+
+        HumanTrafficStats stats = dashboardService.humanTrafficStats(
+                UA_CHROME_WINDOWS, from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, stats.totalRequests(), "webp downloads must not count toward total requests");
+        assertEquals(2, stats.humanRequests(), "webp downloads must not count toward human requests either");
+    }
+
+    @Test
     void topUrlsByResultType_aggregatesPhpAndWordPress() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-grouping-test.gz", List.of(
@@ -1112,7 +1130,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.2.3.4", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_GOOGLEBOT, "US", "Hit"),
@@ -1138,7 +1156,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-bots-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_CLAUDEBOT, "US", "Hit")
         ));
@@ -1152,16 +1170,17 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void trafficCategories_imagesWithVariousExtensions() {
+    void trafficCategories_onlyMainCssStylesheetCountsAsHumanEvidence() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-images-test.gz", List.of(
-                // Pair A: requests "/" + .avif image → Probable human
+                // Pair A: requests "/" + /css/main.css → Probable human
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                // Pair B: requests "/" + .ico only → Other (favicon.ico alone is scanner noise, not human evidence)
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Pair B: requests "/" + an image extension only (no /css/main.css) → Other
+                // (an image alone is no longer human evidence; a bot can fetch a single image directly)
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/favicon.ico", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                // Pair C: requests "/" + .js (no image) → Declared bots (only has robots.txt)
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/photo.avif", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                // Pair C: requests "/" + only /robots.txt → Declared bots
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "3.3.3.3", "/", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
         ));
@@ -1187,10 +1206,10 @@ class DashboardServiceIntegrationTest {
     void trafficCategories_evidenceMustBeHitOrMiss() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-error-evidence-test.gz", List.of(
-                // "/" is only ever an Error and main.css is only ever a FunctionGeneratedResponse →
+                // "/" is only ever an Error and /css/main.css is only ever a FunctionGeneratedResponse →
                 // neither counts as Hit/Miss evidence, so the pair is not "Probable human".
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Error"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CHROME_WINDOWS, "US", "FunctionGeneratedResponse")
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "FunctionGeneratedResponse")
         ));
 
         var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
@@ -1200,12 +1219,12 @@ class DashboardServiceIntegrationTest {
 
     @Test
     void trafficCategories_probableHumanWinsOverDeclaredBots() {
-        // Pair with "/" + main.css + "/robots.txt" → Probable human (higher priority, wins)
+        // Pair with "/" + /css/main.css + "/robots.txt" → Probable human (higher priority, wins)
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-js-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CLAUDEBOT, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
         var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
@@ -1220,9 +1239,9 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-country-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "FR", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/main.css", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "FR", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/photo.avif", null, UA_FIREFOX_LINUX, "US", "Hit")
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
         var frResult = dashboardService.trafficCategories("FR", base, base.plusSeconds(10), false);
@@ -1267,7 +1286,7 @@ class DashboardServiceIntegrationTest {
                 // Pair otherwise qualifying as "Probable human" (and having fetched /robots.txt) also
                 // probes /.env — the whole pair is reclassified as "Security", not "Probable human".
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/main.css", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/.env", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
@@ -1288,7 +1307,7 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/category-urls-test.gz", List.of(
                 // Probable human pair
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 // Declared bots pair
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
@@ -1298,6 +1317,8 @@ class DashboardServiceIntegrationTest {
         var human = dashboardService.categoryUrlsByResultType("Probable human", base, base.plusSeconds(10), 10, false);
         var bots  = dashboardService.categoryUrlsByResultType("Declared bots", base, base.plusSeconds(10), 10, false);
 
+        // /css/main.css itself is a configured excluded extension, so it drops out of the URL
+        // breakdown even though it's what qualified this pair as "Probable human".
         assertEquals(2, human.size());
         assertTrue(human.stream().map(NameResultTypeCount::name).toList().containsAll(List.of("/", "/about.html")));
 
@@ -1310,7 +1331,7 @@ class DashboardServiceIntegrationTest {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/category-uas-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/photo.avif", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
         ));

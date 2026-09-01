@@ -16,7 +16,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -95,7 +94,9 @@ public class DashboardService {
     // Only Hit/Miss responses count as "Probable human" evidence — Error, RefreshHit and
     // FunctionGeneratedResponse rows (scanners, edge retries) must not qualify a pair.
     private static final String HUMAN_EVIDENCE_RESULT_TYPES = "edge_response_result_type IN ('Hit','Miss')";
-    private static final String HUMAN_EVIDENCE_EXT_PREDICATE = buildHumanEvidenceExtPredicate();
+    // Evidence of a real browser fetching a rendered page: it also loaded the site stylesheet,
+    // which only a real browser rendering the page requests — bots/scanners never fetch it.
+    private static final String HUMAN_EVIDENCE_EXT_PREDICATE = "uri_stem = '/css/main.css'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
     // Pair classification used both to label rows (trafficCategories) and to filter rows
@@ -115,15 +116,6 @@ public class DashboardService {
                     THEN 'Declared bots'
                 ELSE 'Other'
             END""";
-
-    // Evidence of a real browser fetching a rendered page: its stylesheet or an image format
-    // browsers request inline but bots/scanners rarely bother probing individually.
-    private static String buildHumanEvidenceExtPredicate() {
-        String[] exts = {"avif","svg","gif","webp"};
-        return Arrays.stream(exts)
-                .map(e -> "uri_stem LIKE '%." + e + "'")
-                .collect(Collectors.joining(" OR ", "(uri_stem LIKE '%main.css' OR ", ")"));
-    }
 
     private static String excludeClause(String clause, boolean excludeBots) {
         return excludeBots ? andClause(clause) : "";
@@ -646,6 +638,14 @@ public class DashboardService {
     // package-private, extra filter reserved for later reuse (e.g. "ua_name = ?", "country = ?")
     List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
                                                  Instant from, Instant to, boolean excludeBots) {
+        return trafficCategories(additionalFilter, extraArgs, from, to, excludeBots, false);
+    }
+
+    // excludeWebp: drop .webp requests from the outer per-request count (they're kept as
+    // "Probable human" evidence in the pair_class CTE) — used for the human-traffic proportion,
+    // where bulk webp asset downloads shouldn't inflate the request totals.
+    private List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
+                                                 Instant from, Instant to, boolean excludeBots, boolean excludeWebp) {
         // Bot filtering applied in CTE for pair classification (table has no alias there,
         // so humanTrafficClause references like cloudfront_logs.ua_name resolve correctly).
         // No outer filtering needed — we count all result types from classified pairs.
@@ -654,6 +654,7 @@ public class DashboardService {
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(AND_SEPARATOR));
         String whereAfterRange = filterParts.isEmpty() ? "" : SQL_AND_INDENT + filterParts + "\n";
+        String outerWebpExclusion = excludeWebp ? "  AND c.uri_stem NOT LIKE '%.webp'\n" : "";
 
         String sql = """
                 WITH pair_class AS (
@@ -669,6 +670,7 @@ public class DashboardService {
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
+                %s
                 GROUP BY name
                 ORDER BY CASE name
                     WHEN 'Probable human' THEN 0
@@ -679,7 +681,8 @@ public class DashboardService {
                 """.formatted(
                 categoryCaseExpr,
                 whereAfterRange,
-                ResultTypeSql.resultTypeSums("c")
+                ResultTypeSql.resultTypeSums("c"),
+                outerWebpExclusion
         );
 
         var args = new ArrayList<Object>(List.of(from.toString(), to.toString()));
@@ -768,13 +771,15 @@ public class DashboardService {
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
     public HumanTrafficStats humanTrafficStats(String ua, Instant from, Instant to) {
-        List<NameResultTypeCount> categories = trafficCategories("user_agent = ?", List.of(ua), from, to, false);
+        List<NameResultTypeCount> categories =
+                trafficCategories("user_agent = ?", List.of(ua), from, to, false, true);
         return toHumanTrafficStats(categories);
     }
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one country.
     public HumanTrafficStats countryHumanTrafficStats(String country, Instant from, Instant to) {
-        List<NameResultTypeCount> categories = trafficCategories(country, from, to, false);
+        List<NameResultTypeCount> categories =
+                trafficCategories(COUNTRY_FILTER, List.of(country), from, to, false, true);
         return toHumanTrafficStats(categories);
     }
 
