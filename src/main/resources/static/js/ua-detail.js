@@ -4,9 +4,10 @@ import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, sta
 const ua   = readMeta('cf-ua');
 const CHROME_DESKTOP_UAS = new Set(['Chrome / Windows', 'Chrome / Linux', 'Chrome / macOS']);
 
-// Highest Chrome major version for which every raw UA string sharing that version
-// shows 0% requests from "Probable human" IPs — a likely spoofed-version cutoff.
-export function maxChromeVersionWithZeroHuman(humanStats) {
+// Lowest Chrome major version, across raw UA strings sharing that version, with
+// any requests from "Probable human" IPs — versions below it look spoofed (bots
+// declaring an old/fake Chrome version never show human evidence).
+export function minChromeVersionWithHumanTraffic(humanStats) {
     const totalsByVersion = new Map();
     for (const h of humanStats) {
         const m = h.name.match(/Chrome\/(\d+)/);
@@ -17,21 +18,21 @@ export function maxChromeVersionWithZeroHuman(humanStats) {
         entry.total += h.totalRequests;
         totalsByVersion.set(version, entry);
     }
-    let max = null;
-    for (const [version, { human, total }] of totalsByVersion) {
-        if (total > 0 && human === 0 && (max === null || version > max)) max = version;
+    let min = null;
+    for (const [version, { human }] of totalsByVersion) {
+        if (human > 0 && (min === null || version < min)) min = version;
     }
-    return max;
+    return min;
 }
 
-function updateChromeZeroHumanBanner(humanStats) {
-    const banner = document.getElementById('chromeZeroHumanBanner');
+function updateChromeHumanVersionBanner(humanStats) {
+    const banner = document.getElementById('chromeMinHumanVersionBanner');
     if (!banner) return;
-    const maxVersion = CHROME_DESKTOP_UAS.has(ua) ? maxChromeVersionWithZeroHuman(humanStats) : null;
-    if (maxVersion === null) {
+    const minVersion = CHROME_DESKTOP_UAS.has(ua) ? minChromeVersionWithHumanTraffic(humanStats) : null;
+    if (minVersion === null) {
         banner.classList.add('d-none');
     } else {
-        banner.textContent = `Max Chrome version with 0% requests from human IPs: ${maxVersion}`;
+        banner.textContent = `Min Chrome version with requests from human IPs: ${minVersion}`;
         banner.classList.remove('d-none');
     }
 }
@@ -53,7 +54,7 @@ async function loadAllCharts() {
         fetch(`/api/ua-detail/human-traffic?${p}`).then(r => r.json()),
     ]);
     const humanByName = new Map(humanStats.map(h => [h.name, h]));
-    updateChromeZeroHumanBanner(humanStats);
+    updateChromeHumanVersionBanner(humanStats);
     if (data.length) {
         const maxTotal = Math.max(...data.map(resultTotal));
         tbody.innerHTML = data.map((row, i) => {

@@ -20,58 +20,57 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     uaRequestsUrl:   vi.fn(),
 }));
 
-import { maxChromeVersionWithZeroHuman } from '../../main/resources/static/js/ua-detail.js';
+import { minChromeVersionWithHumanTraffic } from '../../main/resources/static/js/ua-detail.js';
 
 function stat(name, humanRequests, totalRequests) {
     return { name, humanRequests, totalRequests };
 }
 
-describe('maxChromeVersionWithZeroHuman', () => {
-    it('returns the highest major version whose aggregated human proportion is exactly 0%', () => {
+describe('minChromeVersionWithHumanTraffic', () => {
+    it('returns the lowest major version with any aggregated human evidence', () => {
         const humanStats = [
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 0, 243),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', 0, 183),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0', 0, 20),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36', 0, 9),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36', 9, 9),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36', 5, 7),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36', 0, 5),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 4, 4),
-            stat('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6400.44 Safari/537.36', 0, 4),
+            stat('...Chrome/120.0.0.0...', 0, 2082),
+            stat('...Chrome/148.0.0.0...', 6, 1036),   // 0.6% human
+            stat('...Chrome/120.0.0.0 (no webkit)', 0, 387),
+            stat('...Chrome/151.0.0.0...', 52, 67),    // 77.6% human
+            stat('...Chrome/128.0.0.0...', 0, 67),
+            stat('...Chrome/152.0.0.0...', 12, 20),    // 60% human
+            stat('...Chrome/150.0.0.0...', 7, 7),      // 100% human
+            stat('...Chrome/154.0.5702.73...QIHU 360EE', 0, 1),
         ];
 
-        expect(maxChromeVersionWithZeroHuman(humanStats)).toBe(148);
+        expect(minChromeVersionWithHumanTraffic(humanStats)).toBe(148);
     });
 
     it('aggregates multiple raw UA strings sharing the same major version', () => {
         const humanStats = [
             stat('...Chrome/120.0.0.0...', 0, 10),
-            stat('...Chrome/120.5.1.2...', 0, 5), // same major version, still 0% combined
+            stat('...Chrome/120.5.1.2...', 3, 5), // same major version — combined human > 0
         ];
 
-        expect(maxChromeVersionWithZeroHuman(humanStats)).toBe(120);
+        expect(minChromeVersionWithHumanTraffic(humanStats)).toBe(120);
     });
 
-    it('excludes a version with any human evidence, even if mostly 0%', () => {
+    it('ignores versions with zero human requests', () => {
         const humanStats = [
             stat('...Chrome/120...', 0, 100),
-            stat('...Chrome/120...', 1, 1), // combined: 1/101 human — not 0%
+            stat('...Chrome/151...', 5, 10),
         ];
 
-        expect(maxChromeVersionWithZeroHuman(humanStats)).toBeNull();
+        expect(minChromeVersionWithHumanTraffic(humanStats)).toBe(151);
     });
 
-    it('returns null when no version has 0% human proportion', () => {
-        const humanStats = [stat('...Chrome/151...', 9, 9)];
-        expect(maxChromeVersionWithZeroHuman(humanStats)).toBeNull();
+    it('returns null when no version has any human traffic', () => {
+        const humanStats = [stat('...Chrome/120...', 0, 100), stat('...Chrome/151...', 0, 10)];
+        expect(minChromeVersionWithHumanTraffic(humanStats)).toBeNull();
     });
 
     it('returns null for an empty list', () => {
-        expect(maxChromeVersionWithZeroHuman([])).toBeNull();
+        expect(minChromeVersionWithHumanTraffic([])).toBeNull();
     });
 
     it('ignores raw UA strings without a Chrome version', () => {
-        const humanStats = [stat('Mozilla/5.0 (compatible; Googlebot/2.1)', 0, 5)];
-        expect(maxChromeVersionWithZeroHuman(humanStats)).toBeNull();
+        const humanStats = [stat('Mozilla/5.0 (compatible; Googlebot/2.1)', 5, 5)];
+        expect(minChromeVersionWithHumanTraffic(humanStats)).toBeNull();
     });
 });
