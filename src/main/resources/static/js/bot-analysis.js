@@ -71,6 +71,15 @@ export function loadBrowserConfigFetches() {
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
 
+export function loadBrowserLlmsTxtFetches() {
+    const p = buildBaseParams({});
+    loadSimpleTable('/api/browser-llms-txt?' + p, 'browserLlmsTxtTable', 3, b => `<tr>
+        <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
+        <td class="text-end">${resultTotal(b).toLocaleString()}</td>
+        <td class="align-middle px-2">${stackedBar(b, null)}</td>
+    </tr>`, 'No browser UAs fetched /llms.txt in the selected date range.');
+}
+
 function loadDisobedientBots(data) {
     const tbody = document.getElementById('disobedientBotsTable');
     if (!tbody) return;
@@ -132,6 +141,7 @@ export function loadAllCharts() {
     loadProbableBots();
     loadFakeBrowsers();
     loadBrowserConfigFetches();
+    loadBrowserLlmsTxtFetches();
     loadDisobedientSection();
 }
 

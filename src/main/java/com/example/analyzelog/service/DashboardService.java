@@ -844,4 +844,22 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
+    // Browser-classified UAs requesting /llms.txt — real browsers never fetch it,
+    // only AI crawlers and llms.txt scanners do.
+    public List<NameResultTypeCount> browserLlmsTxtFetches(Instant from, Instant to, int limit) {
+        return jdbc.query("""
+                SELECT c.user_agent AS name,
+                """ + ResultTypeSql.RESULT_TYPE_SUMS + """
+
+                FROM cloudfront_logs c
+                INNER JOIN static_ua s ON c.ua_name = s.ua_name
+                WHERE s.ua_group = 'Browsers'
+                  AND c.uri_stem = '/llms.txt'
+                  AND c.timestamp BETWEEN ? AND ?
+                GROUP BY c.user_agent
+                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM,
+                NAME_RESULT_TYPE_COUNT_MAPPER,
+                from.toString(), to.toString(), limit);
+    }
+
 }

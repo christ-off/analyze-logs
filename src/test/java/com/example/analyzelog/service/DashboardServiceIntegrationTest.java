@@ -1091,6 +1091,23 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void browserLlmsTxtFetches_flagsOnlyBrowserGroupOnLlmsTxt() {
+        Instant base = Instant.now().plus(401, ChronoUnit.DAYS);
+        repository.saveEntries("logs/browser-llms-txt-test.gz", List.of(
+                entryAt(base,                "1.1.1.1", UA_CHROME_WINDOWS, "/llms.txt"),
+                entryAt(base.plusSeconds(1), "1.1.1.1", UA_CHROME_WINDOWS, "/llms.txt"),
+                entryAt(base.plusSeconds(2), "2.2.2.2", UA_CLAUDEBOT,      "/llms.txt"),   // bot group — excluded
+                entryAt(base.plusSeconds(3), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt")  // not /llms.txt — excluded
+        ));
+
+        var result = dashboardService.browserLlmsTxtFetches(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+
+        assertEquals(1, result.size());
+        assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
+        assertEquals(2, result.getFirst().total());
+    }
+
+    @Test
     void trafficCategories_classifiesPairsIntoThreeCategories() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-test.gz", List.of(

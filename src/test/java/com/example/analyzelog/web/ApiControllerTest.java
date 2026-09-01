@@ -320,6 +320,21 @@ class ApiControllerTest {
 
 
     @Test
+    void browserLlmsTxtReturnsJson() {
+        when(dashboardService.browserLlmsTxtFetches(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("Mozilla/5.0 Chrome/103", 10, 2, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/browser-llms-txt")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(10);
+    }
+
+
+    @Test
     void trafficCategoriesReturnsJson() {
         when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class), eq(false)))
                 .thenReturn(List.of(
