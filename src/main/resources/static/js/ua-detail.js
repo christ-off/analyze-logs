@@ -1,16 +1,20 @@
 import { Charts } from './charts.js';
 import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
 
-const ua   = readMeta('cf-ua');
-const CHROME_DESKTOP_UAS = new Set(['Chrome / Windows', 'Chrome / Linux', 'Chrome / macOS']);
+const ua = readMeta('cf-ua');
+const DESKTOP_BROWSER_UAS = {
+    Chrome:  new Set(['Chrome / Windows', 'Chrome / Linux', 'Chrome / macOS']),
+    Firefox: new Set(['Firefox / Windows', 'Firefox / Linux', 'Firefox / macOS']),
+};
 
-// Lowest Chrome major version, across raw UA strings sharing that version, with
+// Lowest <browser> major version, across raw UA strings sharing that version, with
 // any requests from "Probable human" IPs — versions below it look spoofed (bots
-// declaring an old/fake Chrome version never show human evidence).
-export function minChromeVersionWithHumanTraffic(humanStats) {
+// declaring an old/fake browser version never show human evidence).
+export function minVersionWithHumanTraffic(humanStats, browser) {
+    const versionPattern = new RegExp(`${browser}/(\\d+)`);
     const totalsByVersion = new Map();
     for (const h of humanStats) {
-        const m = h.name.match(/Chrome\/(\d+)/);
+        const m = h.name.match(versionPattern);
         if (!m) continue;
         const version = Number(m[1]);
         const entry = totalsByVersion.get(version) ?? { human: 0, total: 0 };
@@ -25,14 +29,15 @@ export function minChromeVersionWithHumanTraffic(humanStats) {
     return min;
 }
 
-function updateChromeHumanVersionBanner(humanStats) {
-    const banner = document.getElementById('chromeMinHumanVersionBanner');
+function updateBrowserHumanVersionBanner(humanStats) {
+    const banner = document.getElementById('browserMinHumanVersionBanner');
     if (!banner) return;
-    const minVersion = CHROME_DESKTOP_UAS.has(ua) ? minChromeVersionWithHumanTraffic(humanStats) : null;
+    const browser = Object.keys(DESKTOP_BROWSER_UAS).find(b => DESKTOP_BROWSER_UAS[b].has(ua));
+    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser) : null;
     if (minVersion === null) {
         banner.classList.add('d-none');
     } else {
-        banner.textContent = `Min Chrome version with requests from human IPs: ${minVersion}`;
+        banner.textContent = `Min ${browser} version with requests from human IPs: ${minVersion}`;
         banner.classList.remove('d-none');
     }
 }
@@ -54,7 +59,7 @@ async function loadAllCharts() {
         fetch(`/api/ua-detail/human-traffic?${p}`).then(r => r.json()),
     ]);
     const humanByName = new Map(humanStats.map(h => [h.name, h]));
-    updateChromeHumanVersionBanner(humanStats);
+    updateBrowserHumanVersionBanner(humanStats);
     if (data.length) {
         const maxTotal = Math.max(...data.map(resultTotal));
         tbody.innerHTML = data.map((row, i) => {
