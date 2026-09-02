@@ -30,13 +30,19 @@ export function aggregateByVersion(rawUserAgents, humanStats) {
     return [...byVersion.values()];
 }
 
+// Human-traffic ratio for a version row. Rows with no traffic at all get the sentinel -1 so
+// they sort as the lowest value and display as '–'.
+function humanRatio(row) {
+    return row.total > 0 ? row.human / row.total : -1;
+}
+
 // Sort keys for the Chrome Versions table — each maps a row to the numeric value to compare on,
 // so "Chrome Version" sorts by the version number itself, never lexicographically on label text
 // (which would put "Chrome 10" before "Chrome 9").
 const SORT_VALUE = {
     version:  row => row.version,
     requests: row => resultTotal(row),
-    human:    row => (row.total > 0 ? row.human / row.total : -1),
+    human:    row => humanRatio(row),
 };
 
 export function sortVersions(versions, key, dir) {
@@ -69,7 +75,8 @@ function renderVersionsTable() {
     const rows = sortVersions(currentVersions, sortKey, sortDir);
     const maxTotal = Math.max(...currentVersions.map(resultTotal));
     tbody.innerHTML = rows.map((row, i) => {
-        const humanPct = row.total > 0 ? `${(100 * row.human / row.total).toFixed(1)}%` : '–';
+        const ratio = humanRatio(row);
+        const humanPct = ratio < 0 ? '–' : `${(ratio * 100).toFixed(1)}%`;
         return `
             <tr>
                 <td class="text-muted">${i + 1}</td>

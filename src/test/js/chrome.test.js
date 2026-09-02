@@ -27,6 +27,10 @@ function human(name, humanRequests, totalRequests) {
     return { name, humanRequests, totalRequests };
 }
 
+function versionRow(version, { hit = 0, miss = 0, fn = 0, error = 0, human = 0, total = 0 } = {}) {
+    return { version, hit, miss, function: fn, error, human, total };
+}
+
 describe('chromeMajorVersion', () => {
     it('extracts the major version from a raw UA string', () => {
         expect(chromeMajorVersion('Mozilla/5.0 ... Chrome/120.0.0.0 Safari/537.36')).toBe(120);
@@ -74,10 +78,6 @@ describe('aggregateByVersion', () => {
         expect(aggregateByVersion(rawUserAgents, [])).toEqual([]);
     });
 });
-
-function versionRow(version, { hit = 0, miss = 0, fn = 0, error = 0, human = 0, total = 0 } = {}) {
-    return { version, hit, miss, function: fn, error, human, total };
-}
 
 describe('sortVersions', () => {
     it('sorts the "version" column numerically, not lexicographically on the label text', () => {
