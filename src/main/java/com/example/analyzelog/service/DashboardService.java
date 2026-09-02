@@ -836,6 +836,11 @@ public class DashboardService {
         return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, from.toString(), to.toString());
     }
 
+    public List<DailyResultTypeCount> requestsPerDayByUserAgent(String ua, Instant from, Instant to) {
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND user_agent = ?\n" + SQL_DAILY_GROUP_ORDER,
+                from.toString(), to.toString(), ua);
+    }
+
     // Browser-classified UAs active in nearly every hour of the day — humans show a
     // diurnal pattern, so round-the-clock activity means the browser UA is fake.
     public List<FakeBrowserUa> fakeBrowserUas(Instant from, Instant to, int limit) {

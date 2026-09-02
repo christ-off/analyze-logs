@@ -920,6 +920,26 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void requestsPerDayByUserAgent_filtersToExactUserAgent() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/ua-requests-rpd-test.gz", List.of(
+                entryWithUaAndResultType(UA_BOT, "Hit"),
+                entryWithUaAndResultType(UA_BOT, "Hit"),
+                entryWithUaAndResultType(UA_BOT, "Miss"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")  // different UA — must not count
+        ));
+
+        List<DailyResultTypeCount> result = dashboardService.requestsPerDayByUserAgent(
+                UA_BOT, from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        DailyResultTypeCount today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+        assertEquals(0, today.error());
+    }
+
+    @Test
     void uaGroupCounts_groupsByConfiguredGroups() {
         Instant from = Instant.now();
         repository.saveEntries("logs/ua-groups-test.gz", List.of(
