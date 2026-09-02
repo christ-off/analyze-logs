@@ -78,6 +78,20 @@ export function minVersionWithHumanTraffic(humanStats, browser) {
     return min;
 }
 
+// Show/hide the "Min <browser> version with requests from human IPs" banner. `browser` may be
+// null (e.g. a raw UA not in the tracked desktop set) — treated the same as "no version found".
+export function renderMinVersionBanner(elementId, browser, humanStats) {
+    const banner = document.getElementById(elementId);
+    if (!banner) return;
+    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser) : null;
+    if (minVersion === null) {
+        banner.classList.add('d-none');
+    } else {
+        banner.textContent = `Min ${browser} version with requests from human IPs: ${minVersion}`;
+        banner.classList.remove('d-none');
+    }
+}
+
 export function initToggleBots(loadFn) {
     const toggleEl = document.getElementById('toggleBots');
     if (toggleEl) {

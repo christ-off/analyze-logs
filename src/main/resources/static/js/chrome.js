@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { buildBaseParams, initToggleBots, resultTotal, stackedBar, minVersionWithHumanTraffic } from './utils.js';
+import { buildBaseParams, initToggleBots, resultTotal, stackedBar, renderMinVersionBanner } from './utils.js';
 
 // Extract the Chrome major version from a raw user_agent string, e.g. "...Chrome/120.0.0.0..." -> 120.
 export function chromeMajorVersion(rawUa) {
@@ -30,18 +30,6 @@ export function aggregateByVersion(rawUserAgents, humanStats) {
     return [...byVersion.values()].sort((a, b) => resultTotal(b) - resultTotal(a));
 }
 
-function updateMinVersionBanner(humanStats) {
-    const banner = document.getElementById('minChromeVersionBanner');
-    if (!banner) return;
-    const minVersion = minVersionWithHumanTraffic(humanStats, 'Chrome');
-    if (minVersion === null) {
-        banner.classList.add('d-none');
-    } else {
-        banner.textContent = `Min Chrome version with requests from human IPs: ${minVersion}`;
-        banner.classList.remove('d-none');
-    }
-}
-
 async function loadAllCharts() {
     const p = buildBaseParams({});
 
@@ -58,7 +46,7 @@ async function loadAllCharts() {
         fetch(`/api/chrome/user-agents?${p}`).then(r => r.json()),
         fetch(`/api/chrome/human-traffic?${p}`).then(r => r.json()),
     ]);
-    updateMinVersionBanner(humanStats);
+    renderMinVersionBanner('minChromeVersionBanner', 'Chrome', humanStats);
 
     const versions = aggregateByVersion(rawUserAgents, humanStats);
     if (versions.length) {

@@ -596,16 +596,18 @@ public class DashboardService {
         return urlsByResultType(CHROME_UA_FILTER, List.of(from.toString(), to.toString(), CHROME_UA_PATTERN), limit, excludeBots);
     }
 
-    public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to, boolean excludeBots) {
+    private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), uaName);
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + filterClause + "\n" + exclusion + SQL_DAILY_GROUP_ORDER,
+                from.toString(), to.toString(), filterArg);
+    }
+
+    public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to, boolean excludeBots) {
+        return requestsPerDayByFilter(UA_NAME_FILTER, uaName, from, to, excludeBots);
     }
 
     public List<DailyResultTypeCount> chromeRequestsPerDay(Instant from, Instant to, boolean excludeBots) {
-        String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name LIKE ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), CHROME_UA_PATTERN);
+        return requestsPerDayByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, excludeBots);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to, boolean excludeBots) {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, minVersionWithHumanTraffic } from '../../main/resources/static/js/utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, minVersionWithHumanTraffic, renderMinVersionBanner } from '../../main/resources/static/js/utils.js';
 
 // charts.js (imported transitively) references Chart via globalThis
 globalThis.Chart = vi.fn();
@@ -213,5 +213,42 @@ describe('minVersionWithHumanTraffic', () => {
     it('ignores raw UA strings without a matching browser version', () => {
         const humanStats = [stat('Mozilla/5.0 (compatible; Googlebot/2.1)', 5, 5)];
         expect(minVersionWithHumanTraffic(humanStats, 'Chrome')).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// renderMinVersionBanner
+// ---------------------------------------------------------------------------
+
+describe('renderMinVersionBanner', () => {
+    beforeEach(() => {
+        document.body.innerHTML = '<div id="banner" class="d-none"></div>';
+    });
+
+    it('shows the banner with the min version when one is found', () => {
+        const humanStats = [stat('...Chrome/120...', 5, 5)];
+        renderMinVersionBanner('banner', 'Chrome', humanStats);
+
+        const banner = document.getElementById('banner');
+        expect(banner.classList.contains('d-none')).toBe(false);
+        expect(banner.textContent).toBe('Min Chrome version with requests from human IPs: 120');
+    });
+
+    it('hides the banner when no version has human traffic', () => {
+        const humanStats = [stat('...Chrome/120...', 0, 5)];
+        renderMinVersionBanner('banner', 'Chrome', humanStats);
+
+        expect(document.getElementById('banner').classList.contains('d-none')).toBe(true);
+    });
+
+    it('hides the banner when browser is falsy (e.g. an untracked raw UA)', () => {
+        const humanStats = [stat('...Chrome/120...', 5, 5)];
+        renderMinVersionBanner('banner', undefined, humanStats);
+
+        expect(document.getElementById('banner').classList.contains('d-none')).toBe(true);
+    });
+
+    it('works without a matching element in the DOM', () => {
+        expect(() => renderMinVersionBanner('missing', 'Chrome', [])).not.toThrow();
     });
 });

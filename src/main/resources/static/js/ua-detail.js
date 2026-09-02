@@ -1,24 +1,11 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, minVersionWithHumanTraffic } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, renderMinVersionBanner } from './utils.js';
 
 const ua = readMeta('cf-ua');
 const DESKTOP_BROWSER_UAS = {
     Chrome:  new Set(['Chrome / Windows', 'Chrome / Linux', 'Chrome / macOS']),
     Firefox: new Set(['Firefox / Windows', 'Firefox / Linux', 'Firefox / macOS']),
 };
-
-function updateBrowserHumanVersionBanner(humanStats) {
-    const banner = document.getElementById('browserMinHumanVersionBanner');
-    if (!banner) return;
-    const browser = Object.keys(DESKTOP_BROWSER_UAS).find(b => DESKTOP_BROWSER_UAS[b].has(ua));
-    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser) : null;
-    if (minVersion === null) {
-        banner.classList.add('d-none');
-    } else {
-        banner.textContent = `Min ${browser} version with requests from human IPs: ${minVersion}`;
-        banner.classList.remove('d-none');
-    }
-}
 
 async function loadAllCharts() {
     const p = buildBaseParams({ ua });
@@ -37,7 +24,8 @@ async function loadAllCharts() {
         fetch(`/api/ua-detail/human-traffic?${p}`).then(r => r.json()),
     ]);
     const humanByName = new Map(humanStats.map(h => [h.name, h]));
-    updateBrowserHumanVersionBanner(humanStats);
+    const browser = Object.keys(DESKTOP_BROWSER_UAS).find(b => DESKTOP_BROWSER_UAS[b].has(ua));
+    renderMinVersionBanner('browserMinHumanVersionBanner', browser, humanStats);
     if (data.length) {
         const maxTotal = Math.max(...data.map(resultTotal));
         tbody.innerHTML = data.map((row, i) => {
