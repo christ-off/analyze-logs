@@ -37,6 +37,11 @@ public class DashboardService {
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
+    private static final String UA_NAME_FILTER = "ua_name = ?";
+    private static final String CHROME_UA_FILTER = "ua_name LIKE ?";
+    // Every Chrome ua_name variant (desktop and mobile) shares this "Chrome / <OS>" prefix —
+    // the Chrome dashboard aggregates across all of them regardless of OS.
+    private static final String CHROME_UA_PATTERN = "Chrome / %";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
@@ -353,7 +358,7 @@ public class DashboardService {
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(humanTrafficClause, excludeBots);
-        return queryResultTypesByFilter("country", countryCode, from, to, exclusion);
+        return queryResultTypesByFilter(COUNTRY_FILTER, countryCode, from, to, exclusion);
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit, boolean excludeBots) {
@@ -493,23 +498,32 @@ public class DashboardService {
         return null;
     }
 
-    public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to, boolean excludeBots) {
+    private List<NameResultTypeCount> rawUserAgentsByFilter(String filterClause, Object filterArg, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND ua_name = ?\n" +
+                "  AND " + filterClause + "\n" +
                 exclusion +
                 "GROUP BY user_agent\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(), uaName);
+                from.toString(), to.toString(), filterArg);
+    }
+
+    public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to, boolean excludeBots) {
+        return rawUserAgentsByFilter(UA_NAME_FILTER, uaName, from, to, excludeBots);
+    }
+
+    // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
+    public List<NameResultTypeCount> chromeRawUserAgents(Instant from, Instant to, boolean excludeBots) {
+        return rawUserAgentsByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, excludeBots);
     }
 
     // Per raw user_agent string, proportion of requests whose (client_ip, user_agent) pair
     // classifies as "Probable human" — same categoryCaseExpr used by humanTrafficStats()/trafficCategories(),
     // just grouped per user_agent instead of aggregated to one total.
-    public List<NameHumanTrafficStats> uaHumanTrafficByUserAgent(String uaName, Instant from, Instant to, boolean excludeBots) {
+    private List<NameHumanTrafficStats> humanTrafficByUserAgent(String filterClause, Object filterArg, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
         String sql = """
                 WITH pair_class AS (
@@ -525,41 +539,73 @@ public class DashboardService {
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
-                  AND c.ua_name = ?
+                  AND c.%s
                 %sGROUP BY c.user_agent
-                """.formatted(categoryCaseExpr, exclusion);
+                """.formatted(categoryCaseExpr, filterClause, exclusion);
         return jdbc.query(sql,
                 (rs, _) -> new NameHumanTrafficStats(rs.getString("name"), rs.getLong("human"), rs.getLong("total")),
-                from.toString(), to.toString(), from.toString(), to.toString(), uaName);
+                from.toString(), to.toString(), from.toString(), to.toString(), filterArg);
+    }
+
+    public List<NameHumanTrafficStats> uaHumanTrafficByUserAgent(String uaName, Instant from, Instant to, boolean excludeBots) {
+        return humanTrafficByUserAgent(UA_NAME_FILTER, uaName, from, to, excludeBots);
+    }
+
+    // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
+    public List<NameHumanTrafficStats> chromeHumanTraffic(Instant from, Instant to, boolean excludeBots) {
+        return humanTrafficByUserAgent(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, excludeBots);
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
-        return queryResultTypesByFilter("ua_name", uaName, from, to, exclusion);
+        return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to, exclusion);
     }
 
-    public List<NameCount> uaCountries(String uaName, Instant from, Instant to, boolean excludeBots) {
+    public List<NameCount> chromeResultTypes(Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
+        return queryResultTypesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, exclusion);
+    }
+
+    private List<NameCount> countriesByFilter(String filterClause, Object filterArg, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
         return jdbc.query("SELECT country as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND ua_name = ?\n" +
+                "  AND " + filterClause + "\n" +
                 exclusion +
                 "GROUP BY country\n" +
                 "ORDER BY count DESC\n" +
                 "LIMIT " + UA_COUNTRIES_LIMIT + "\n",
                 (rs, _) -> new NameCount(resolveCountryLabel(rs.getString("name")), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), uaName);
+                from.toString(), to.toString(), filterArg);
+    }
+
+    public List<NameCount> uaCountries(String uaName, Instant from, Instant to, boolean excludeBots) {
+        return countriesByFilter(UA_NAME_FILTER, uaName, from, to, excludeBots);
+    }
+
+    public List<NameCount> chromeCountries(Instant from, Instant to, boolean excludeBots) {
+        return countriesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, excludeBots);
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit, boolean excludeBots) {
-        return urlsByResultType("ua_name = ?", List.of(from.toString(), to.toString(), uaName), limit, excludeBots);
+        return urlsByResultType(UA_NAME_FILTER, List.of(from.toString(), to.toString(), uaName), limit, excludeBots);
+    }
+
+    public List<NameResultTypeCount> chromeUrlsByResultType(Instant from, Instant to, int limit, boolean excludeBots) {
+        return urlsByResultType(CHROME_UA_FILTER, List.of(from.toString(), to.toString(), CHROME_UA_PATTERN), limit, excludeBots);
     }
 
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to, boolean excludeBots) {
         String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
                 from.toString(), to.toString(), uaName);
+    }
+
+    public List<DailyResultTypeCount> chromeRequestsPerDay(Instant from, Instant to, boolean excludeBots) {
+        String exclusion = excludeClause(RESULT_TYPE_EXCLUSION, excludeBots);
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND ua_name LIKE ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
+                from.toString(), to.toString(), CHROME_UA_PATTERN);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to, boolean excludeBots) {
@@ -572,12 +618,12 @@ public class DashboardService {
         return jdbc.query(sql, DAILY_RESULT_TYPE_COUNT_MAPPER, args);
     }
 
-    // filterColumn is always a trusted Java constant, never user input
-    private List<NameCount> queryResultTypesByFilter(String filterColumn, Object value, Instant from, Instant to, String extraClause) {
+    // filterClause is always a trusted Java constant, never user input
+    private List<NameCount> queryResultTypesByFilter(String filterClause, Object value, Instant from, Instant to, String extraClause) {
         String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
-                + "  AND " + filterColumn + " = ?\n"
+                + "  AND " + filterClause + "\n"
                 + extraClause
                 + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";

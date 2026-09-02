@@ -404,6 +404,10 @@ class DashboardServiceIntegrationTest {
             "Feedly/1.0 (+http://www.feedly.com/fetcher.html)";
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    private static final String UA_CHROME_MACOS =
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36";
+    private static final String UA_CHROME_ANDROID =
+            "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/146.0.0.0 Mobile Safari/537.36";
     private static final String UA_FIREFOX_LINUX =
             "Mozilla/5.0 (X11; Linux x86_64; rv:147.0) Gecko/20100101 Firefox/147.0";
 
@@ -1103,6 +1107,78 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, v2.totalRequests());
         assertEquals(0, v2.humanRequests());
         assertEquals(0.0, v2.percentage());
+    }
+
+    @Test
+    void chromeRawUserAgents_aggregatesEveryOsVariantButExcludesOtherBrowsers() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/chrome-raw-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_ANDROID, "Hit"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
+        ));
+
+        var result = dashboardService.chromeRawUserAgents(from, Instant.now().plusSeconds(5), false);
+
+        var names = result.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.containsAll(List.of(UA_CHROME_WINDOWS, UA_CHROME_MACOS, UA_CHROME_ANDROID)));
+        assertFalse(names.contains(UA_FIREFOX_LINUX));
+    }
+
+    @Test
+    void chromeHumanTraffic_aggregatesEveryOsVariantButExcludesOtherBrowsers() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/chrome-human-test.gz", List.of(
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_MACOS, "/"),
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_MACOS, "/css/main.css"),
+                entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/"),
+                entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/css/main.css")
+        ));
+
+        var result = dashboardService.chromeHumanTraffic(from, Instant.now().plusSeconds(5), false);
+
+        var names = result.stream().map(NameHumanTrafficStats::name).toList();
+        assertTrue(names.contains(UA_CHROME_MACOS));
+        assertFalse(names.contains(UA_FIREFOX_LINUX));
+        var macos = result.stream().filter(r -> UA_CHROME_MACOS.equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, macos.humanRequests());
+        assertEquals(2, macos.totalRequests());
+    }
+
+    @Test
+    void chromeResultTypes_countsAcrossEveryOsVariant() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/chrome-result-types-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_ANDROID, "Miss"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX, "Error")
+        ));
+
+        var result = dashboardService.chromeResultTypes(from, Instant.now().plusSeconds(5), false);
+
+        assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> "Error".equals(n.name())));
+    }
+
+    @Test
+    void chromeRequestsPerDay_countsAcrossEveryOsVariant() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/chrome-rpd-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_ANDROID, "Miss"),
+                entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
+        ));
+
+        var result = dashboardService.chromeRequestsPerDay(from, Instant.now().plusSeconds(5), false);
+
+        assertFalse(result.isEmpty());
+        var today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
     }
 
     // Future time bases keep these datasets out of other tests' [now, now+5s] query windows.

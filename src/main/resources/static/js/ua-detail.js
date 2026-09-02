@@ -1,33 +1,11 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, minVersionWithHumanTraffic } from './utils.js';
 
 const ua = readMeta('cf-ua');
 const DESKTOP_BROWSER_UAS = {
     Chrome:  new Set(['Chrome / Windows', 'Chrome / Linux', 'Chrome / macOS']),
     Firefox: new Set(['Firefox / Windows', 'Firefox / Linux', 'Firefox / macOS']),
 };
-
-// Lowest <browser> major version, across raw UA strings sharing that version, with
-// any requests from "Probable human" IPs — versions below it look spoofed (bots
-// declaring an old/fake browser version never show human evidence).
-export function minVersionWithHumanTraffic(humanStats, browser) {
-    const versionPattern = new RegExp(`${browser}/(\\d+)`);
-    const totalsByVersion = new Map();
-    for (const h of humanStats) {
-        const m = h.name.match(versionPattern);
-        if (!m) continue;
-        const version = Number(m[1]);
-        const entry = totalsByVersion.get(version) ?? { human: 0, total: 0 };
-        entry.human += h.humanRequests;
-        entry.total += h.totalRequests;
-        totalsByVersion.set(version, entry);
-    }
-    let min = null;
-    for (const [version, { human }] of totalsByVersion) {
-        if (human > 0 && (min === null || version < min)) min = version;
-    }
-    return min;
-}
 
 function updateBrowserHumanVersionBanner(humanStats) {
     const banner = document.getElementById('browserMinHumanVersionBanner');

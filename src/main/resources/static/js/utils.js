@@ -56,6 +56,28 @@ export function stackedBar(row, maxTotal) {
     return `<div style="display:flex;height:1.1em;width:100%;border-radius:2px;overflow:hidden">${segments}</div>`;
 }
 
+// Lowest <browser> major version, across raw UA strings sharing that version, with
+// any requests from "Probable human" IPs — versions below it look spoofed (bots
+// declaring an old/fake browser version never show human evidence).
+export function minVersionWithHumanTraffic(humanStats, browser) {
+    const versionPattern = new RegExp(`${browser}/(\\d+)`);
+    const totalsByVersion = new Map();
+    for (const h of humanStats) {
+        const m = h.name.match(versionPattern);
+        if (!m) continue;
+        const version = Number(m[1]);
+        const entry = totalsByVersion.get(version) ?? { human: 0, total: 0 };
+        entry.human += h.humanRequests;
+        entry.total += h.totalRequests;
+        totalsByVersion.set(version, entry);
+    }
+    let min = null;
+    for (const [version, { human }] of totalsByVersion) {
+        if (human > 0 && (min === null || version < min)) min = version;
+    }
+    return min;
+}
+
 export function initToggleBots(loadFn) {
     const toggleEl = document.getElementById('toggleBots');
     if (toggleEl) {

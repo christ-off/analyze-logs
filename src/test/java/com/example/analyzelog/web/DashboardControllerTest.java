@@ -161,4 +161,17 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
+    @Test
+    void chromeReturns200() {
+        assertThat(mvc.get().uri("/chrome").exchange())
+                .hasStatusOk()
+                .hasViewName("chrome");
+    }
+
+    @Test
+    void chromeDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/chrome").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
 }

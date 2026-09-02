@@ -1,0 +1,127 @@
+package com.example.analyzelog.web;
+
+import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameHumanTrafficStats;
+import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.service.DashboardService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+
+@WebMvcTest(ChromeController.class)
+@EnableConfigurationProperties(AppProperties.class)
+class ChromeControllerTest {
+
+    @Autowired
+    MockMvcTester mvc;
+
+    @MockitoBean
+    DashboardService dashboardService;
+
+    @Test
+    void resultTypesReturnsJson() {
+        when(dashboardService.chromeResultTypes(any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));
+
+        assertThat(mvc.get().uri("/api/chrome/result-types")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Hit");
+    }
+
+    @Test
+    void countriesReturnsJson() {
+        when(dashboardService.chromeCountries(any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(new NameCount("France", 50)));
+
+        assertThat(mvc.get().uri("/api/chrome/countries")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("France");
+    }
+
+    @Test
+    void uriStemsReturnsJson() {
+        when(dashboardService.chromeUrlsByResultType(any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+                .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3)));
+
+        assertThat(mvc.get().uri("/api/chrome/uri-stems")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("/index.html");
+    }
+
+    @Test
+    void requestsPerDayReturnsJson() {
+        when(dashboardService.chromeRequestsPerDay(any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/chrome/requests-per-day")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].hit").isEqualTo(10);
+    }
+
+    @Test
+    void userAgentsReturnsJson() {
+        when(dashboardService.chromeRawUserAgents(any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(
+                        new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0", 80, 30, 5, 3),
+                        new NameResultTypeCount("Mozilla/5.0 (Macintosh) Chrome/119.0.0.0", 20, 8, 0, 1)));
+
+        assertThat(mvc.get().uri("/api/chrome/user-agents")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0");
+    }
+
+    @Test
+    void humanTrafficReturnsJson() {
+        when(dashboardService.chromeHumanTraffic(any(Instant.class), any(Instant.class), anyBoolean()))
+                .thenReturn(List.of(new NameHumanTrafficStats("Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0", 8, 10)));
+
+        assertThat(mvc.get().uri("/api/chrome/human-traffic")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].humanRequests").isEqualTo(8);
+    }
+
+    @Test
+    void invalidDateRangeReturns400() {
+        assertThat(mvc.get().uri("/api/chrome/result-types")
+                .param("from", "2026-02-01").param("to", "2026-01-01")
+                .exchange())
+                .hasStatus(HttpStatus.BAD_REQUEST);
+    }
+}
