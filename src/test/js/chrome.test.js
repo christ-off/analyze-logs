@@ -17,7 +17,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     renderMinVersionBanner: vi.fn(),
 }));
 
-import { chromeMajorVersion, aggregateByVersion } from '../../main/resources/static/js/chrome.js';
+import { chromeMajorVersion, aggregateByVersion, sortVersions } from '../../main/resources/static/js/chrome.js';
 
 function raw(name, hit, miss, fn, error) {
     return { name, hit, miss, function: fn, error };
@@ -73,15 +73,59 @@ describe('aggregateByVersion', () => {
         const rawUserAgents = [raw('Mozilla/5.0 (compatible; Googlebot/2.1)', 5, 0, 0, 0)];
         expect(aggregateByVersion(rawUserAgents, [])).toEqual([]);
     });
+});
 
-    it('sorts versions by total requests descending', () => {
-        const rawUserAgents = [
-            raw('...Chrome/119.0.0.0...', 100, 0, 0, 0),
-            raw('...Chrome/120.0.0.0...', 5, 0, 0, 0),
+function versionRow(version, { hit = 0, miss = 0, fn = 0, error = 0, human = 0, total = 0 } = {}) {
+    return { version, hit, miss, function: fn, error, human, total };
+}
+
+describe('sortVersions', () => {
+    it('sorts the "version" column numerically, not lexicographically on the label text', () => {
+        // Lexicographic order would read "10" before "9" — must sort as numbers.
+        const versions = [versionRow(152), versionRow(9), versionRow(10), versionRow(2)];
+
+        const result = sortVersions(versions, 'version', 'asc');
+
+        expect(result.map(r => r.version)).toEqual([2, 9, 10, 152]);
+    });
+
+    it('sorts by requests (hit+miss+filtered+error total)', () => {
+        const versions = [
+            versionRow(120, { hit: 5 }),
+            versionRow(119, { hit: 100 }),
+            versionRow(118, { hit: 20 }),
         ];
 
-        const result = aggregateByVersion(rawUserAgents, []);
+        const result = sortVersions(versions, 'requests', 'desc');
 
-        expect(result.map(r => r.version)).toEqual([119, 120]);
+        expect(result.map(r => r.version)).toEqual([119, 118, 120]);
+    });
+
+    it('sorts by proportion of human traffic, treating rows with no traffic as lowest', () => {
+        const versions = [
+            versionRow(120, { human: 8, total: 10 }),  // 80%
+            versionRow(119, { human: 1, total: 10 }),  // 10%
+            versionRow(118),                            // no traffic at all
+        ];
+
+        const result = sortVersions(versions, 'human', 'desc');
+
+        expect(result.map(r => r.version)).toEqual([120, 119, 118]);
+    });
+
+    it('reverses order when direction is asc', () => {
+        const versions = [versionRow(120, { hit: 5 }), versionRow(119, { hit: 100 })];
+
+        expect(sortVersions(versions, 'requests', 'asc').map(r => r.version)).toEqual([120, 119]);
+        expect(sortVersions(versions, 'requests', 'desc').map(r => r.version)).toEqual([119, 120]);
+    });
+
+    it('does not mutate the input array', () => {
+        const versions = [versionRow(120, { hit: 5 }), versionRow(119, { hit: 100 })];
+        const original = [...versions];
+
+        sortVersions(versions, 'requests', 'desc');
+
+        expect(versions).toEqual(original);
     });
 });

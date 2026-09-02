@@ -8,7 +8,7 @@ export function chromeMajorVersion(rawUa) {
 }
 
 // Fold per-raw-UA result-type sums and human-traffic stats (one row per raw user_agent string,
-// across every OS) down into one row per Chrome major version, ordered by total requests desc.
+// across every OS) down into one row per Chrome major version. Unordered — the table sorts.
 export function aggregateByVersion(rawUserAgents, humanStats) {
     const humanByName = new Map(humanStats.map(h => [h.name, h]));
     const byVersion = new Map();
@@ -27,8 +27,69 @@ export function aggregateByVersion(rawUserAgents, humanStats) {
         }
         byVersion.set(version, entry);
     }
-    return [...byVersion.values()].sort((a, b) => resultTotal(b) - resultTotal(a));
+    return [...byVersion.values()];
 }
+
+// Sort keys for the Chrome Versions table — each maps a row to the numeric value to compare on,
+// so "Chrome Version" sorts by the version number itself, never lexicographically on label text
+// (which would put "Chrome 10" before "Chrome 9").
+const SORT_VALUE = {
+    version:  row => row.version,
+    requests: row => resultTotal(row),
+    human:    row => (row.total > 0 ? row.human / row.total : -1),
+};
+
+export function sortVersions(versions, key, dir) {
+    const getValue = SORT_VALUE[key];
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...versions].sort((a, b) => sign * (getValue(a) - getValue(b)));
+}
+
+let currentVersions = [];
+let sortKey = 'requests';
+let sortDir = 'desc';
+
+function updateSortIndicators() {
+    document.querySelectorAll('#tableVersions [data-sort-key]').forEach(th => {
+        const active = th.dataset.sortKey === sortKey;
+        th.classList.toggle('cf-sort-active', active);
+        th.querySelector('.cf-sort-indicator').textContent = active ? (sortDir === 'asc' ? '▲' : '▼') : '';
+    });
+}
+
+function renderVersionsTable() {
+    updateSortIndicators();
+    const tbody = document.getElementById('tbodyVersions');
+    const legend = document.getElementById('versionBarLegend');
+    if (!currentVersions.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No data</td></tr>';
+        legend.style.setProperty('display', 'none', 'important');
+        return;
+    }
+    const rows = sortVersions(currentVersions, sortKey, sortDir);
+    const maxTotal = Math.max(...currentVersions.map(resultTotal));
+    tbody.innerHTML = rows.map((row, i) => {
+        const humanPct = row.total > 0 ? `${(100 * row.human / row.total).toFixed(1)}%` : '–';
+        return `
+            <tr>
+                <td class="text-muted">${i + 1}</td>
+                <td class="font-monospace">Chrome ${row.version}</td>
+                <td class="text-end">${resultTotal(row).toLocaleString()}</td>
+                <td class="text-end">${humanPct}</td>
+                <td>${stackedBar(row, maxTotal)}</td>
+            </tr>`;
+    }).join('');
+    legend.style.removeProperty('display');
+}
+
+document.querySelectorAll('#tableVersions [data-sort-key]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        sortDir = key === sortKey ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc';
+        sortKey = key;
+        renderVersionsTable();
+    });
+});
 
 async function loadAllCharts() {
     const p = buildBaseParams({});
@@ -48,24 +109,8 @@ async function loadAllCharts() {
     ]);
     renderMinVersionBanner('minChromeVersionBanner', 'Chrome', humanStats);
 
-    const versions = aggregateByVersion(rawUserAgents, humanStats);
-    if (versions.length) {
-        const maxTotal = Math.max(...versions.map(resultTotal));
-        tbody.innerHTML = versions.map((row, i) => {
-            const humanPct = row.total > 0 ? `${(100 * row.human / row.total).toFixed(1)}%` : '–';
-            return `
-            <tr>
-                <td class="text-muted">${i + 1}</td>
-                <td class="font-monospace">Chrome ${row.version}</td>
-                <td class="text-end">${resultTotal(row).toLocaleString()}</td>
-                <td class="text-end">${humanPct}</td>
-                <td>${stackedBar(row, maxTotal)}</td>
-            </tr>`;
-        }).join('');
-        document.getElementById('versionBarLegend').style.removeProperty('display');
-    } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No data</td></tr>';
-    }
+    currentVersions = aggregateByVersion(rawUserAgents, humanStats);
+    renderVersionsTable();
 }
 
 initToggleBots(loadAllCharts);

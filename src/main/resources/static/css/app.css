@@ -472,6 +472,27 @@ input[type="date"] { font-family: var(--cf-font-mono); }
   font-size: .8rem;
 }
 
+/* Sortable table headers */
+.cf-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.cf-sortable:hover {
+  color: var(--cf-accent-strong);
+}
+
+.cf-sort-indicator {
+  display: inline-block;
+  width: 1em;
+  opacity: .5;
+}
+
+.cf-sortable.cf-sort-active .cf-sort-indicator {
+  opacity: 1;
+}
+
 /* ── Detail page – context header inside toolbar card ─────────────────────── */
 .cf-detail-title {
   font-size: 1.05rem;
