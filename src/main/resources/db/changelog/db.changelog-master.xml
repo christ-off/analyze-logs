@@ -12,5 +12,6 @@
     <include file="db/changelog/changes/005-static-ua-add-catstodon.xml"/>
     <include file="db/changelog/changes/006-static-ua-rename-mastodon.xml"/>
     <include file="db/changelog/changes/007-reclassify-catstodon-logs.xml"/>
+    <include file="db/changelog/changes/008-static-ua-add-birchfeed.xml"/>
 
 </databaseChangeLog>
