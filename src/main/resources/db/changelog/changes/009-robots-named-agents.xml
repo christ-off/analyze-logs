@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Every user-agent named in robots.txt, regardless of whether it carries a
+         Disallow rule — unlike robots_disallowed, which only tracks agents that are
+         actually restricted. Used to flag bots that check robots.txt in good faith
+         before requesting anything else. -->
+    <changeSet id="009-robots-named-agents" author="analyze-logs">
+        <sql>
+            CREATE TABLE robots_named_agents (
+                user_agent   TEXT NOT NULL PRIMARY KEY,
+                refreshed_at TEXT NOT NULL
+            )
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

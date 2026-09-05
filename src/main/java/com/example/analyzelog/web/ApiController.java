@@ -8,6 +8,7 @@ import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
@@ -120,7 +121,7 @@ public class ApiController {
     }
 
     @GetMapping("/browser-config")
-    public List<NameResultTypeCount> browserConfig(@RequestParam String from, @RequestParam String to) {
+    public List<SiteConfigFetcher> browserConfig(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }

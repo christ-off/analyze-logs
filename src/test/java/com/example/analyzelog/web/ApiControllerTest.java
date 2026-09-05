@@ -7,6 +7,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
@@ -307,7 +308,7 @@ class ApiControllerTest {
     @Test
     void browserConfigReturnsJson() {
         when(dashboardService.browserConfigFetches(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameResultTypeCount("Mozilla/5.0 Chrome/103", 40, 10, 4, 2)));
+                .thenReturn(List.of(new SiteConfigFetcher("Mozilla/5.0 Chrome/103", 40, 10, 4, 2, false)));
 
         assertThat(mvc.get().uri("/api/browser-config")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

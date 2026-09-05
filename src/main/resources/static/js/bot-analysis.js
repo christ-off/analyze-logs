@@ -62,10 +62,16 @@ export function loadFakeBrowsers() {
     </tr>`, 'No round-the-clock browser UAs found for the selected date range.');
 }
 
+function goodMannersBadge(b) {
+    return b.goodManners
+        ? ' <span class="badge bg-success" title="Only requests /robots.txt, and is named in robots.txt — checks politely before requesting anything else">✓ polite</span>'
+        : '';
+}
+
 export function loadBrowserConfigFetches() {
     const p = buildBaseParams({});
     loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 3, b => `<tr>
-        <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
+        <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a>${goodMannersBadge(b)}</td>
         <td class="text-end">${resultTotal(b).toLocaleString()}</td>
         <td class="align-middle px-2">${stackedBar(b, null)}</td>
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
@@ -106,27 +112,24 @@ export function loadDisobedientSection() {
 }
 
 export function initRobotsRefresh() {
-    const btn = document.getElementById('refreshRobotsBtn');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-        btn.disabled = true;
-        btn.textContent = 'Refreshing…';
+    const btns = document.querySelectorAll('.js-refresh-robots-btn');
+    if (btns.length === 0) return;
+    btns.forEach(btn => btn.addEventListener('click', () => {
+        btns.forEach(b => { b.disabled = true; b.textContent = 'Refreshing…'; });
         fetch('/api/robots-refresh')
             .then(r => r.text())
             .then(msg => {
-                const el = document.getElementById('robotsRefreshedAt');
-                if (el) el.textContent = msg;
+                document.querySelectorAll('.js-robots-refreshed-at').forEach(el => el.textContent = msg);
                 loadDisobedientSection();
+                loadBrowserConfigFetches();
             })
             .catch(() => {
-                const el = document.getElementById('robotsRefreshedAt');
-                if (el) el.textContent = 'Refresh failed';
+                document.querySelectorAll('.js-robots-refreshed-at').forEach(el => el.textContent = 'Refresh failed');
             })
             .finally(() => {
-                btn.disabled = false;
-                btn.textContent = 'Refresh Robots';
+                btns.forEach(b => { b.disabled = false; b.textContent = 'Refresh Robots'; });
             });
-    });
+    }));
 }
 
 function countryDetailUrl(d) {

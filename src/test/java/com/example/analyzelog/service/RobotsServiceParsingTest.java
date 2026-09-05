@@ -114,4 +114,39 @@ class RobotsServiceParsingTest {
     void returnsEmptyForEmptyInput() {
         assertTrue(RobotsService.parseDisallowedAgents("").isEmpty());
     }
+
+    @Test
+    void parseNamedAgents_includesAgentsWithoutDisallow() {
+        String robots = """
+                User-agent: Googlebot
+                Allow: /
+                """;
+        List<String> result = RobotsService.parseNamedAgents(robots);
+        assertTrue(result.contains("Googlebot"));
+    }
+
+    @Test
+    void parseNamedAgents_includesAgentsWithDisallow() {
+        String robots = """
+                User-agent: BadBot
+                Disallow: /
+                """;
+        List<String> result = RobotsService.parseNamedAgents(robots);
+        assertTrue(result.contains("BadBot"));
+    }
+
+    @Test
+    void parseNamedAgents_skipsWildcard() {
+        String robots = """
+                User-agent: *
+                Disallow: /
+                """;
+        List<String> result = RobotsService.parseNamedAgents(robots);
+        assertFalse(result.contains("*"));
+    }
+
+    @Test
+    void parseNamedAgents_returnsEmptyForNullInput() {
+        assertTrue(RobotsService.parseNamedAgents(null).isEmpty());
+    }
 }

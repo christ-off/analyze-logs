@@ -28,9 +28,12 @@ async function flushPromises() {
 const BOTS_HTML = `
     <table>
         <tbody id="disobedientBotsTable"><tr><td colspan="3">Loading...</td></tr></tbody>
+        <tbody id="browserConfigTable"></tbody>
     </table>
-    <span id="robotsRefreshedAt"></span>
-    <button id="refreshRobotsBtn">Refresh Robots</button>
+    <span id="robotsRefreshedAt" class="js-robots-refreshed-at"></span>
+    <button id="refreshRobotsBtn" class="js-refresh-robots-btn">Refresh Robots</button>
+    <span id="robotsRefreshedAtConfig" class="js-robots-refreshed-at"></span>
+    <button id="refreshRobotsBtnConfig" class="js-refresh-robots-btn">Refresh Robots</button>
 `;
 
 const SAMPLE_BOT = { userAgent: 'BadBot/1.0', count: 5, hit: 3, miss: 1, error: 1, function: 0 };
@@ -101,7 +104,7 @@ describe('bot signal tables', () => {
 
     it('loadBrowserConfigFetches renders UA and count', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: 'FakeChrome/103', hit: 50, miss: 4, function: 1, error: 1 }]),
+            json: () => Promise.resolve([{ name: 'FakeChrome/103', hit: 50, miss: 4, function: 1, error: 1, goodManners: false }]),
         }));
         loadBrowserConfigFetches();
         await flushPromises();
@@ -110,6 +113,18 @@ describe('bot signal tables', () => {
         expect(fetch.mock.calls[0][0]).toContain('/api/browser-config?');
         expect(row.textContent).toContain('FakeChrome/103');
         expect(row.textContent).toContain('56');
+        expect(row.textContent).not.toContain('polite');
+    });
+
+    it('loadBrowserConfigFetches flags good-manners UAs', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            json: () => Promise.resolve([{ name: 'PoliteBot/1.0', hit: 3, miss: 0, function: 0, error: 0, goodManners: true }]),
+        }));
+        loadBrowserConfigFetches();
+        await flushPromises();
+
+        const row = document.querySelector('#browserConfigTable tr');
+        expect(row.textContent).toContain('polite');
     });
 
     it('loadBrowserLlmsTxtFetches renders UA and count', async () => {
