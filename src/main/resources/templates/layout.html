@@ -77,9 +77,19 @@
         const path = location.pathname;
         const links = document.querySelectorAll('.cf-nav-link');
         let active = links[0];
+
+        const currentParams = new URLSearchParams(location.search);
+        const dateParams = new URLSearchParams();
+        ['range', 'from', 'to'].forEach(key => {
+            const value = currentParams.get(key);
+            if (value) dateParams.set(key, value);
+        });
+        const dateQuery = dateParams.toString();
+
         links.forEach(link => {
             const p = link.dataset.path;
             if (p !== '/' && path.startsWith(p)) active = link;
+            if (dateQuery) link.href = link.getAttribute('href').split('?')[0] + '?' + dateQuery;
         });
         if (active) active.classList.add('active');
     })();
