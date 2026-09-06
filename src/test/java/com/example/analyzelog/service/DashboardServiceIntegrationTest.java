@@ -1220,15 +1220,43 @@ class DashboardServiceIntegrationTest {
                 entryAt(base.plusSeconds(2), "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
                 entryAt(base.plusSeconds(3), "1.1.1.1", UA_CHROME_WINDOWS, "/ads.txt"),
                 entryAt(base.plusSeconds(4), "1.1.1.1", UA_CHROME_WINDOWS, "/sitemap.xml"),
-                entryAt(base.plusSeconds(5), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
-                entryAt(base.plusSeconds(6), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html")   // not a config file — excluded
+                entryAt(base.plusSeconds(5), "1.1.1.1", UA_CHROME_WINDOWS, "/humans.txt"),
+                entryAt(base.plusSeconds(6), "1.1.1.1", UA_CHROME_WINDOWS, "/security.txt"),
+                entryAt(base.plusSeconds(7), "1.1.1.1", UA_CHROME_WINDOWS, "/.well-known/security.txt"),
+                entryAt(base.plusSeconds(8), "1.1.1.1", UA_CHROME_WINDOWS, "/browserconfig.xml"),
+                entryAt(base.plusSeconds(9), "1.1.1.1", UA_CHROME_WINDOWS, "/opensearch.xml"),
+                entryAt(base.plusSeconds(10), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
+                entryAt(base.plusSeconds(11), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html"),  // other content request
+                entryAt(base.plusSeconds(12), "3.3.3.3", UA_FIREFOX_LINUX,  "/index.html")   // never fetched config — excluded
         ));
 
         var result = dashboardService.browserConfigFetches(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(5, result.getFirst().total());
+        assertEquals(10, result.getFirst().total());
+        assertEquals(1, result.getFirst().otherRequests());
+    }
+
+    @Test
+    void browserConfigFetches_ordersByOtherRequestsDescending() {
+        Instant base = Instant.now().plus(402, ChronoUnit.DAYS);
+        List<CloudFrontLogEntry> entries = new ArrayList<>(List.of(
+                entryAt(base, "1.1.1.1", UA_CHROME_WINDOWS, "/robots.txt"),
+                entryAt(base.plusSeconds(1), "2.2.2.2", UA_FIREFOX_LINUX, "/robots.txt")
+        ));
+        for (int i = 0; i < 5; i++) {
+            entries.add(entryAt(base.plusSeconds(2 + i), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html"));
+        }
+        repository.saveEntries("logs/browser-config-order-test.gz", entries);
+
+        var result = dashboardService.browserConfigFetches(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
+
+        assertEquals(2, result.size());
+        assertEquals(UA_CHROME_WINDOWS, result.get(0).name());
+        assertEquals(5, result.get(0).otherRequests());
+        assertEquals(UA_FIREFOX_LINUX, result.get(1).name());
+        assertEquals(0, result.get(1).otherRequests());
     }
 
     @Test

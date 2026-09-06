@@ -99,9 +99,9 @@ describe('bot signal tables', () => {
         expect(row.textContent).toContain('67');
     });
 
-    it('loadBrowserConfigFetches renders UA and count', async () => {
+    it('loadBrowserConfigFetches renders UA and other-requests count', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: 'FakeChrome/103', hit: 50, miss: 4, function: 1, error: 1 }]),
+            json: () => Promise.resolve([{ name: 'FakeChrome/103', hit: 50, miss: 4, function: 1, error: 1, otherRequests: 128 }]),
         }));
         loadBrowserConfigFetches();
         await flushPromises();
@@ -109,7 +109,7 @@ describe('bot signal tables', () => {
         const row = document.querySelector('#browserConfigTable tr');
         expect(fetch.mock.calls[0][0]).toContain('/api/browser-config?');
         expect(row.textContent).toContain('FakeChrome/103');
-        expect(row.textContent).toContain('56');
+        expect(row.textContent).toContain('128');
     });
 
     it('loadBrowserLlmsTxtFetches renders UA and count', async () => {

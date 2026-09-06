@@ -12,6 +12,7 @@ import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.SiteConfigFetcher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,12 @@ public class DashboardService {
                     rs.getString("name"),
                     rs.getLong("hit"), rs.getLong("miss"),
                     rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
+    private static final RowMapper<SiteConfigFetcher> SITE_CONFIG_FETCHER_MAPPER =
+            (rs, _) -> new SiteConfigFetcher(
+                    rs.getString("name"),
+                    rs.getLong("hit"), rs.getLong("miss"),
+                    rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
+                    rs.getLong("other_requests"));
     private static final RowMapper<DailyResultTypeCount> DAILY_RESULT_TYPE_COUNT_MAPPER =
             (rs, _) -> new DailyResultTypeCount(
                     LocalDate.parse(rs.getString("day")),
@@ -97,6 +104,11 @@ public class DashboardService {
             "  AND c.edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")\n" +
             NOISE_EXCLUSION_CLAUSE_ALIASED;
     private static final String LIMIT_PARAM = "LIMIT ?\n";
+    // Files real browsers never request on their own — a site owner may or may not
+    // even publish some of these, so a hit is still a strong non-browser signal.
+    private static final String SITE_CONFIG_PATHS_SQL_LIST =
+            "'/robots.txt','/ads.txt','/sitemap.xml','/humans.txt','/security.txt'," +
+            "'/.well-known/security.txt','/browserconfig.xml','/opensearch.xml'";
     // Only Hit/Miss responses count as "Probable human" evidence — Error, RefreshHit and
     // FunctionGeneratedResponse rows (scanners, edge retries) must not qualify a pair.
     private static final String HUMAN_EVIDENCE_RESULT_TYPES = "edge_response_result_type IN ('Hit','Miss')";
@@ -914,19 +926,27 @@ public class DashboardService {
     }
 
     // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
-    public List<NameResultTypeCount> browserConfigFetches(Instant from, Instant to, int limit) {
+    // and other files real browsers never fetch on their own. Also reports how many other
+    // (non-config) requests the same UA made, since a real browser that stumbles into one of
+    // these paths still browses the rest of the site, while a bot mostly won't.
+    public List<SiteConfigFetcher> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent AS name,
-                """ + ResultTypeSql.RESULT_TYPE_SUMS + """
-
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Hit'  THEN 1 ELSE 0 END) AS hit,
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Miss' THEN 1 ELSE 0 END) AS miss,
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN (%2$s) THEN 1 ELSE 0 END) AS function,
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Error' THEN 1 ELSE 0 END) AS error,
+                       SUM(CASE WHEN c.uri_stem NOT IN (%1$s) THEN 1 ELSE 0 END) AS other_requests
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE s.ua_group = 'Browsers'
-                  AND c.uri_stem IN ('/robots.txt', '/ads.txt', '/sitemap.xml')
                   AND c.timestamp BETWEEN ? AND ?
                 GROUP BY c.user_agent
-                """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM,
-                NAME_RESULT_TYPE_COUNT_MAPPER,
+                HAVING (hit + miss + function + error) > 0
+                ORDER BY other_requests DESC
+                """.formatted(SITE_CONFIG_PATHS_SQL_LIST, ResultTypeSql.FUNCTION_TYPE_LIST)
+                + LIMIT_PARAM,
+                SITE_CONFIG_FETCHER_MAPPER,
                 from.toString(), to.toString(), limit);
     }
 

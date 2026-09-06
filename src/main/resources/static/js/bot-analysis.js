@@ -66,7 +66,7 @@ export function loadBrowserConfigFetches() {
     const p = buildBaseParams({});
     loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 3, b => `<tr>
         <td><a href="${uaRequestsUrl(b.name)}">${escapeHtml(b.name)}</a></td>
-        <td class="text-end">${resultTotal(b).toLocaleString()}</td>
+        <td class="text-end">${b.otherRequests.toLocaleString()}</td>
         <td class="align-middle px-2">${stackedBar(b, null)}</td>
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
