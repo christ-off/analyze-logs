@@ -12,7 +12,6 @@ import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
-import com.example.analyzelog.model.SiteConfigFetcher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -70,12 +69,6 @@ public class DashboardService {
                     rs.getString("name"),
                     rs.getLong("hit"), rs.getLong("miss"),
                     rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
-    private static final RowMapper<SiteConfigFetcher> SITE_CONFIG_FETCHER_MAPPER =
-            (rs, _) -> new SiteConfigFetcher(
-                    rs.getString("name"),
-                    rs.getLong("hit"), rs.getLong("miss"),
-                    rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                    rs.getInt("good_manners") == 1);
     private static final RowMapper<DailyResultTypeCount> DAILY_RESULT_TYPE_COUNT_MAPPER =
             (rs, _) -> new DailyResultTypeCount(
                     LocalDate.parse(rs.getString("day")),
@@ -920,22 +913,12 @@ public class DashboardService {
                 from.toString(), to.toString(), limit);
     }
 
-    // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml.
-    // good_manners flags UAs that only ever requested /robots.txt and self-declare a name that
-    // robots.txt addresses — most of these UAs have no dedicated classifier rule (that's exactly
-    // why they land in the catch-all 'Unknown'/Browsers bucket here), so the check must look at
-    // the raw user_agent text rather than ua_name, matching the token the bot puts in its own
-    // header (e.g. "SofyaBot/1.0 (...)") against the name it's listed under in robots.txt.
-    public List<SiteConfigFetcher> browserConfigFetches(Instant from, Instant to, int limit) {
+    // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
+    public List<NameResultTypeCount> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent AS name,
                 """ + ResultTypeSql.RESULT_TYPE_SUMS + """
-                ,
-                       (SUM(CASE WHEN c.uri_stem != '/robots.txt' THEN 1 ELSE 0 END) = 0
-                        AND EXISTS (
-                            SELECT 1 FROM robots_named_agents r
-                            WHERE c.user_agent LIKE '%' || r.user_agent || '%'
-                        )) AS good_manners
+
                 FROM cloudfront_logs c
                 INNER JOIN static_ua s ON c.ua_name = s.ua_name
                 WHERE s.ua_group = 'Browsers'
@@ -943,7 +926,7 @@ public class DashboardService {
                   AND c.timestamp BETWEEN ? AND ?
                 GROUP BY c.user_agent
                 """ + ResultTypeSql.ORDER_BY_TOTAL_DESC + LIMIT_PARAM,
-                SITE_CONFIG_FETCHER_MAPPER,
+                NAME_RESULT_TYPE_COUNT_MAPPER,
                 from.toString(), to.toString(), limit);
     }
 

@@ -33,38 +33,24 @@ public class RobotsService {
                 .retrieve()
                 .body(String.class);
 
+        List<String> disallowed = parseDisallowedAgents(body);
         String now = Instant.now().toString();
-        replaceAgentTable("robots_disallowed", parseDisallowedAgents(body), now);
-        replaceAgentTable("robots_named_agents", parseNamedAgents(body), now);
-    }
-
-    private void replaceAgentTable(String table, List<String> agents, String refreshedAt) {
-        jdbc.update("DELETE FROM " + table);
-        for (String ua : agents) {
-            jdbc.update("INSERT INTO " + table + " (user_agent, refreshed_at) VALUES (?, ?)", ua, refreshedAt);
+        jdbc.update("DELETE FROM robots_disallowed");
+        for (String ua : disallowed) {
+            jdbc.update("INSERT INTO robots_disallowed (user_agent, refreshed_at) VALUES (?, ?)", ua, now);
         }
     }
 
     static List<String> parseDisallowedAgents(String robotsTxt) {
-        return parseAgents(robotsTxt, true);
-    }
-
-    // Every agent named in robots.txt, regardless of whether it carries a Disallow rule —
-    // used to recognize bots that check robots.txt in good faith before requesting anything else.
-    static List<String> parseNamedAgents(String robotsTxt) {
-        return parseAgents(robotsTxt, false);
-    }
-
-    private static List<String> parseAgents(String robotsTxt, boolean requireDisallow) {
         if (robotsTxt == null || robotsTxt.isBlank()) return List.of();
         LinkedHashSet<String> result = new LinkedHashSet<>();
         for (String block : robotsTxt.split("\\r?\\n\\s*\\r?\\n")) {
-            collectAgents(block, requireDisallow, result);
+            collectDisallowedAgents(block, result);
         }
         return new ArrayList<>(result);
     }
 
-    private static void collectAgents(String block, boolean requireDisallow, Set<String> result) {
+    private static void collectDisallowedAgents(String block, Set<String> result) {
         List<String> agents = new ArrayList<>();
         boolean hasDisallow = false;
         for (String raw : block.lines().toList()) {
@@ -76,7 +62,7 @@ public class RobotsService {
                 hasDisallow = true;
             }
         }
-        if (!requireDisallow || hasDisallow) {
+        if (hasDisallow) {
             agents.stream().filter(a -> !a.equals("*")).forEach(result::add);
         }
     }

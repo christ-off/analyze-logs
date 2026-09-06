@@ -1229,33 +1229,6 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
         assertEquals(5, result.getFirst().total());
-        assertFalse(result.getFirst().goodManners(), "fetched ads.txt/sitemap.xml too — not robots.txt-only");
-    }
-
-    // Bots checking robots.txt in good faith rarely have a dedicated classifier rule (that's
-    // exactly why they land in the catch-all 'Unknown'/Browsers bucket alongside real browsers),
-    // so ua_name is "Unknown" for both — the good-manners check must match the raw user_agent
-    // text against the name it's listed under in robots.txt, not ua_name.
-    private static final String UA_POLITE_UNCLASSIFIED_BOT = "PoliteBot/1.0 (+https://politebot.example/bot)";
-    private static final String UA_RUDE_UNCLASSIFIED_BOT = "RandomCrawler/2.0 (+http://random.example)";
-
-    @Test
-    void browserConfigFetches_flagsGoodMannersForRobotsOnlyNamedAgent() {
-        Instant base = Instant.now().plus(402, ChronoUnit.DAYS);
-        testJdbc.update("INSERT INTO robots_named_agents (user_agent, refreshed_at) VALUES (?, ?)",
-                "PoliteBot", Instant.now().toString());
-        repository.saveEntries("logs/browser-config-good-manners-test.gz", List.of(
-                entryAt(base,                "1.1.1.1", UA_POLITE_UNCLASSIFIED_BOT, "/robots.txt"),
-                entryAt(base.plusSeconds(1), "2.2.2.2", UA_RUDE_UNCLASSIFIED_BOT,   "/robots.txt")  // not named in robots.txt
-        ));
-
-        var result = dashboardService.browserConfigFetches(base.minusSeconds(1), base.plus(1, ChronoUnit.HOURS), 10);
-
-        var polite = result.stream().filter(r -> UA_POLITE_UNCLASSIFIED_BOT.equals(r.name())).findFirst().orElseThrow();
-        assertTrue(polite.goodManners(), "robots.txt-only and named in robots.txt");
-
-        var rude = result.stream().filter(r -> UA_RUDE_UNCLASSIFIED_BOT.equals(r.name())).findFirst().orElseThrow();
-        assertFalse(rude.goodManners(), "not named in robots.txt");
     }
 
     @Test

@@ -43,7 +43,6 @@ class RobotsServiceTest {
     @BeforeEach
     void clearTable() {
         jdbc.update("DELETE FROM robots_disallowed");
-        jdbc.update("DELETE FROM robots_named_agents");
     }
 
     // ClaudeBot/1.0 classifies to ua_name="ClaudeBot", Googlebot/2.1 to "Googlebot"
@@ -105,20 +104,6 @@ class RobotsServiceTest {
 
         var count = jdbc.queryForObject("SELECT COUNT(*) FROM robots_disallowed", Long.class);
         assertTrue(count != null && count > 10, "robots_disallowed should have more than 10 entries after live fetch");
-
-        var namedCount = jdbc.queryForObject("SELECT COUNT(*) FROM robots_named_agents", Long.class);
-        assertTrue(namedCount != null && namedCount > 0, "robots_named_agents should have entries after live fetch");
-    }
-
-    @Test
-    void refresh_clearsNamedAgentsTableBeforeReloading() {
-        jdbc.update("INSERT INTO robots_named_agents (user_agent, refreshed_at) VALUES (?, ?)",
-                "OldBot", "2020-01-01T00:00:00Z");
-
-        robotsService.refresh();
-
-        var remaining = jdbc.queryForList("SELECT user_agent FROM robots_named_agents WHERE user_agent = 'OldBot'", String.class);
-        assertTrue(remaining.isEmpty(), "OldBot removed from stale entry should be gone after refresh");
     }
 
     @Test
