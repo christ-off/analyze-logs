@@ -27,6 +27,7 @@ import java.util.List;
 public class ApiController {
 
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
+    private static final int MAIN_PAGE_TOP_LIMIT = 20;
 
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
@@ -52,14 +53,14 @@ public class ApiController {
     public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to,
                                              @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT, excludeBots);
     }
 
     @GetMapping("/countries")
     public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to,
                                                   @RequestParam(defaultValue = "false") boolean excludeBots) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topCountriesByResultType(range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.topCountriesByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT, excludeBots);
     }
 
     @GetMapping("/countries-filtered-ratio")
