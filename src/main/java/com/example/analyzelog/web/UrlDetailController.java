@@ -3,7 +3,6 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +21,7 @@ class UrlDetailController extends DetailControllerBase {
     }
 
     @GetMapping("/urls")
-    public List<NameCount> urls(
+    public List<NameResultTypeCount> urls(
             @RequestParam String url,
             @RequestParam String from, @RequestParam String to,
             @RequestParam(defaultValue = "false") boolean excludeBots) {

@@ -644,21 +644,22 @@ public class DashboardService {
         return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), value);
     }
 
-    public List<NameCount> urlMatchingUriStems(String urlName, Instant from, Instant to, boolean excludeBots) {
+    public List<NameResultTypeCount> urlMatchingUriStems(String urlName, Instant from, Instant to, boolean excludeBots) {
         var entry = uriStemPredicate(urlName);
         String exclusion = excludeClause(humanTrafficClause, excludeBots);
-        String sql = "SELECT uri_stem as name, COUNT(*) as count\n" +
+        String sql = "SELECT uri_stem as name,\n" +
+                RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
                 exclusion +
                 "GROUP BY uri_stem\n" +
-                "ORDER BY count DESC\n";
+                ResultTypeSql.ORDER_BY_TOTAL_DESC;
         var args = new ArrayList<>();
         args.add(from.toString());
         args.add(to.toString());
         args.addAll(entry.getValue());
-        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
     public List<CountryResultTypeCount> urlTopCountriesByResultType(String urlName, Instant from, Instant to, int limit, boolean excludeBots) {

@@ -691,11 +691,11 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/about.html")   // different stem — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5), false);
 
         assertEquals(1, result.size());
         assertEquals("/index.html", result.getFirst().name());
-        assertEquals(2, result.getFirst().count());
+        assertEquals(2, result.getFirst().total());
     }
 
     @Test
@@ -708,13 +708,13 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/page.php"));
         assertTrue(names.contains("/other.php"));
         assertFalse(names.contains("/index.html"));
-        long total = result.stream().mapToLong(NameCount::count).sum();
+        long total = result.stream().mapToLong(NameResultTypeCount::total).sum();
         assertEquals(3, total);
     }
 
@@ -728,9 +728,9 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
 
-        var names = result.stream().map(NameCount::name).toList();
+        var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/wp-login.php"));
         assertTrue(names.contains("/wp-content/themes/style"));
         assertTrue(names.contains("//wp-admin/"));

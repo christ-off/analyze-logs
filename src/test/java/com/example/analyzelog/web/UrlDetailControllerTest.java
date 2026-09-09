@@ -3,7 +3,6 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ class UrlDetailControllerTest {
     @Test
     void urlsReturnsJson() {
         when(dashboardService.urlMatchingUriStems(eq("/index.html"), any(Instant.class), any(Instant.class), anyBoolean()))
-                .thenReturn(List.of(new NameCount("/index.html", 42)));
+                .thenReturn(List.of(new NameResultTypeCount("/index.html", 40, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/url-detail/urls")
                 .param("url", "/index.html")
