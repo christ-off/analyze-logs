@@ -145,6 +145,31 @@
         </div>
     </div>
 
+    <!-- Robots.txt obedient bots -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold">
+                    Robots.txt Obedient Bots
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>User Agent</th>
+                                <th class="text-end">Requests</th>
+                                <th style="width:40%">Hit / Miss / Error / Filtered</th>
+                            </tr>
+                        </thead>
+                        <tbody id="obedientBotsTable">
+                            <tr><td colspan="3" class="text-center text-muted py-3">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </th:block>
 <th:block class="page-script">
     <script type="module" th:src="@{/js/bot-analysis.js}"></script>

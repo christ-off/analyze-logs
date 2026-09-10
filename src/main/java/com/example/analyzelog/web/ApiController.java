@@ -7,6 +7,7 @@ import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.service.DashboardService;
@@ -138,6 +139,12 @@ public class ApiController {
     public List<DisobedientBot> robotsDisobedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return robotsService.findDisobedientBots(range.from(), range.to());
+    }
+
+    @GetMapping("/robots-obedient")
+    public List<ObedientBot> robotsObedient(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return robotsService.findObedientBots(range.from(), range.to());
     }
 
     @GetMapping("/ip-info/{ip}")

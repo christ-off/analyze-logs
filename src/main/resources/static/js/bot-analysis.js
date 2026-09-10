@@ -96,6 +96,31 @@ export function loadDisobedientSection() {
         });
 }
 
+function loadObedientBots(data) {
+    const tbody = document.getElementById('obedientBotsTable');
+    if (!tbody) return;
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No obedient bots found. Try refreshing robots.txt first.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(b => `<tr>
+        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
+        <td class="text-end">${b.count.toLocaleString()}</td>
+        <td class="align-middle px-2">${stackedBar(b, null)}</td>
+    </tr>`).join('');
+}
+
+export function loadObedientSection() {
+    const p = buildBaseParams({});
+    fetch('/api/robots-obedient?' + p)
+        .then(r => r.json())
+        .then(loadObedientBots)
+        .catch(() => {
+            const tbody = document.getElementById('obedientBotsTable');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
+        });
+}
+
 export function initRobotsRefresh() {
     const btn = document.getElementById('refreshRobotsBtn');
     if (!btn) return;
@@ -108,6 +133,7 @@ export function initRobotsRefresh() {
                 const el = document.getElementById('robotsRefreshedAt');
                 if (el) el.textContent = msg;
                 loadDisobedientSection();
+                loadObedientSection();
             })
             .catch(() => {
                 const el = document.getElementById('robotsRefreshedAt');
@@ -133,6 +159,7 @@ export function loadAllCharts() {
     loadFakeBrowsers();
     loadBrowserConfigFetches();
     loadDisobedientSection();
+    loadObedientSection();
 }
 
 initToggleBots(loadAllCharts);

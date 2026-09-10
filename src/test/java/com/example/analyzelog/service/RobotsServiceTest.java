@@ -2,6 +2,7 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.DisobedientBot;
+import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,38 @@ class RobotsServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(UA_CLAUDEBOT, result.getFirst().userAgent());
+    }
+
+    @Test
+    void findObedientBots_returnsOnlyBotsThatFetchedNothingButRobotsTxt() {
+        jdbc.update("INSERT INTO robots_disallowed (user_agent, refreshed_at) VALUES (?, ?)",
+                "ClaudeBot", Instant.now().toString());
+        jdbc.update("INSERT INTO robots_disallowed (user_agent, refreshed_at) VALUES (?, ?)",
+                "Googlebot", Instant.now().toString());
+
+        Instant from = Instant.now();
+        repository.saveEntries("logs/robots-obedient-test.gz", List.of(
+                entryWithUaAndUri(UA_CLAUDEBOT, "/robots.txt", "Hit"),      // obedient: only robots.txt
+                entryWithUaAndUri(UA_CLAUDEBOT, "/robots.txt", "Miss"),
+                entryWithUaAndUri(UA_GOOGLEBOT, "/robots.txt", "Hit"),      // disobedient: also fetches other pages
+                entryWithUaAndUri(UA_GOOGLEBOT, "/index.html", "Hit")
+        ));
+
+        List<ObedientBot> result = robotsService.findObedientBots(from, Instant.now().plusSeconds(5));
+
+        assertEquals(1, result.size());
+        ObedientBot bot = result.getFirst();
+        assertEquals(UA_CLAUDEBOT, bot.userAgent());
+        assertEquals(2, bot.count());
+        assertEquals(1, bot.hit());
+        assertEquals(1, bot.miss());
+    }
+
+    @Test
+    void findObedientBots_emptyWhenNoData() {
+        Instant from = Instant.now();
+        List<ObedientBot> result = robotsService.findObedientBots(from, Instant.now().plusSeconds(5));
+        assertTrue(result.isEmpty());
     }
 
     @Test

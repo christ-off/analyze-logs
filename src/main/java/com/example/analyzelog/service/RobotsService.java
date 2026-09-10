@@ -2,6 +2,7 @@ package com.example.analyzelog.service;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DisobedientBot;
+import com.example.analyzelog.model.ObedientBot;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -80,6 +81,28 @@ public class RobotsService {
                 "GROUP BY c.user_agent\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new DisobedientBot(
+                        rs.getString("user_agent"),
+                        rs.getLong("count"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong("error"),
+                        rs.getLong("function")),
+                from.toString(), to.toString());
+    }
+
+    public List<ObedientBot> findObedientBots(Instant from, Instant to) {
+        return jdbc.query(
+                "SELECT c.user_agent,\n" +
+                "       COUNT(*) AS count,\n" +
+                ResultTypeSql.resultTypeSums("c") + "\n" +
+                "FROM cloudfront_logs c\n" +
+                "INNER JOIN robots_disallowed r ON c.ua_name = r.user_agent\n" +
+                "WHERE c.user_agent != ''\n" +
+                "  AND c.timestamp BETWEEN ? AND ?\n" +
+                "GROUP BY c.user_agent\n" +
+                "HAVING SUM(CASE WHEN c.uri_stem != '/robots.txt' THEN 1 ELSE 0 END) = 0\n" +
+                "ORDER BY count DESC\n",
+                (rs, _) -> new ObedientBot(
                         rs.getString("user_agent"),
                         rs.getLong("count"),
                         rs.getLong("hit"),

@@ -19,7 +19,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
-import { loadDisobedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
+import { loadDisobedientSection, loadObedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
 
 async function flushPromises() {
     for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -71,6 +71,52 @@ describe('loadDisobedientSection', () => {
         await flushPromises();
 
         expect(document.getElementById('disobedientBotsTable').textContent)
+            .toContain('Failed to load');
+    });
+});
+
+const OBEDIENT_HTML = `
+    <table>
+        <tbody id="obedientBotsTable"><tr><td colspan="3">Loading...</td></tr></tbody>
+    </table>
+`;
+
+describe('loadObedientSection', () => {
+    beforeEach(() => {
+        document.body.innerHTML = OBEDIENT_HTML;
+        vi.clearAllMocks();
+    });
+
+    it('renders rows for each bot', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            json: () => Promise.resolve([SAMPLE_BOT]),
+        }));
+        loadObedientSection();
+        await flushPromises();
+
+        const rows = document.querySelectorAll('#obedientBotsTable tr');
+        expect(rows).toHaveLength(1);
+        expect(rows[0].textContent).toContain('BadBot/1.0');
+        expect(rows[0].textContent).toContain('5');
+    });
+
+    it('shows empty state when array is empty', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            json: () => Promise.resolve([]),
+        }));
+        loadObedientSection();
+        await flushPromises();
+
+        expect(document.getElementById('obedientBotsTable').textContent)
+            .toContain('No obedient bots found');
+    });
+
+    it('shows error state on fetch failure', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
+        loadObedientSection();
+        await flushPromises();
+
+        expect(document.getElementById('obedientBotsTable').textContent)
             .toContain('Failed to load');
     });
 });

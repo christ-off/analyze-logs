@@ -5,6 +5,7 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DisobedientBot;
+import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
@@ -271,6 +272,20 @@ class ApiControllerTest {
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson()
                 .extractingPath("$[0].userAgent").isEqualTo("Googlebot");
+    }
+
+    @Test
+    void robotsObedientReturnsJson() {
+        when(robotsService.findObedientBots(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new ObedientBot("ClaudeBot", 10, 8, 2, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/robots-obedient")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].userAgent").isEqualTo("ClaudeBot");
     }
 
     @Test
