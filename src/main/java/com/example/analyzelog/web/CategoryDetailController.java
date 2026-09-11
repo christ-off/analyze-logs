@@ -21,18 +21,16 @@ class CategoryDetailController extends DetailControllerBase {
     @GetMapping("/url-split")
     public List<NameResultTypeCount> urlSplit(
             @RequestParam String category,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.categoryUrlsByResultType(category, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
+        return dashboardService.categoryUrlsByResultType(category, range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(
             @RequestParam String category,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.categoryTopUserAgentsByResultType(category, range.from(), range.to(), appProperties.topDetailLimit(), excludeBots);
+        return dashboardService.categoryTopUserAgentsByResultType(category, range.from(), range.to(), appProperties.topDetailLimit());
     }
 }
