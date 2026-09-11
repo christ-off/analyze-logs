@@ -6,6 +6,7 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
+import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -145,6 +146,13 @@ public class ApiController {
     public List<ObedientBot> robotsObedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return robotsService.findObedientBots(range.from(), range.to());
+    }
+
+    @GetMapping("/identity-shifts")
+    public List<IdentityShift> identityShifts(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.identityShiftingIps(range.from(), range.to(),
+                appProperties.topDetailLimit(), appProperties.topDetailLimit(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/ip-info/{ip}")

@@ -1483,4 +1483,44 @@ class DashboardServiceIntegrationTest {
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
         return makeEntry(ts, "SFO53-P7", ip, uri, null, ua, "US", "Hit");
     }
+
+    @Test
+    void identityShiftingIps_findsIpsClaimingMultipleBotIdentities() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/identity-shift-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "9.9.9.9", "/feed.xml",  null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "9.9.9.9", "/hero.webp", null, UA_CLAUDEBOT, "US", "FunctionGeneratedResponse"),
+                // single bot identity — must not appear
+                makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.identityShiftingIps(from, Instant.now().plusSeconds(5), 10, 10, 10);
+
+        assertEquals(1, result.size());
+        var shift = result.getFirst();
+        assertEquals("9.9.9.9", shift.ip());
+        assertEquals(2, shift.userAgents().size());
+        assertTrue(shift.userAgents().stream().anyMatch(u -> UA_GOOGLEBOT.equals(u.name())));
+        assertTrue(shift.userAgents().stream().anyMatch(u -> UA_CLAUDEBOT.equals(u.name())));
+        var hero = shift.urls().stream().filter(u -> "/hero.webp".equals(u.name())).findFirst().orElseThrow();
+        assertEquals(1, hero.function());
+        assertEquals(List.of(UA_CLAUDEBOT), hero.userAgents());
+
+        var feed = shift.urls().stream().filter(u -> "/feed.xml".equals(u.name())).findFirst().orElseThrow();
+        assertEquals(1, feed.hit());
+        assertEquals(List.of(UA_GOOGLEBOT), feed.userAgents());
+    }
+
+    @Test
+    void identityShiftingIps_ignoresIpsWithOnlyOneBotIdentity() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/identity-shift-single-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "5.5.5.5", "/",      null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "5.5.5.5", "/about", null, UA_GOOGLEBOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.identityShiftingIps(from, Instant.now().plusSeconds(5), 10, 10, 10);
+
+        assertTrue(result.isEmpty());
+    }
 }

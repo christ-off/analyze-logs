@@ -9,11 +9,13 @@ import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.HumanTrafficStats;
+import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,9 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -949,6 +953,129 @@ public class DashboardService {
                 + LIMIT_PARAM,
                 SITE_CONFIG_FETCHER_MAPPER,
                 from.toString(), to.toString(), limit);
+    }
+
+    private static final String BOT_UA_GROUPS_FOR_IDENTITY_SHIFT = "'AI Bots','Search Bots','Other Bots'";
+
+    private record IpSeen(String ip, Instant firstSeen, Instant lastSeen) {}
+
+    private static String placeholders(int n) {
+        return String.join(",", Collections.nCopies(n, "?"));
+    }
+
+    // IPs that presented more than one distinct known-bot identity (ua_name in a bot ua_group)
+    // within the range — real crawlers each operate from their own infrastructure and never
+    // share an IP, so one IP claiming several of them is UA-spoofed scraping ("face dancing").
+    public List<IdentityShift> identityShiftingIps(Instant from, Instant to, int ipLimit, int uaLimit, int urlLimit) {
+        List<IpSeen> ips = jdbc.query("""
+                SELECT c.client_ip AS ip, MIN(c.timestamp) AS first_seen, MAX(c.timestamp) AS last_seen
+                FROM cloudfront_logs c
+                INNER JOIN static_ua s ON c.ua_name = s.ua_name
+                WHERE c.timestamp BETWEEN ? AND ?
+                  AND s.ua_group IN (%s)
+                GROUP BY c.client_ip
+                HAVING COUNT(DISTINCT c.ua_name) > 1
+                ORDER BY last_seen DESC
+                LIMIT ?
+                """.formatted(BOT_UA_GROUPS_FOR_IDENTITY_SHIFT),
+                (rs, _) -> new IpSeen(rs.getString("ip"),
+                        Instant.parse(rs.getString("first_seen")), Instant.parse(rs.getString("last_seen"))),
+                from.toString(), to.toString(), ipLimit);
+        if (ips.isEmpty()) return List.of();
+
+        List<String> ipValues = ips.stream().map(IpSeen::ip).toList();
+        String inClause = placeholders(ipValues.size());
+
+        Map<String, List<NameCount>> userAgentsByIp = new LinkedHashMap<>();
+        var uaArgs = new ArrayList<>();
+        uaArgs.add(from.toString());
+        uaArgs.add(to.toString());
+        uaArgs.addAll(ipValues);
+        uaArgs.add(uaLimit);
+        jdbc.query("""
+                SELECT client_ip, name, count FROM (
+                    SELECT client_ip, user_agent AS name, COUNT(*) AS count,
+                           ROW_NUMBER() OVER (PARTITION BY client_ip ORDER BY COUNT(*) DESC) AS rn
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ? AND client_ip IN (%s)
+                    GROUP BY client_ip, user_agent
+                )
+                WHERE rn <= ?
+                ORDER BY client_ip, count DESC
+                """.formatted(inClause),
+                (RowCallbackHandler) (rs ->
+                        userAgentsByIp.computeIfAbsent(rs.getString("client_ip"), _ -> new ArrayList<>())
+                                .add(new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)))),
+                uaArgs.toArray());
+
+        record UrlAgg(String ip, String name, long hit, long miss, long function, long error) {}
+        List<UrlAgg> urlAggs = new ArrayList<>();
+        var urlArgs = new ArrayList<>();
+        urlArgs.add(from.toString());
+        urlArgs.add(to.toString());
+        urlArgs.addAll(ipValues);
+        urlArgs.add(urlLimit);
+        jdbc.query("""
+                SELECT client_ip, name, hit, miss, function, error FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY client_ip ORDER BY (hit + miss + function + error) DESC) AS rn
+                    FROM (
+                        SELECT client_ip, uri_stem AS name,
+                            %s
+                        FROM cloudfront_logs
+                        WHERE timestamp BETWEEN ? AND ? AND client_ip IN (%s)
+                        GROUP BY client_ip, uri_stem
+                    )
+                )
+                WHERE rn <= ?
+                ORDER BY client_ip, (hit + miss + function + error) DESC
+                """.formatted(RESULT_TYPE_SUMS, inClause),
+                (RowCallbackHandler) (rs ->
+                        urlAggs.add(new UrlAgg(rs.getString("client_ip"), rs.getString("name"),
+                                rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR)))),
+                urlArgs.toArray());
+        if (urlAggs.isEmpty()) {
+            return ips.stream()
+                    .map(ip -> new IdentityShift(ip.ip(), ip.firstSeen(), ip.lastSeen(),
+                            userAgentsByIp.getOrDefault(ip.ip(), List.of()), List.of()))
+                    .toList();
+        }
+
+        // Which of the IP's user agents fetched each of the (ip, url) pairs just selected above —
+        // scoped to that exact pair list so a prolific IP's thousands of other URLs aren't scanned.
+        Map<String, Map<String, List<String>>> userAgentsByIpUrl = new LinkedHashMap<>();
+        var pairArgs = new ArrayList<>();
+        pairArgs.add(from.toString());
+        pairArgs.add(to.toString());
+        for (UrlAgg u : urlAggs) {
+            pairArgs.add(u.ip());
+            pairArgs.add(u.name());
+        }
+        String pairPlaceholders = urlAggs.stream().map(_ -> "(?,?)").collect(Collectors.joining(","));
+        jdbc.query("""
+                SELECT DISTINCT client_ip, uri_stem, user_agent
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND (client_ip, uri_stem) IN (VALUES %s)
+                """.formatted(pairPlaceholders),
+                (RowCallbackHandler) (rs ->
+                        userAgentsByIpUrl.computeIfAbsent(rs.getString("client_ip"), _ -> new LinkedHashMap<>())
+                                .computeIfAbsent(rs.getString("uri_stem"), _ -> new ArrayList<>())
+                                .add(rs.getString("user_agent"))),
+                pairArgs.toArray());
+
+        Map<String, List<IdentityShift.IdentityShiftUrl>> urlsByIp = new LinkedHashMap<>();
+        for (UrlAgg u : urlAggs) {
+            List<String> uas = userAgentsByIpUrl.getOrDefault(u.ip(), Map.of()).getOrDefault(u.name(), List.of());
+            urlsByIp.computeIfAbsent(u.ip(), _ -> new ArrayList<>())
+                    .add(new IdentityShift.IdentityShiftUrl(u.name(), u.hit(), u.miss(), u.function(), u.error(), uas));
+        }
+
+        return ips.stream()
+                .map(ip -> new IdentityShift(ip.ip(), ip.firstSeen(), ip.lastSeen(),
+                        userAgentsByIp.getOrDefault(ip.ip(), List.of()),
+                        urlsByIp.getOrDefault(ip.ip(), List.of())))
+                .toList();
     }
 
 }

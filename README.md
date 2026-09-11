@@ -113,6 +113,13 @@ The **Bot vs Human Traffic Over Time** chart shows daily request volume split be
 
 Date range presets and custom date picker are shared with the main dashboard.
 
+### Bene Tleilax page
+
+Lists IPs that presented more than one known crawler identity (`ua_name` in a bot `ua_group`) within the
+selected date range — real bots each operate from their own infrastructure, so one IP claiming several is
+a strong UA-spoofing signal. Each entry shows first/last seen, the distinct user agents used (click one to
+open its `/ua-requests` page), and the URLs requested with a Hit/Miss/Filtered/Error bar per URL.
+
 ### Main dashboard
 
 Eight charts, all scoped to the selected date range:
