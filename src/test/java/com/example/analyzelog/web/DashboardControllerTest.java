@@ -187,4 +187,17 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
+    @Test
+    void firefoxReturns200() {
+        assertThat(mvc.get().uri("/firefox").exchange())
+                .hasStatusOk()
+                .hasViewName("firefox");
+    }
+
+    @Test
+    void firefoxDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/firefox").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
 }

@@ -52,6 +52,9 @@ public class DashboardService {
     // Every Edge ua_name variant (desktop and mobile) shares this "Edge / <OS>" prefix —
     // the Edge dashboard aggregates across all of them regardless of OS.
     private static final String EDGE_UA_PATTERN = "Edge / %";
+    // Every Firefox ua_name variant (desktop and mobile) shares this "Firefox / <OS>" prefix —
+    // the Firefox dashboard aggregates across all of them regardless of OS.
+    private static final String FIREFOX_UA_PATTERN = "Firefox / %";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
@@ -502,6 +505,11 @@ public class DashboardService {
         return rawUserAgentsByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
+    // Every raw Firefox user_agent string, whatever the OS (ua_name LIKE 'Firefox / %').
+    public List<NameResultTypeCount> firefoxRawUserAgents(Instant from, Instant to) {
+        return rawUserAgentsByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
+    }
+
     // Per raw user_agent string, proportion of requests whose (client_ip, user_agent) pair
     // classifies as "Probable human" — same categoryCaseExpr used by humanTrafficStats()/trafficCategories(),
     // just grouped per user_agent instead of aggregated to one total.
@@ -544,6 +552,11 @@ public class DashboardService {
         return humanTrafficByUserAgent(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
+    // Every raw Firefox user_agent string, whatever the OS (ua_name LIKE 'Firefox / %').
+    public List<NameHumanTrafficStats> firefoxHumanTraffic(Instant from, Instant to) {
+        return humanTrafficByUserAgent(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
+    }
+
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
         return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to);
     }
@@ -554,6 +567,10 @@ public class DashboardService {
 
     public List<NameCount> edgeResultTypes(Instant from, Instant to) {
         return queryResultTypesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
+    }
+
+    public List<NameCount> firefoxResultTypes(Instant from, Instant to) {
+        return queryResultTypesByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
     }
 
     private List<NameCount> countriesByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -580,6 +597,10 @@ public class DashboardService {
         return countriesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
+    public List<NameCount> firefoxCountries(Instant from, Instant to) {
+        return countriesByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
+    }
+
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
         return urlsByResultType(UA_NAME_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), uaName), limit);
     }
@@ -590,6 +611,10 @@ public class DashboardService {
 
     public List<NameResultTypeCount> edgeUrlsByResultType(Instant from, Instant to, int limit) {
         return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), EDGE_UA_PATTERN), limit);
+    }
+
+    public List<NameResultTypeCount> firefoxUrlsByResultType(Instant from, Instant to, int limit) {
+        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), FIREFOX_UA_PATTERN), limit);
     }
 
     private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -607,6 +632,10 @@ public class DashboardService {
 
     public List<DailyResultTypeCount> edgeRequestsPerDay(Instant from, Instant to) {
         return requestsPerDayByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
+    }
+
+    public List<DailyResultTypeCount> firefoxRequestsPerDay(Instant from, Instant to) {
+        return requestsPerDayByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {

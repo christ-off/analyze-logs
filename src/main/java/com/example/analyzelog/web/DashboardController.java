@@ -98,6 +98,16 @@ public class DashboardController extends DateRangeController {
         return "edge";
     }
 
+    @GetMapping("/firefox")
+    public String firefox(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "firefox";
+    }
+
     @GetMapping("/security")
     public String security(
             @RequestParam(required = false) String range,
