@@ -109,6 +109,7 @@ async function loadAllCharts() {
     Charts.loadChart(`edge/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
 
     const tbody = document.getElementById('tbodyVersions');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>';
     document.getElementById('versionBarLegend').style.setProperty('display', 'none', 'important');
 
