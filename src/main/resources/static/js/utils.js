@@ -57,8 +57,8 @@ export function stackedBar(row, maxTotal) {
 // Lowest <browser> major version, across raw UA strings sharing that version, with
 // any requests from "Probable human" IPs — versions below it look spoofed (bots
 // declaring an old/fake browser version never show human evidence).
-export function minVersionWithHumanTraffic(humanStats, browser) {
-    const versionPattern = new RegExp(`${browser}/(\\d+)`);
+export function minVersionWithHumanTraffic(humanStats, browser, uaToken = browser) {
+    const versionPattern = new RegExp(`${uaToken}/(\\d+)`);
     const totalsByVersion = new Map();
     for (const h of humanStats) {
         const m = h.name.match(versionPattern);
@@ -78,10 +78,12 @@ export function minVersionWithHumanTraffic(humanStats, browser) {
 
 // Show/hide the "Min <browser> version with requests from human IPs" banner. `browser` may be
 // null (e.g. a raw UA not in the tracked desktop set) — treated the same as "no version found".
-export function renderMinVersionBanner(elementId, browser, humanStats) {
+// `uaToken` is the token the version number actually follows in the raw UA string (e.g. Edge's
+// raw UA carries "Edg/144", not "Edge/144") — defaults to `browser` when they're the same.
+export function renderMinVersionBanner(elementId, browser, humanStats, uaToken = browser) {
     const banner = document.getElementById(elementId);
     if (!banner) return;
-    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser) : null;
+    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser, uaToken) : null;
     if (minVersion === null) {
         banner.classList.add('d-none');
     } else {

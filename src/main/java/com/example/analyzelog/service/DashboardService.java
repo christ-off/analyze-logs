@@ -44,10 +44,14 @@ public class DashboardService {
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
     private static final String UA_NAME_FILTER = "ua_name = ?";
-    private static final String CHROME_UA_FILTER = "ua_name LIKE ?";
+    // Shared by any single-browser dashboard filtering on "ua_name LIKE '<Browser> / %'".
+    private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
     // Every Chrome ua_name variant (desktop and mobile) shares this "Chrome / <OS>" prefix —
     // the Chrome dashboard aggregates across all of them regardless of OS.
     private static final String CHROME_UA_PATTERN = "Chrome / %";
+    // Every Edge ua_name variant (desktop and mobile) shares this "Edge / <OS>" prefix —
+    // the Edge dashboard aggregates across all of them regardless of OS.
+    private static final String EDGE_UA_PATTERN = "Edge / %";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
@@ -490,7 +494,12 @@ public class DashboardService {
 
     // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
     public List<NameResultTypeCount> chromeRawUserAgents(Instant from, Instant to) {
-        return rawUserAgentsByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
+        return rawUserAgentsByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
+    }
+
+    // Every raw Edge user_agent string, whatever the OS (ua_name LIKE 'Edge / %').
+    public List<NameResultTypeCount> edgeRawUserAgents(Instant from, Instant to) {
+        return rawUserAgentsByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
     // Per raw user_agent string, proportion of requests whose (client_ip, user_agent) pair
@@ -527,7 +536,12 @@ public class DashboardService {
 
     // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
     public List<NameHumanTrafficStats> chromeHumanTraffic(Instant from, Instant to) {
-        return humanTrafficByUserAgent(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
+        return humanTrafficByUserAgent(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
+    }
+
+    // Every raw Edge user_agent string, whatever the OS (ua_name LIKE 'Edge / %').
+    public List<NameHumanTrafficStats> edgeHumanTraffic(Instant from, Instant to) {
+        return humanTrafficByUserAgent(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
@@ -535,7 +549,11 @@ public class DashboardService {
     }
 
     public List<NameCount> chromeResultTypes(Instant from, Instant to) {
-        return queryResultTypesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
+        return queryResultTypesByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
+    }
+
+    public List<NameCount> edgeResultTypes(Instant from, Instant to) {
+        return queryResultTypesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
     private List<NameCount> countriesByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -555,7 +573,11 @@ public class DashboardService {
     }
 
     public List<NameCount> chromeCountries(Instant from, Instant to) {
-        return countriesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
+        return countriesByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
+    }
+
+    public List<NameCount> edgeCountries(Instant from, Instant to) {
+        return countriesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
@@ -563,7 +585,11 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> chromeUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(CHROME_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), CHROME_UA_PATTERN), limit);
+        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), CHROME_UA_PATTERN), limit);
+    }
+
+    public List<NameResultTypeCount> edgeUrlsByResultType(Instant from, Instant to, int limit) {
+        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), EDGE_UA_PATTERN), limit);
     }
 
     private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -576,7 +602,11 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> chromeRequestsPerDay(Instant from, Instant to) {
-        return requestsPerDayByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
+        return requestsPerDayByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
+    }
+
+    public List<DailyResultTypeCount> edgeRequestsPerDay(Instant from, Instant to) {
+        return requestsPerDayByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {

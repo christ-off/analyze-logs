@@ -174,4 +174,17 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
+    @Test
+    void edgeReturns200() {
+        assertThat(mvc.get().uri("/edge").exchange())
+                .hasStatusOk()
+                .hasViewName("edge");
+    }
+
+    @Test
+    void edgeDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/edge").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
 }

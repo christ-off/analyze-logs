@@ -264,6 +264,10 @@ class DashboardServiceIntegrationTest {
             "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/146.0.0.0 Mobile Safari/537.36";
     private static final String UA_FIREFOX_LINUX =
             "Mozilla/5.0 (X11; Linux x86_64; rv:147.0) Gecko/20100101 Firefox/147.0";
+    private static final String UA_EDGE_WINDOWS =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
+    private static final String UA_EDGE_MACOS =
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
 
     @Test
     void topUserAgentsByResultType_countsPerResultType() {
@@ -1028,6 +1032,77 @@ class DashboardServiceIntegrationTest {
         ));
 
         var result = dashboardService.chromeRequestsPerDay(from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        var today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+    }
+
+    @Test
+    void edgeRawUserAgents_aggregatesEveryOsVariantButExcludesOtherBrowsers() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/edge-raw-test.gz", List.of(
+                entryWithUaAndResultType(UA_EDGE_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_EDGE_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")
+        ));
+
+        var result = dashboardService.edgeRawUserAgents(from, Instant.now().plusSeconds(5));
+
+        var names = result.stream().map(NameResultTypeCount::name).toList();
+        assertTrue(names.containsAll(List.of(UA_EDGE_WINDOWS, UA_EDGE_MACOS)));
+        assertFalse(names.contains(UA_CHROME_WINDOWS));
+    }
+
+    @Test
+    void edgeHumanTraffic_aggregatesEveryOsVariantButExcludesOtherBrowsers() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/edge-human-test.gz", List.of(
+                entryAt(Instant.now(), "1.2.3.4", UA_EDGE_MACOS, "/"),
+                entryAt(Instant.now(), "1.2.3.4", UA_EDGE_MACOS, "/css/main.css"),
+                entryAt(Instant.now(), "5.6.7.8", UA_CHROME_WINDOWS, "/"),
+                entryAt(Instant.now(), "5.6.7.8", UA_CHROME_WINDOWS, "/css/main.css")
+        ));
+
+        var result = dashboardService.edgeHumanTraffic(from, Instant.now().plusSeconds(5));
+
+        var names = result.stream().map(NameHumanTrafficStats::name).toList();
+        assertTrue(names.contains(UA_EDGE_MACOS));
+        assertFalse(names.contains(UA_CHROME_WINDOWS));
+        var macos = result.stream().filter(r -> UA_EDGE_MACOS.equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, macos.humanRequests());
+        assertEquals(2, macos.totalRequests());
+    }
+
+    @Test
+    void edgeResultTypes_countsAcrossEveryOsVariant() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/edge-result-types-test.gz", List.of(
+                entryWithUaAndResultType(UA_EDGE_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_EDGE_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_EDGE_WINDOWS, "Miss"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error")
+        ));
+
+        var result = dashboardService.edgeResultTypes(from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
+        assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
+        assertTrue(result.stream().noneMatch(n -> "Error".equals(n.name())));
+    }
+
+    @Test
+    void edgeRequestsPerDay_countsAcrossEveryOsVariant() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/edge-rpd-test.gz", List.of(
+                entryWithUaAndResultType(UA_EDGE_WINDOWS, "Hit"),
+                entryWithUaAndResultType(UA_EDGE_MACOS, "Hit"),
+                entryWithUaAndResultType(UA_EDGE_WINDOWS, "Miss"),
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")
+        ));
+
+        var result = dashboardService.edgeRequestsPerDay(from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         var today = result.getLast();

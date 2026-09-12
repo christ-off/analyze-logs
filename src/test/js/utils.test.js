@@ -142,6 +142,15 @@ describe('minVersionWithHumanTraffic', () => {
         const humanStats = [stat('Mozilla/5.0 (compatible; Googlebot/2.1)', 5, 5)];
         expect(minVersionWithHumanTraffic(humanStats, 'Chrome')).toBeNull();
     });
+
+    it('matches on a separate uaToken when the raw UA token differs from the display name (Edge)', () => {
+        const humanStats = [
+            stat('...Chrome/144.0.0.0...Edg/144.0.0.0', 0, 10),
+            stat('...Chrome/143.0.0.0...Edg/143.0.0.0', 5, 5),
+        ];
+
+        expect(minVersionWithHumanTraffic(humanStats, 'Edge', 'Edg')).toBe(143);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -178,5 +187,14 @@ describe('renderMinVersionBanner', () => {
 
     it('works without a matching element in the DOM', () => {
         expect(() => renderMinVersionBanner('missing', 'Chrome', [])).not.toThrow();
+    });
+
+    it('labels the banner with browser but matches versions using a separate uaToken (Edge)', () => {
+        const humanStats = [stat('...Chrome/144.0.0.0...Edg/144.0.0.0', 5, 5)];
+        renderMinVersionBanner('banner', 'Edge', humanStats, 'Edg');
+
+        const banner = document.getElementById('banner');
+        expect(banner.classList.contains('d-none')).toBe(false);
+        expect(banner.textContent).toBe('Min Edge version with requests from human IPs: 144');
     });
 });
