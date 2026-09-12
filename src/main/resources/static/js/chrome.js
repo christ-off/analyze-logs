@@ -52,7 +52,7 @@ export function sortVersions(versions, key, dir) {
 }
 
 let currentVersions = [];
-let sortKey = 'requests';
+let sortKey = 'version';
 let sortDir = 'desc';
 
 function updateSortIndicators() {
