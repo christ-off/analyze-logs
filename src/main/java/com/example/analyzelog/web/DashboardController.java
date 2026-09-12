@@ -1,5 +1,6 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.service.DashboardService;
 import java.util.Locale;
 import org.springframework.stereotype.Controller;
@@ -11,9 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class DashboardController extends DateRangeController {
 
     private final DashboardService dashboardService;
+    private final AppProperties appProperties;
 
-    public DashboardController(DashboardService dashboardService) {
+    public DashboardController(DashboardService dashboardService, AppProperties appProperties) {
         this.dashboardService = dashboardService;
+        this.appProperties = appProperties;
     }
 
     @GetMapping("/")
@@ -105,6 +108,7 @@ public class DashboardController extends DateRangeController {
             @RequestParam(required = false) String to,
             Model model) {
         addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        model.addAttribute("firefoxEsrVersion", appProperties.firefoxEsrVersion());
         return "firefox";
     }
 

@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { buildBaseParams, resultTotal, stackedBar, renderMinVersionBanner } from './utils.js';
+import { buildBaseParams, resultTotal, stackedBar, renderMinVersionBanner, readMeta } from './utils.js';
 
 // Extract the Firefox major version from a raw user_agent string, e.g. "...Firefox/151.0" -> 151.
 export function firefoxMajorVersion(rawUa) {
@@ -114,7 +114,8 @@ async function loadAllCharts() {
         fetch(`/api/firefox/user-agents?${p}`).then(r => r.json()),
         fetch(`/api/firefox/human-traffic?${p}`).then(r => r.json()),
     ]);
-    renderMinVersionBanner('minFirefoxVersionBanner', 'Firefox', humanStats);
+    const esrVersion = Number(readMeta('cf-firefox-esr'));
+    renderMinVersionBanner('minFirefoxVersionBanner', 'Firefox', humanStats, undefined, [esrVersion]);
 
     currentVersions = aggregateByVersion(rawUserAgents, humanStats);
     renderVersionsTable();

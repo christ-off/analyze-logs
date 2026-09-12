@@ -14,6 +14,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     resultTotal:           row => row.hit + row.miss + row['function'] + row.error,
     stackedBar:             vi.fn(),
     renderMinVersionBanner: vi.fn(),
+    readMeta:               vi.fn(() => '115'),
 }));
 
 import { firefoxMajorVersion, aggregateByVersion, sortVersions } from '../../main/resources/static/js/firefox.js';

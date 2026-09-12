@@ -56,14 +56,18 @@ export function stackedBar(row, maxTotal) {
 
 // Lowest <browser> major version, across raw UA strings sharing that version, with
 // any requests from "Probable human" IPs — versions below it look spoofed (bots
-// declaring an old/fake browser version never show human evidence).
-export function minVersionWithHumanTraffic(humanStats, browser, uaToken = browser) {
+// declaring an old/fake browser version never show human evidence). `excludedVersions`
+// skips versions that are expected to linger below the rest (e.g. Firefox ESR), which
+// would otherwise pull the minimum down without indicating spoofing.
+export function minVersionWithHumanTraffic(humanStats, browser, uaToken = browser, excludedVersions = []) {
     const versionPattern = new RegExp(`${uaToken}/(\\d+)`);
+    const excluded = new Set(excludedVersions);
     const totalsByVersion = new Map();
     for (const h of humanStats) {
         const m = h.name.match(versionPattern);
         if (!m) continue;
         const version = Number(m[1]);
+        if (excluded.has(version)) continue;
         const entry = totalsByVersion.get(version) ?? { human: 0, total: 0 };
         entry.human += h.humanRequests;
         entry.total += h.totalRequests;
@@ -80,10 +84,11 @@ export function minVersionWithHumanTraffic(humanStats, browser, uaToken = browse
 // null (e.g. a raw UA not in the tracked desktop set) — treated the same as "no version found".
 // `uaToken` is the token the version number actually follows in the raw UA string (e.g. Edge's
 // raw UA carries "Edg/144", not "Edge/144") — defaults to `browser` when they're the same.
-export function renderMinVersionBanner(elementId, browser, humanStats, uaToken = browser) {
+// `excludedVersions` — see minVersionWithHumanTraffic.
+export function renderMinVersionBanner(elementId, browser, humanStats, uaToken = browser, excludedVersions = []) {
     const banner = document.getElementById(elementId);
     if (!banner) return;
-    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser, uaToken) : null;
+    const minVersion = browser ? minVersionWithHumanTraffic(humanStats, browser, uaToken, excludedVersions) : null;
     if (minVersion === null) {
         banner.classList.add('d-none');
     } else {

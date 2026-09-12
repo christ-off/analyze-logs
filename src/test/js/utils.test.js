@@ -151,6 +151,21 @@ describe('minVersionWithHumanTraffic', () => {
 
         expect(minVersionWithHumanTraffic(humanStats, 'Edge', 'Edg')).toBe(143);
     });
+
+    it('skips excluded versions (e.g. Firefox ESR) even when they have human traffic', () => {
+        const humanStats = [
+            stat('...Firefox/115.0...', 3, 5),  // ESR — excluded
+            stat('...Firefox/130.0...', 4, 5),
+        ];
+
+        expect(minVersionWithHumanTraffic(humanStats, 'Firefox', 'Firefox', [115])).toBe(130);
+    });
+
+    it('returns null when only excluded versions have human traffic', () => {
+        const humanStats = [stat('...Firefox/115.0...', 3, 5)];
+
+        expect(minVersionWithHumanTraffic(humanStats, 'Firefox', 'Firefox', [115])).toBeNull();
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -196,5 +211,17 @@ describe('renderMinVersionBanner', () => {
         const banner = document.getElementById('banner');
         expect(banner.classList.contains('d-none')).toBe(false);
         expect(banner.textContent).toBe('Min Edge version with requests from human IPs: 144');
+    });
+
+    it('skips excluded versions (e.g. Firefox ESR) when computing the banner', () => {
+        const humanStats = [
+            stat('...Firefox/115.0...', 3, 5),
+            stat('...Firefox/130.0...', 4, 5),
+        ];
+        renderMinVersionBanner('banner', 'Firefox', humanStats, undefined, [115]);
+
+        const banner = document.getElementById('banner');
+        expect(banner.classList.contains('d-none')).toBe(false);
+        expect(banner.textContent).toBe('Min Firefox version with requests from human IPs: 130');
     });
 });

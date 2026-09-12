@@ -11,7 +11,8 @@ public record AppProperties(
         int topUrlsLimit,
         int topReferersLimit,
         int nbMonthsToKeep,
-        String robotsUrl) {
+        String robotsUrl,
+        int firefoxEsrVersion) {
 
     public record AwsProperties(String region, String bucket, String prefix) {}
 }

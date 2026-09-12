@@ -33,6 +33,7 @@ app:
   top-referers-limit: 20
   nb-months-to-keep: 3
   robots-url: "https://post-tenebras-lire.net/robots.txt"
+  firefox-esr-version: 115
 
 referer-filter:
   self-referers: []

@@ -1,10 +1,12 @@
 package com.example.analyzelog.web;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @WebMvcTest(DashboardController.class)
+@EnableConfigurationProperties(AppProperties.class)
 class DashboardControllerTest {
 
     @Autowired
@@ -198,6 +201,12 @@ class DashboardControllerTest {
     void firefoxDefaultRangeIs7Days() {
         assertThat(mvc.get().uri("/firefox").exchange())
                 .model().containsEntry("activeRange", "7d");
+    }
+
+    @Test
+    void firefoxModelContainsEsrVersion() {
+        assertThat(mvc.get().uri("/firefox").exchange())
+                .model().containsEntry("firefoxEsrVersion", 115);
     }
 
 }
