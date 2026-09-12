@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, buildBaseParams, initToggleBots, detailUrl } from './utils.js';
+import { readMeta, buildBaseParams, detailUrl } from './utils.js';
 
 export function loadAllCharts() {
     const p = buildBaseParams({});
@@ -17,8 +17,6 @@ export function loadAllCharts() {
     Charts.loadChart(`traffic-categories?${p}`, data => Charts.horizontalStackedBar('chartTrafficCategories', data,
         d => detailUrl('/category-detail', { category: d.name })));
 }
-
-initToggleBots(loadAllCharts);
 
 // ── Refresh from S3 with progress bar ──────────────────────────────────────
 export function initRefresh() {
@@ -105,4 +103,5 @@ export function initRefresh() {
     });
 }
 
+loadAllCharts();
 initRefresh();

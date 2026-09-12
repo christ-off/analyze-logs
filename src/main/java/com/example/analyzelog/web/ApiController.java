@@ -1,15 +1,15 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
+import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
-import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
@@ -45,24 +45,21 @@ public class ApiController {
     }
 
     @GetMapping("/ua-groups")
-    public List<NameCount> uaGroups(@RequestParam String from, @RequestParam String to,
-                                    @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameCount> uaGroups(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.uaGroupCounts(range.from(), range.to(), excludeBots);
+        return dashboardService.uaGroupCounts(range.from(), range.to());
     }
 
     @GetMapping("/ua-names-split")
-    public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to,
-                                             @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameResultTypeCount> uaNames(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT, excludeBots);
+        return dashboardService.topUserAgentsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
     }
 
     @GetMapping("/countries")
-    public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to,
-                                                  @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topCountriesByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT, excludeBots);
+        return dashboardService.topCountriesByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
     }
 
     @GetMapping("/countries-filtered-ratio")
@@ -72,17 +69,15 @@ public class ApiController {
     }
 
     @GetMapping("/top-urls-split")
-    public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to,
-                                                  @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameResultTypeCount> topUrlsSplit(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topUrlsByResultType(range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
+        return dashboardService.topUrlsByResultType(range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/requests-per-day")
-    public List<DailyResultTypeCount> requestsPerDay(@RequestParam String from, @RequestParam String to,
-                                                     @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<DailyResultTypeCount> requestsPerDay(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.requestsPerDay(range.from(), range.to(), excludeBots);
+        return dashboardService.requestsPerDay(range.from(), range.to());
     }
 
     @GetMapping("/edge-locations")
@@ -92,17 +87,15 @@ public class ApiController {
     }
 
     @GetMapping("/platforms")
-    public List<NameCount> platforms(@RequestParam String from, @RequestParam String to,
-                                     @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameCount> platforms(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.platformCounts(range.from(), range.to(), excludeBots);
+        return dashboardService.platformCounts(range.from(), range.to());
     }
 
     @GetMapping("/referers")
-    public List<NameCount> referers(@RequestParam String from, @RequestParam String to,
-                                    @RequestParam(defaultValue = "false") boolean excludeBots) {
+    public List<NameCount> referers(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topReferers(range.from(), range.to(), appProperties.topReferersLimit(), excludeBots);
+        return dashboardService.topReferers(range.from(), range.to(), appProperties.topReferersLimit());
     }
 
     @GetMapping("/top-bots")
@@ -129,11 +122,10 @@ public class ApiController {
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }
 
-@GetMapping("/traffic-categories")
-    public List<NameResultTypeCount> trafficCategories(@RequestParam String from, @RequestParam String to,
-                                                        @RequestParam(defaultValue = "false") boolean excludeBots) {
+    @GetMapping("/traffic-categories")
+    public List<NameResultTypeCount> trafficCategories(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.trafficCategories(range.from(), range.to(), excludeBots);
+        return dashboardService.trafficCategories(range.from(), range.to());
     }
 
     @GetMapping("/robots-disobedient")

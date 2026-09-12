@@ -31,7 +31,7 @@ class CategoryDetailControllerTest {
 
     @Test
     void urlSplitReturnsJson() {
-        when(dashboardService.categoryUrlsByResultType(eq("Probable human"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.categoryUrlsByResultType(eq("Probable human"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 40, 10, 0, 2)));
 
         assertThat(mvc.get().uri("/api/category-detail/url-split")
@@ -46,7 +46,7 @@ class CategoryDetailControllerTest {
 
     @Test
     void userAgentsReturnsJson() {
-        when(dashboardService.categoryTopUserAgentsByResultType(eq("Declared bots"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.categoryTopUserAgentsByResultType(eq("Declared bots"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("Googlebot", 30, 5, 0, 0)));
 
         assertThat(mvc.get().uri("/api/category-detail/user-agents")

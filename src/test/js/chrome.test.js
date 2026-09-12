@@ -11,7 +11,6 @@ vi.mock('../../main/resources/static/js/charts.js', () => ({
 
 vi.mock('../../main/resources/static/js/utils.js', () => ({
     buildBaseParams:       vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
-    initToggleBots:        vi.fn(),   // no-op: don't run loadAllCharts on module load
     resultTotal:           row => row.hit + row.miss + row['function'] + row.error,
     stackedBar:             vi.fn(),
     renderMinVersionBanner: vi.fn(),

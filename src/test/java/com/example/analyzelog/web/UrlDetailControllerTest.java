@@ -35,7 +35,7 @@ class UrlDetailControllerTest {
 
     @Test
     void urlsReturnsJson() {
-        when(dashboardService.urlMatchingUriStems(eq("/index.html"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.urlMatchingUriStems(eq("/index.html"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 40, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/url-detail/urls")
@@ -50,7 +50,7 @@ class UrlDetailControllerTest {
 
     @Test
     void countriesReturnsJson() {
-        when(dashboardService.urlTopCountriesByResultType(eq("PHP"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.urlTopCountriesByResultType(eq("PHP"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new CountryResultTypeCount("FR", "France", 30, 5, 0, 1)));
 
         assertThat(mvc.get().uri("/api/url-detail/countries")
@@ -65,7 +65,7 @@ class UrlDetailControllerTest {
 
     @Test
     void userAgentsReturnsJson() {
-        when(dashboardService.urlTopUserAgentsByResultType(eq("WordPress"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.urlTopUserAgentsByResultType(eq("WordPress"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 20, 5, 0, 1)));
 
         assertThat(mvc.get().uri("/api/url-detail/user-agents")
@@ -80,7 +80,7 @@ class UrlDetailControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.urlRequestsPerDay(eq("/index.html"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.urlRequestsPerDay(eq("/index.html"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/url-detail/requests-per-day")

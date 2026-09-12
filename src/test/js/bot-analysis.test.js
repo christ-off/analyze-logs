@@ -12,7 +12,6 @@ vi.mock('../../main/resources/static/js/charts.js', () => ({
 vi.mock('../../main/resources/static/js/utils.js', () => ({
     buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
     escapeHtml:      vi.fn((s) => s),
-    initToggleBots:  vi.fn(),
     readMeta:        vi.fn(() => '2026-01-01'),
     resultTotal:     (row) => row.hit + row.miss + (row['function'] ?? 0) + row.error,
     stackedBar:      vi.fn(() => ''),

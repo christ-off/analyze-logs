@@ -24,54 +24,48 @@ class UaDetailController extends DetailControllerBase {
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaRawUserAgents(ua, range.from(), range.to(), excludeBots);
+        return dashboardService.uaRawUserAgents(ua, range.from(), range.to());
     }
 
     @GetMapping("/human-traffic")
     public List<NameHumanTrafficStats> humanTraffic(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaHumanTrafficByUserAgent(ua, range.from(), range.to(), excludeBots);
+        return dashboardService.uaHumanTrafficByUserAgent(ua, range.from(), range.to());
     }
 
     @GetMapping("/result-types")
     public List<NameCount> resultTypes(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaResultTypes(ua, range.from(), range.to(), excludeBots);
+        return dashboardService.uaResultTypes(ua, range.from(), range.to());
     }
 
     @GetMapping("/countries")
     public List<NameCount> countries(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaCountries(ua, range.from(), range.to(), excludeBots);
+        return dashboardService.uaCountries(ua, range.from(), range.to());
     }
 
     @GetMapping("/uri-stems")
     public List<NameResultTypeCount> uriStems(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
+        return dashboardService.uaUrlsByResultType(ua, range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
             @RequestParam String ua,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.uaRequestsPerDay(ua, range.from(), range.to(), excludeBots);
+        return dashboardService.uaRequestsPerDay(ua, range.from(), range.to());
     }
 }

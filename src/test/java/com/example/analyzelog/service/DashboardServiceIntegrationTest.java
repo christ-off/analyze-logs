@@ -71,7 +71,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")  // different country — must not appear
         ));
 
-        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
 
         assertFalse(result.isEmpty());
         var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
@@ -100,7 +100,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/icon.svg")
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/about.html"));
@@ -123,7 +123,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUriAndResultType("/wp-content/themes/style", "Hit")
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -153,7 +153,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndUriAndResultType("US", "/index.html", "Hit")   // different country
         ));
 
-        var result = dashboardService.countryUrlsByResultType("FR", from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.countryUrlsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -179,7 +179,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndResultType("US", "Miss")
         ));
 
-        var result = dashboardService.topCountriesByResultType(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topCountriesByResultType(from, Instant.now().plusSeconds(5), 10);
 
         assertFalse(result.isEmpty());
         var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
@@ -237,7 +237,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.requestsPerDay(
-                from, Instant.now().plusSeconds(5), false);
+                from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();
@@ -247,155 +247,9 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, today.function());
     }
 
-    // Bot filter (excludeBots) tests
-
+    // Bot UA strings — used by identity-shift and other tests that need bot identifiers
     private static final String UA_CLAUDEBOT = "ClaudeBot/1.0";
     private static final String UA_GOOGLEBOT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
-
-    @Test
-    void uaGroupCounts_excludeBots_removesBotGroups() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/ua-groups-exclude-bots-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),   // Browsers — kept
-                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),   // AI Bots — excluded
-                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")    // Search Bots — excluded
-        ));
-
-        var withBots    = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
-        var withoutBots = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), true);
-
-        assertTrue(withBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
-        assertFalse(withoutBots.stream().anyMatch(r -> "AI Bots".equals(r.name())));
-        assertFalse(withoutBots.stream().anyMatch(r -> "Search Bots".equals(r.name())));
-        assertTrue(withoutBots.stream().anyMatch(r -> "Browsers".equals(r.name())));
-    }
-
-    @Test
-    void uaGroupCounts_excludeBots_removesFeedReaders() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/ua-groups-exclude-bots-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // Browsers — kept
-                entryWithUaAndResultType(UA_FEEDLY,             "Hit") // Feed Readers — excluded
-        ));
-
-        var withBots    = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
-        var withoutBots = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), true);
-
-        assertTrue(withBots.stream().anyMatch(r -> "Feed Readers".equals(r.name())));
-        assertFalse(withoutBots.stream().anyMatch(r -> "Feed Readers".equals(r.name())));
-        assertTrue(withoutBots.stream().anyMatch(r -> "Browsers".equals(r.name())));
-    }
-
-    @Test
-    void topUserAgentsByResultType_excludeBots_removesBotEntries() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/ua-split-exclude-bots-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
-                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
-                entryWithUaAndResultType(UA_GOOGLEBOT,      "Hit")
-        ));
-
-        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
-
-        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
-        assertTrue(names.contains("Chrome / Windows"));
-        assertFalse(names.contains("ClaudeBot"));
-        assertFalse(names.contains("Googlebot"));
-    }
-
-    @Test
-    void topUserAgentsByResultType_excludeBots_removesNoUserAgent() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/ua-no-ua-exclude-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
-                entryWithUaAndResultType(null,              "Hit")   // ua_name = "(no user agent)"
-        ));
-
-        var withoutBots = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
-
-        var names = withoutBots.stream().map(NameResultTypeCount::name).toList();
-        assertTrue(names.contains("Chrome / Windows"));
-        assertFalse(names.contains("(no user agent)"));
-    }
-
-    @Test
-    void requestsPerDay_excludeBots_reducesDailyCounts() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/rpd-exclude-bots-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
-                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit"),
-                entryWithUaAndResultType(UA_CLAUDEBOT,      "Hit")
-        ));
-
-        var withBots    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
-        var withoutBots = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
-
-        assertFalse(withBots.isEmpty());
-        assertFalse(withoutBots.isEmpty());
-        long totalWith    = withBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
-        long totalWithout = withoutBots.stream().mapToLong(DailyResultTypeCount::hit).sum();
-        assertTrue(totalWith > totalWithout, "bot hits must be excluded from daily count");
-    }
-
-    @Test
-    void requestsPerDay_excludeBots_excludesErrorResultType() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/rpd-exclude-error-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"),
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error")
-        ));
-
-        var withFilter    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
-        var withoutFilter = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
-
-        long errorsWith    = withFilter.stream().mapToLong(DailyResultTypeCount::error).sum();
-        long errorsWithout = withoutFilter.stream().mapToLong(DailyResultTypeCount::error).sum();
-        assertEquals(0, errorsWith, "Error rows must be excluded when filter is active");
-        assertEquals(2, errorsWithout, "Error rows must remain when filter is inactive");
-    }
-
-    @Test
-    void requestsPerDay_excludeBots_excludesFunctionResultType() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/rpd-exclude-function-test.gz", List.of(
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionGeneratedResponse"),
-                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionExecutionError")
-        ));
-
-        var withFilter    = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), true);
-        var withoutFilter = dashboardService.requestsPerDay(from, Instant.now().plusSeconds(5), false);
-
-        long functionWith    = withFilter.stream().mapToLong(DailyResultTypeCount::function).sum();
-        long functionWithout = withoutFilter.stream().mapToLong(DailyResultTypeCount::function).sum();
-        assertEquals(0, functionWith, "Function rows must be excluded when filter is active");
-        assertEquals(2, functionWithout, "Function rows must remain when filter is inactive");
-    }
-
-    @Test
-    void topUserAgentsByResultType_excludeBots_excludesFediverseRootRequests() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/fediverse-noise-test.gz", List.of(
-                entryWithUaAndUri(UA_FEDIVERSE,       "/"),           // noise — excluded
-                entryWithUaAndUri(UA_FEDIVERSE,       "/blog/post"),  // real content — kept
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/")            // human visit — kept
-        ));
-
-        var withFilter    = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, true);
-        var withoutFilter = dashboardService.topUserAgentsByResultType(from, Instant.now().plusSeconds(5), 10, false);
-
-        // Without filter: Mastodon appears (2 requests)
-        assertTrue(withoutFilter.stream().anyMatch(r -> "Mastodon".equals(r.name())));
-
-        // With filter: Mastodon "/" excluded, Mastodon "/blog/post" kept → count = 1
-        var fediverse = withFilter.stream().filter(r -> "Mastodon".equals(r.name())).findFirst();
-        assertTrue(fediverse.isPresent(), "Fediverse to /blog/post must survive noise filter");
-        assertEquals(1, fediverse.get().hit(), "only /blog/post hit must remain");
-
-        // Chrome "/" is not noise — kept
-        assertTrue(withFilter.stream().anyMatch(r -> "Chrome / Windows".equals(r.name())));
-    }
 
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
     private static final String UA_FEDIVERSE =
@@ -423,7 +277,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.topUserAgentsByResultType(
-                from, Instant.now().plusSeconds(5), 10, false);
+                from, Instant.now().plusSeconds(5), 10);
 
         assertFalse(result.isEmpty());
         NameResultTypeCount chrome = result.stream()
@@ -454,7 +308,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameCount> result = dashboardService.uaResultTypes(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Error".equals(n.name())).findFirst().orElseThrow().count());
@@ -474,7 +328,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameCount> result = dashboardService.uaCountries(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.stream().filter(n -> "France".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "United States".equals(n.name())).findFirst().orElseThrow().count());
@@ -492,7 +346,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/index.html"));
@@ -511,7 +365,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/page.php"), "individual .php URLs must not appear");
@@ -534,7 +388,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertFalse(names.contains("/wp-login.php"), "individual /wp- URLs must not appear");
@@ -560,7 +414,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameResultTypeCount> result = dashboardService.uaUrlsByResultType(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10, false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("PHP/WordPress"), "PHP/WordPress label must be present");
@@ -581,7 +435,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.uaRequestsPerDay(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();
@@ -620,7 +474,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("//wp-admin/")      // //wp-% also maps to PHP/WordPress
         ));
 
-        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topUrlsByResultType(from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("/index.html"));
@@ -691,7 +545,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/about.html")   // different stem — must not appear
         ));
 
-        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("/index.html", from, Instant.now().plusSeconds(5));
 
         assertEquals(1, result.size());
         assertEquals("/index.html", result.getFirst().name());
@@ -708,7 +562,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/page.php"));
@@ -728,7 +582,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUri("/index.html")   // not PHP/WordPress — must not appear
         ));
 
-        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5), false);
+        List<NameResultTypeCount> result = dashboardService.urlMatchingUriStems("PHP/WordPress", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.contains("/wp-login.php"));
@@ -747,7 +601,7 @@ class DashboardServiceIntegrationTest {
                 entryWithCountryAndUriAndResultType("FR", "/about.html", "Hit")  // different stem
         ));
 
-        var result = dashboardService.urlTopCountriesByResultType("/index.html", from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.urlTopCountriesByResultType("/index.html", from, Instant.now().plusSeconds(5), 10);
 
         var fr = result.stream().filter(r -> "FR".equals(r.code())).findFirst().orElseThrow();
         assertEquals(2, fr.hit());
@@ -767,7 +621,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/index.html")  // not PHP/WordPress
         ));
 
-        var result = dashboardService.urlTopUserAgentsByResultType("PHP/WordPress", from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.urlTopUserAgentsByResultType("PHP/WordPress", from, Instant.now().plusSeconds(5), 10);
 
         var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, chrome.hit());
@@ -789,7 +643,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<DailyResultTypeCount> result = dashboardService.urlRequestsPerDay(
-                "/index.html", from, Instant.now().plusSeconds(5), false);
+                "/index.html", from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         DailyResultTypeCount today = result.getLast();
@@ -954,7 +808,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(null,              "Hit")   // excluded (ua_name = "(no user agent)")
         ));
 
-        var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.uaGroupCounts(from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         var browsers = result.stream().filter(r -> "Browsers".equals(r.name())).findFirst().orElseThrow();
@@ -989,7 +843,7 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("https://external.com/page")
         ));
 
-        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
         var map = result.stream().collect(java.util.stream.Collectors.toMap(NameCount::name, NameCount::count));
 
         assertEquals(4L, map.get("Google"), "all google.* referers including schemeless must be grouped");
@@ -1016,7 +870,7 @@ class DashboardServiceIntegrationTest {
                 entryWithReferer("post-tenebras-lire.net")                        // no-scheme self — excluded
         ));
 
-        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10, false);
+        var result = dashboardService.topReferers(from, Instant.now().plusSeconds(5), 10);
 
         var names = result.stream().map(NameCount::name).toList();
         assertTrue(names.contains("external.com"), "unknown referers are grouped by hostname");
@@ -1043,7 +897,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "FunctionExecutionError"),
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")
         ));
-        var result = dashboardService.countryResultTypes("FR", from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.countryResultTypes("FR", from, Instant.now().plusSeconds(5));
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(2, result.stream().filter(n -> "Filtered".equals(n.name())).findFirst().orElseThrow().count());
@@ -1059,7 +913,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss"),
                 entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "US", "Hit")
         ));
-        var result = dashboardService.countryRequestsPerDay("FR", from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.countryRequestsPerDay("FR", from, Instant.now().plusSeconds(5));
         assertFalse(result.isEmpty());
         var today = result.getLast();
         assertEquals(2, today.hit());
@@ -1075,7 +929,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Miss"),
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
         ));
-        var result = dashboardService.uaRawUserAgents("Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.uaRawUserAgents("Chrome / Windows", from, Instant.now().plusSeconds(5));
         assertFalse(result.isEmpty());
         var chrome = result.stream().filter(r -> UA_CHROME_WINDOWS.equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, chrome.hit());
@@ -1096,7 +950,7 @@ class DashboardServiceIntegrationTest {
         ));
 
         List<NameHumanTrafficStats> result = dashboardService.uaHumanTrafficByUserAgent(
-                "Chrome / Windows", from, Instant.now().plusSeconds(5), false);
+                "Chrome / Windows", from, Instant.now().plusSeconds(5));
 
         var v1 = result.stream().filter(r -> uaChromeV1.equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, v1.totalRequests());
@@ -1119,7 +973,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
         ));
 
-        var result = dashboardService.chromeRawUserAgents(from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.chromeRawUserAgents(from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.containsAll(List.of(UA_CHROME_WINDOWS, UA_CHROME_MACOS, UA_CHROME_ANDROID)));
@@ -1136,7 +990,7 @@ class DashboardServiceIntegrationTest {
                 entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/css/main.css")
         ));
 
-        var result = dashboardService.chromeHumanTraffic(from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.chromeHumanTraffic(from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameHumanTrafficStats::name).toList();
         assertTrue(names.contains(UA_CHROME_MACOS));
@@ -1156,7 +1010,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Error")
         ));
 
-        var result = dashboardService.chromeResultTypes(from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.chromeResultTypes(from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
@@ -1173,7 +1027,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
         ));
 
-        var result = dashboardService.chromeRequestsPerDay(from, Instant.now().plusSeconds(5), false);
+        var result = dashboardService.chromeRequestsPerDay(from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         var today = result.getLast();
@@ -1271,7 +1125,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.4.5.6", "/index.html", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         assertEquals(3, result.size());
 
@@ -1283,24 +1137,6 @@ class DashboardServiceIntegrationTest {
 
         var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
         assertEquals(1, other.hit());
-    }
-
-    @Test
-    void trafficCategories_excludeBots_removesBotPair() {
-        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
-        repository.saveEntries("logs/traffic-categories-bots-test.gz", List.of(
-                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_CLAUDEBOT, "US", "Hit")
-        ));
-
-        var withBots    = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
-        var withoutBots = dashboardService.trafficCategories(base, base.plusSeconds(10), true);
-
-        assertEquals(2, withBots.size());
-        assertEquals(1, withoutBots.size());
-        assertEquals("Probable human", withoutBots.getFirst().name());
     }
 
     @Test
@@ -1319,7 +1155,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
@@ -1346,7 +1182,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "FunctionGeneratedResponse")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
     }
@@ -1361,7 +1197,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
@@ -1378,8 +1214,8 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var frResult = dashboardService.trafficCategories("FR", base, base.plusSeconds(10), false);
-        var usResult = dashboardService.trafficCategories("US", base, base.plusSeconds(10), false);
+        var frResult = dashboardService.trafficCategories("FR", base, base.plusSeconds(10));
+        var usResult = dashboardService.trafficCategories("US", base, base.plusSeconds(10));
 
         assertEquals(1, frResult.size());
         assertEquals(1, usResult.size());
@@ -1402,7 +1238,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/rss.xml", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
 
@@ -1425,7 +1261,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/.env", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10), false);
+        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Other".equals(r.name())));
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
@@ -1448,8 +1284,8 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
         ));
 
-        var human = dashboardService.categoryUrlsByResultType("Probable human", base, base.plusSeconds(10), 10, false);
-        var bots  = dashboardService.categoryUrlsByResultType("Declared bots", base, base.plusSeconds(10), 10, false);
+        var human = dashboardService.categoryUrlsByResultType("Probable human", base, base.plusSeconds(10), 10);
+        var bots  = dashboardService.categoryUrlsByResultType("Declared bots", base, base.plusSeconds(10), 10);
 
         // /css/main.css itself is a configured excluded extension, so it drops out of the URL
         // breakdown even though it's what qualified this pair as "Probable human".
@@ -1470,8 +1306,8 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
         ));
 
-        var human = dashboardService.categoryTopUserAgentsByResultType("Probable human", base, base.plusSeconds(10), 10, false);
-        var bots  = dashboardService.categoryTopUserAgentsByResultType("Declared bots", base, base.plusSeconds(10), 10, false);
+        var human = dashboardService.categoryTopUserAgentsByResultType("Probable human", base, base.plusSeconds(10), 10);
+        var bots  = dashboardService.categoryTopUserAgentsByResultType("Declared bots", base, base.plusSeconds(10), 10);
 
         assertEquals(1, human.size());
         assertEquals("Chrome / Windows", human.getFirst().name());

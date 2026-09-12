@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { buildBaseParams, initToggleBots, resultTotal, stackedBar, renderMinVersionBanner } from './utils.js';
+import { buildBaseParams, resultTotal, stackedBar, renderMinVersionBanner } from './utils.js';
 
 // Extract the Chrome major version from a raw user_agent string, e.g. "...Chrome/120.0.0.0..." -> 120.
 export function chromeMajorVersion(rawUa) {
@@ -120,4 +120,4 @@ async function loadAllCharts() {
     renderVersionsTable();
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();

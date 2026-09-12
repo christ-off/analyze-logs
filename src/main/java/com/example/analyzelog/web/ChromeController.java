@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
@@ -23,49 +24,43 @@ class ChromeController extends DetailControllerBase {
 
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeRawUserAgents(range.from(), range.to(), excludeBots);
+        return dashboardService.chromeRawUserAgents(range.from(), range.to());
     }
 
     @GetMapping("/human-traffic")
     public List<NameHumanTrafficStats> humanTraffic(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeHumanTraffic(range.from(), range.to(), excludeBots);
+        return dashboardService.chromeHumanTraffic(range.from(), range.to());
     }
 
     @GetMapping("/result-types")
     public List<NameCount> resultTypes(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeResultTypes(range.from(), range.to(), excludeBots);
+        return dashboardService.chromeResultTypes(range.from(), range.to());
     }
 
     @GetMapping("/countries")
     public List<NameCount> countries(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeCountries(range.from(), range.to(), excludeBots);
+        return dashboardService.chromeCountries(range.from(), range.to());
     }
 
     @GetMapping("/uri-stems")
     public List<NameResultTypeCount> uriStems(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeUrlsByResultType(range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
+        return dashboardService.chromeUrlsByResultType(range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.chromeRequestsPerDay(range.from(), range.to(), excludeBots);
+        return dashboardService.chromeRequestsPerDay(range.from(), range.to());
     }
 }

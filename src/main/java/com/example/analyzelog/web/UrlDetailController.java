@@ -23,36 +23,32 @@ class UrlDetailController extends DetailControllerBase {
     @GetMapping("/urls")
     public List<NameResultTypeCount> urls(
             @RequestParam String url,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.urlMatchingUriStems(url, range.from(), range.to(), excludeBots);
+        return dashboardService.urlMatchingUriStems(url, range.from(), range.to());
     }
 
     @GetMapping("/countries")
     public List<CountryResultTypeCount> countries(
             @RequestParam String url,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.urlTopCountriesByResultType(url, range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/user-agents")
     public List<NameResultTypeCount> userAgents(
             @RequestParam String url,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit(), excludeBots);
+        return dashboardService.urlTopUserAgentsByResultType(url, range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
             @RequestParam String url,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.urlRequestsPerDay(url, range.from(), range.to(), excludeBots);
+        return dashboardService.urlRequestsPerDay(url, range.from(), range.to());
     }
 }

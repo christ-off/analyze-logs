@@ -34,7 +34,7 @@ class RefererDetailControllerTest {
 
     @Test
     void urlsReturnsJson() {
-        when(dashboardService.refererTopUrlsByResultType(eq("google.com"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.refererTopUrlsByResultType(eq("google.com"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/blog/", 50, 10, 0, 0)));
 
         assertThat(mvc.get().uri("/api/referer-detail/urls")
@@ -49,7 +49,7 @@ class RefererDetailControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.refererRequestsPerDay(eq("google.com"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.refererRequestsPerDay(eq("google.com"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/referer-detail/requests-per-day")

@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, resultTotal, stackedBar } from './utils.js';
 
 const refererName = readMeta('cf-referer');
 
@@ -35,4 +35,4 @@ function loadAllCharts() {
     loadUrlsTable();
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();

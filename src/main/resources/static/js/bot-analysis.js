@@ -1,7 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, detailUrl } from './utils.js';
+import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl } from './utils.js';
 
 function uaDetailUrl(uaName) {
     return detailUrl('/ua-detail', { ua: uaName });
@@ -162,5 +162,6 @@ export function loadAllCharts() {
     loadObedientSection();
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();
+
 initRobotsRefresh();

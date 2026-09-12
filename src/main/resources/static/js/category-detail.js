@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, buildBaseParams, initToggleBots, detailUrl } from './utils.js';
+import { readMeta, buildBaseParams, detailUrl } from './utils.js';
 
 const category = readMeta('cf-category');
 
@@ -11,4 +11,4 @@ function loadAllCharts() {
         item => detailUrl('/ua-detail', { ua: item.name })));
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();

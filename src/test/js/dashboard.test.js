@@ -17,7 +17,6 @@ vi.mock('../../main/resources/static/js/charts.js', () => ({
 vi.mock('../../main/resources/static/js/utils.js', () => ({
     readMeta:       vi.fn(() => '2026-01-01T00:00:00Z'),
     buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
-    initToggleBots: vi.fn(),   // no-op: don't call loadAllCharts on module load
     detailUrl:      vi.fn((path, params) => `${path}?${new URLSearchParams(params).toString()}`),
 }));
 

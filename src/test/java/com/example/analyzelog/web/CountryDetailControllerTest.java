@@ -35,7 +35,7 @@ class CountryDetailControllerTest {
 
     @Test
     void uaSplitReturnsJson() {
-        when(dashboardService.countryTopUserAgentsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.countryTopUserAgentsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 50, 10, 0, 2)));
 
         assertThat(mvc.get().uri("/api/country-detail/ua-split")
@@ -58,7 +58,7 @@ class CountryDetailControllerTest {
 
     @Test
     void resultTypesReturnsJson() {
-        when(dashboardService.countryResultTypes(eq("FR"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.countryResultTypes(eq("FR"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));
 
         assertThat(mvc.get().uri("/api/country-detail/result-types")
@@ -73,7 +73,7 @@ class CountryDetailControllerTest {
 
     @Test
     void trafficCategoriesReturnsJson() {
-        when(dashboardService.trafficCategories(eq("FR"), any(Instant.class), any(Instant.class), eq(false)))
+        when(dashboardService.trafficCategories(eq("FR"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(
                         new NameResultTypeCount("Probable human", 50, 10, 2, 1),
                         new NameResultTypeCount("Declared bots", 30, 5, 0, 0)));
@@ -98,7 +98,7 @@ class CountryDetailControllerTest {
 
     @Test
     void urlSplitReturnsJson() {
-        when(dashboardService.countryUrlsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.countryUrlsByResultType(eq("FR"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 40, 10, 0, 2)));
 
         assertThat(mvc.get().uri("/api/country-detail/url-split")
@@ -121,7 +121,7 @@ class CountryDetailControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.countryRequestsPerDay(eq("FR"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.countryRequestsPerDay(eq("FR"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/country-detail/requests-per-day")

@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, detailUrl, resultTotal, stackedBar } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, detailUrl, resultTotal, stackedBar } from './utils.js';
 
 const urlName = readMeta('cf-url');
 
@@ -45,4 +45,4 @@ function loadAllCharts() {
     loadUrlsTable();
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();

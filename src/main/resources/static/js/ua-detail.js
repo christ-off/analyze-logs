@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, initToggleBots, resultTotal, stackedBar, uaRequestsUrl, renderMinVersionBanner } from './utils.js';
+import { readMeta, escapeHtml, buildBaseParams, resultTotal, stackedBar, uaRequestsUrl, renderMinVersionBanner } from './utils.js';
 
 const ua = readMeta('cf-ua');
 const DESKTOP_BROWSER_UAS = {
@@ -50,5 +50,4 @@ async function loadAllCharts() {
     }
 }
 
-
-initToggleBots(loadAllCharts);
+loadAllCharts();

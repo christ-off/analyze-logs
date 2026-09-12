@@ -22,18 +22,16 @@ class RefererDetailController extends DetailControllerBase {
     @GetMapping("/urls")
     public List<NameResultTypeCount> urls(
             @RequestParam String referer,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.refererTopUrlsByResultType(referer, range.from(), range.to(), appProperties.topUrlsLimit(), excludeBots);
+        return dashboardService.refererTopUrlsByResultType(referer, range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/requests-per-day")
     public List<DailyResultTypeCount> requestsPerDay(
             @RequestParam String referer,
-            @RequestParam String from, @RequestParam String to,
-            @RequestParam(defaultValue = "false") boolean excludeBots) {
+            @RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
-        return dashboardService.refererRequestsPerDay(referer, range.from(), range.to(), excludeBots);
+        return dashboardService.refererRequestsPerDay(referer, range.from(), range.to());
     }
 }

@@ -50,7 +50,7 @@ class ApiControllerTest {
 
     @Test
     void uaGroupsReturnsJson() {
-        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class), eq(false)))
+        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(
                         new NameCount("Browsers", 400),
                         new NameCount("AI Bots",  180),
@@ -74,12 +74,11 @@ class ApiControllerTest {
 
     @Test
     void uaGroupsExcludeBotsPassesFlag() {
-        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class), eq(true)))
+        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("Browsers", 400)));
 
         assertThat(mvc.get().uri("/api/ua-groups")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
-                .param("excludeBots", "true")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
@@ -88,7 +87,7 @@ class ApiControllerTest {
 
     @Test
     void uaNamesReturnsJson() {
-        when(dashboardService.topUserAgentsByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
+        when(dashboardService.topUserAgentsByResultType(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 30, 10, 0, 1)));
 
         assertThat(mvc.get().uri("/api/ua-names-split")
@@ -109,7 +108,7 @@ class ApiControllerTest {
 
     @Test
     void countriesReturnsJson() {
-        when(dashboardService.topCountriesByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
+        when(dashboardService.topCountriesByResultType(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new CountryResultTypeCount("CN", "China", 80, 15, 0, 3)));
 
         assertThat(mvc.get().uri("/api/countries")
@@ -129,7 +128,7 @@ class ApiControllerTest {
 
     @Test
     void topUrlsSplitReturnsJson() {
-        when(dashboardService.topUrlsByResultType(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
+        when(dashboardService.topUrlsByResultType(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/feed.xml", 40, 10, 0, 2)));
 
         assertThat(mvc.get().uri("/api/top-urls-split")
@@ -150,7 +149,7 @@ class ApiControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.requestsPerDay(any(Instant.class), any(Instant.class), eq(false)))
+        when(dashboardService.requestsPerDay(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 80, 20, 3, 5)));
 
         assertThat(mvc.get().uri("/api/requests-per-day")
@@ -205,7 +204,7 @@ class ApiControllerTest {
 
     @Test
     void referersReturnsJson() {
-        when(dashboardService.topReferers(any(Instant.class), any(Instant.class), anyInt(), eq(false)))
+        when(dashboardService.topReferers(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameCount("https://example.com", 55)));
 
         assertThat(mvc.get().uri("/api/referers")
@@ -219,7 +218,7 @@ class ApiControllerTest {
 
     @Test
     void unexpectedErrorReturns500() {
-        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class), eq(false)))
+        when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
                 .thenThrow(new RuntimeException("db failure"));
 
         assertThat(mvc.get().uri("/api/ua-groups")
@@ -337,7 +336,7 @@ class ApiControllerTest {
 
     @Test
     void trafficCategoriesReturnsJson() {
-        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class), eq(false)))
+        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(
                         new NameResultTypeCount("Probable human",  50, 10, 2, 1),
                         new NameResultTypeCount("Declared bots",   30,  5, 0, 0),
@@ -361,12 +360,11 @@ class ApiControllerTest {
 
     @Test
     void trafficCategoriesExcludeBotsPassesFlag() {
-        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class), eq(true)))
+        when(dashboardService.trafficCategories(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameResultTypeCount("Probable human", 40, 5, 1, 0)));
 
         assertThat(mvc.get().uri("/api/traffic-categories")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
-                .param("excludeBots", "true")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()

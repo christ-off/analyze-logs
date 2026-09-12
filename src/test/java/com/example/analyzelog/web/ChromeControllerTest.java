@@ -36,7 +36,7 @@ class ChromeControllerTest {
 
     @Test
     void resultTypesReturnsJson() {
-        when(dashboardService.chromeResultTypes(any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.chromeResultTypes(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));
 
         assertThat(mvc.get().uri("/api/chrome/result-types")
@@ -50,7 +50,7 @@ class ChromeControllerTest {
 
     @Test
     void countriesReturnsJson() {
-        when(dashboardService.chromeCountries(any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.chromeCountries(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("France", 50)));
 
         assertThat(mvc.get().uri("/api/chrome/countries")
@@ -63,7 +63,7 @@ class ChromeControllerTest {
 
     @Test
     void uriStemsReturnsJson() {
-        when(dashboardService.chromeUrlsByResultType(any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.chromeUrlsByResultType(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3)));
 
         assertThat(mvc.get().uri("/api/chrome/uri-stems")
@@ -76,7 +76,7 @@ class ChromeControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.chromeRequestsPerDay(any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.chromeRequestsPerDay(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/chrome/requests-per-day")
@@ -89,7 +89,7 @@ class ChromeControllerTest {
 
     @Test
     void userAgentsReturnsJson() {
-        when(dashboardService.chromeRawUserAgents(any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.chromeRawUserAgents(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(
                         new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0", 80, 30, 5, 3),
                         new NameResultTypeCount("Mozilla/5.0 (Macintosh) Chrome/119.0.0.0", 20, 8, 0, 1)));
@@ -105,7 +105,7 @@ class ChromeControllerTest {
 
     @Test
     void humanTrafficReturnsJson() {
-        when(dashboardService.chromeHumanTraffic(any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.chromeHumanTraffic(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameHumanTrafficStats("Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0", 8, 10)));
 
         assertThat(mvc.get().uri("/api/chrome/human-traffic")

@@ -36,7 +36,7 @@ class UaDetailControllerTest {
 
     @Test
     void resultTypesReturnsJson() {
-        when(dashboardService.uaResultTypes(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.uaResultTypes(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("Hit", 80), new NameCount("Miss", 20)));
 
         assertThat(mvc.get().uri("/api/ua-detail/result-types")
@@ -51,7 +51,7 @@ class UaDetailControllerTest {
 
     @Test
     void countriesReturnsJson() {
-        when(dashboardService.uaCountries(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.uaCountries(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameCount("France", 50)));
 
         assertThat(mvc.get().uri("/api/ua-detail/countries")
@@ -65,7 +65,7 @@ class UaDetailControllerTest {
 
     @Test
     void uriStemsReturnsJson() {
-        when(dashboardService.uaUrlsByResultType(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyInt(), anyBoolean()))
+        when(dashboardService.uaUrlsByResultType(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new NameResultTypeCount("/index.html", 20, 5, 0, 3)));
 
         assertThat(mvc.get().uri("/api/ua-detail/uri-stems")
@@ -79,7 +79,7 @@ class UaDetailControllerTest {
 
     @Test
     void requestsPerDayReturnsJson() {
-        when(dashboardService.uaRequestsPerDay(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.uaRequestsPerDay(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
 
         assertThat(mvc.get().uri("/api/ua-detail/requests-per-day")
@@ -93,7 +93,7 @@ class UaDetailControllerTest {
 
     @Test
     void userAgentsReturnsJson() {
-        when(dashboardService.uaRawUserAgents(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.uaRawUserAgents(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(
                         new NameResultTypeCount("Mozilla/5.0 (Windows NT 10.0)", 80, 30, 5, 3),
                         new NameResultTypeCount("Mozilla/5.0 (Windows NT 6.1)", 20, 8, 0, 1)));
@@ -110,7 +110,7 @@ class UaDetailControllerTest {
 
     @Test
     void humanTrafficReturnsJson() {
-        when(dashboardService.uaHumanTrafficByUserAgent(eq("Chrome / Windows"), any(Instant.class), any(Instant.class), anyBoolean()))
+        when(dashboardService.uaHumanTrafficByUserAgent(eq("Chrome / Windows"), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new NameHumanTrafficStats("Mozilla/5.0 (Windows NT 10.0)", 8, 10)));
 
         assertThat(mvc.get().uri("/api/ua-detail/human-traffic")

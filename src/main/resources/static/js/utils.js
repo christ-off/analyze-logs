@@ -14,8 +14,6 @@ export function buildBaseParams(extra) {
     const from = readMeta('cf-from');
     const to   = readMeta('cf-to');
     const p = new URLSearchParams({ ...extra, from: Charts.toDateParam(from), to: Charts.toDateParam(to) });
-    const toggleEl = document.getElementById('toggleBots');
-    if (toggleEl?.checked) p.set('excludeBots', 'true');
     return p.toString();
 }
 
@@ -90,16 +88,4 @@ export function renderMinVersionBanner(elementId, browser, humanStats) {
         banner.textContent = `Min ${browser} version with requests from human IPs: ${minVersion}`;
         banner.classList.remove('d-none');
     }
-}
-
-export function initToggleBots(loadFn) {
-    const toggleEl = document.getElementById('toggleBots');
-    if (toggleEl) {
-        toggleEl.checked = localStorage.getItem('excludeBots') === 'true';
-        toggleEl.addEventListener('change', () => {
-            localStorage.setItem('excludeBots', String(toggleEl.checked));
-            loadFn();
-        });
-    }
-    loadFn();
 }

@@ -1,5 +1,5 @@
 import { Charts } from './charts.js';
-import { readMeta, buildBaseParams, initToggleBots, detailUrl } from './utils.js';
+import { readMeta, buildBaseParams, detailUrl } from './utils.js';
 
 const country = readMeta('cf-country');
 
@@ -14,4 +14,4 @@ function loadAllCharts() {
     Charts.loadChart(`country-detail/requests-per-day?${p}`, d => Charts.stackedBarByDay('chartRequestsPerDay', d));
 }
 
-initToggleBots(loadAllCharts);
+loadAllCharts();
