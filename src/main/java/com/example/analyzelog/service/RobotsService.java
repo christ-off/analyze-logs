@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
+import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -35,7 +36,7 @@ public class RobotsService {
                 .body(String.class);
 
         List<String> disallowed = parseDisallowedAgents(body);
-        String now = Instant.now().toString();
+        String now = TimestampFormat.sqlValue(Instant.now());
         jdbc.update("DELETE FROM robots_disallowed");
         for (String ua : disallowed) {
             jdbc.update("INSERT INTO robots_disallowed (user_agent, refreshed_at) VALUES (?, ?)", ua, now);
@@ -87,7 +88,7 @@ public class RobotsService {
                         rs.getLong("miss"),
                         rs.getLong("error"),
                         rs.getLong("function")),
-                from.toString(), to.toString());
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<ObedientBot> findObedientBots(Instant from, Instant to) {
@@ -109,7 +110,7 @@ public class RobotsService {
                         rs.getLong("miss"),
                         rs.getLong("error"),
                         rs.getLong("function")),
-                from.toString(), to.toString());
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public Optional<String> getRefreshedAt() {

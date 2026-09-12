@@ -14,6 +14,7 @@ import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
+import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -30,7 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings("java:S2077") // dynamic SQL parts are static constants or parameterized — no user input is concatenated
 @Service
@@ -258,20 +258,13 @@ public class DashboardService {
 
 
     public List<NameCount> uaGroupCounts(Instant from, Instant to) {
-        var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
-
-        String botFilter = "";
-
         String sql = "SELECT s.ua_group AS name, COUNT(*) AS count\n" +
                      "FROM cloudfront_logs c\n" +
                      "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
                      "WHERE c.timestamp BETWEEN ? AND ?\n" +
-                     botFilter +
                      "GROUP BY s.ua_group\n" +
                      "ORDER BY count DESC";
-        return jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
+        return jdbc.query(sql, NAME_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<NameResultTypeCount> topBots(Instant from, Instant to, int limit) {
@@ -284,23 +277,21 @@ public class DashboardService {
                 "GROUP BY s.ua_name\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
-        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     private List<NameResultTypeCount> uaResultTypesByFilter(String additionalFilter, List<Object> extraArgs,
                                                               Instant from, Instant to, int limit) {
-        String exclusion = "";
         String sql = SQL_SELECT_UA_NAME + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 andClause(additionalFilter) +
-                exclusion +
                 GROUP_BY_UA_NAME +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(extraArgs);
         args.add(limit);
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
@@ -312,19 +303,17 @@ public class DashboardService {
 
     private List<CountryResultTypeCount> countryResultTypesByFilter(String additionalFilter, List<Object> extraArgs,
                                                                       Instant from, Instant to, int limit) {
-        String exclusion = "";
         String sql = SQL_SELECT_COUNTRY + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
                 andClause(additionalFilter) +
-                exclusion +
                 "GROUP BY country\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(extraArgs);
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
@@ -344,7 +333,7 @@ public class DashboardService {
                 "ORDER BY CASE WHEN (hit + miss) = 0 THEN CAST(function AS REAL)\n" +
                 "              ELSE CAST(function AS REAL) / (hit + miss) END DESC\n" +
                 LIMIT_PARAM;
-        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, from.toString(), to.toString(), limit);
+        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     public List<NameResultTypeCount> countryTopUserAgentsByResultType(String countryCode, Instant from, Instant to, int limit) {
@@ -352,31 +341,25 @@ public class DashboardService {
     }
 
     public List<NameCount> countryResultTypes(String countryCode, Instant from, Instant to) {
-        String exclusion = "";
-        return queryResultTypesByFilter(COUNTRY_FILTER, countryCode, from, to, exclusion);
+        return queryResultTypesByFilter(COUNTRY_FILTER, countryCode, from, to);
     }
 
     public List<NameResultTypeCount> countryUrlsByResultType(String countryCode, Instant from, Instant to, int limit) {
-        return urlsByResultType(COUNTRY_FILTER, List.of(from.toString(), to.toString(), countryCode), limit);
+        return urlsByResultType(COUNTRY_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), countryCode), limit);
     }
 
     public List<DailyResultTypeCount> countryRequestsPerDay(String countryCode, Instant from, Instant to) {
-        String exclusion = "";
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + exclusion + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), countryCode);
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND country = ?\n" + SQL_DAILY_GROUP_ORDER,
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), countryCode);
     }
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType("", List.of(from.toString(), to.toString()), limit);
+        return urlsByResultType("", List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to)), limit);
     }
 
     private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit) {
-        String botClause = "";
-        String combinedFilter = Stream.of(additionalFilter, botClause)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.joining(AND_SEPARATOR));
         String sql = sqlUriByResultType
-                + andClause(combinedFilter)
+                + andClause(additionalFilter)
                 + andClause(uriStemExclusionClause)
                 + SQL_URI_RESULT_TYPE_GROUP_ORDER;
 
@@ -398,11 +381,10 @@ public class DashboardService {
                 LIMIT ?
                 """,
                 (rs, _) -> new NameCount(edgeLocationResolver.resolveDisplay(rs.getString("iata")), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), limit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     public List<NameCount> platformCounts(Instant from, Instant to) {
-        String exclusion = "";
         String sql = """
                 SELECT CASE
                     WHEN user_agent LIKE '%iPhone%' OR user_agent LIKE '%iPad%' OR user_agent LIKE '%iPod%' THEN 'iOS'
@@ -415,28 +397,25 @@ public class DashboardService {
                 COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
-                """ + exclusion + """
                 GROUP BY name
                 ORDER BY count DESC
                 """;
-        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString());
+        return jdbc.query(sql, NAME_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<NameCount> topReferers(Instant from, Instant to, int limit) {
-        String botClause = "";
         String sql = "SELECT referer as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND referer IS NOT NULL\n" +
                 "  AND " + RESULT_TYPE_EXCLUSION + "\n" +
                 andClause(selfExclusionClause) +
-                andClause(botClause) +
                 "GROUP BY referer\n" +
                 "ORDER BY count DESC\n";
 
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(selfExclusionPatterns);
 
         List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
@@ -494,16 +473,14 @@ public class DashboardService {
     }
 
     private List<NameResultTypeCount> rawUserAgentsByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
-        String exclusion = "";
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + filterClause + "\n" +
-                exclusion +
                 "GROUP BY user_agent\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(), filterArg);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), filterArg);
     }
 
     public List<NameResultTypeCount> uaRawUserAgents(String uaName, Instant from, Instant to) {
@@ -519,7 +496,6 @@ public class DashboardService {
     // classifies as "Probable human" — same categoryCaseExpr used by humanTrafficStats()/trafficCategories(),
     // just grouped per user_agent instead of aggregated to one total.
     private List<NameHumanTrafficStats> humanTrafficByUserAgent(String filterClause, Object filterArg, Instant from, Instant to) {
-        String exclusion = "";
         String sql = """
                 WITH pair_class AS (
                     SELECT client_ip, user_agent,
@@ -535,11 +511,13 @@ public class DashboardService {
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
                   AND c.%s
-                %sGROUP BY c.user_agent
-                """.formatted(categoryCaseExpr, filterClause, exclusion);
+                GROUP BY c.user_agent
+                """.formatted(categoryCaseExpr, filterClause);
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql,
                 (rs, _) -> new NameHumanTrafficStats(rs.getString("name"), rs.getLong("human"), rs.getLong("total")),
-                from.toString(), to.toString(), from.toString(), to.toString(), filterArg);
+                fromSql, toSql, fromSql, toSql, filterArg);
     }
 
     public List<NameHumanTrafficStats> uaHumanTrafficByUserAgent(String uaName, Instant from, Instant to) {
@@ -552,27 +530,23 @@ public class DashboardService {
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
-        String exclusion = "";
-        return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to, exclusion);
+        return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to);
     }
 
     public List<NameCount> chromeResultTypes(Instant from, Instant to) {
-        String exclusion = "";
-        return queryResultTypesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to, exclusion);
+        return queryResultTypesByFilter(CHROME_UA_FILTER, CHROME_UA_PATTERN, from, to);
     }
 
     private List<NameCount> countriesByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
-        String exclusion = "";
         return jdbc.query("SELECT country as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + filterClause + "\n" +
-                exclusion +
                 "GROUP BY country\n" +
                 "ORDER BY count DESC\n" +
                 "LIMIT " + UA_COUNTRIES_LIMIT + "\n",
                 (rs, _) -> new NameCount(resolveCountryLabel(rs.getString("name")), rs.getLong(COUNT_FIELD)),
-                from.toString(), to.toString(), filterArg);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), filterArg);
     }
 
     public List<NameCount> uaCountries(String uaName, Instant from, Instant to) {
@@ -584,17 +558,16 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
-        return urlsByResultType(UA_NAME_FILTER, List.of(from.toString(), to.toString(), uaName), limit);
+        return urlsByResultType(UA_NAME_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), uaName), limit);
     }
 
     public List<NameResultTypeCount> chromeUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(CHROME_UA_FILTER, List.of(from.toString(), to.toString(), CHROME_UA_PATTERN), limit);
+        return urlsByResultType(CHROME_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), CHROME_UA_PATTERN), limit);
     }
 
     private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
-        String exclusion = "";
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + filterClause + "\n" + exclusion + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), filterArg);
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + filterClause + "\n" + SQL_DAILY_GROUP_ORDER,
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), filterArg);
     }
 
     public List<DailyResultTypeCount> uaRequestsPerDay(String uaName, Instant from, Instant to) {
@@ -606,9 +579,8 @@ public class DashboardService {
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
-        String exclusion = "";
-        String sql = SQL_DAILY_SELECT + exclusion + SQL_DAILY_GROUP_ORDER;
-        return queryDailyByResultType(sql, from.toString(), to.toString());
+        String sql = SQL_DAILY_SELECT + SQL_DAILY_GROUP_ORDER;
+        return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     private List<DailyResultTypeCount> queryDailyByResultType(String sql, Object... args) {
@@ -616,31 +588,28 @@ public class DashboardService {
     }
 
     // filterClause is always a trusted Java constant, never user input
-    private List<NameCount> queryResultTypesByFilter(String filterClause, Object value, Instant from, Instant to, String extraClause) {
+    private List<NameCount> queryResultTypesByFilter(String filterClause, Object value, Instant from, Instant to) {
         String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
                 + "  AND " + filterClause + "\n"
-                + extraClause
                 + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";
-        return jdbc.query(sql, NAME_COUNT_MAPPER, from.toString(), to.toString(), value);
+        return jdbc.query(sql, NAME_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), value);
     }
 
     public List<NameResultTypeCount> urlMatchingUriStems(String urlName, Instant from, Instant to) {
         var entry = uriStemPredicate(urlName);
-        String exclusion = "";
         String sql = "SELECT uri_stem as name,\n" +
                 RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND " + entry.getKey() + "\n" +
-                exclusion +
                 "GROUP BY uri_stem\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC;
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(entry.getValue());
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -657,11 +626,10 @@ public class DashboardService {
 
     public List<DailyResultTypeCount> urlRequestsPerDay(String urlName, Instant from, Instant to) {
         var entry = uriStemPredicate(urlName);
-        String exclusion = "";
-        String sql = SQL_DAILY_SELECT + SQL_AND_INDENT + entry.getKey() + "\n" + exclusion + SQL_DAILY_GROUP_ORDER;
+        String sql = SQL_DAILY_SELECT + SQL_AND_INDENT + entry.getKey() + "\n" + SQL_DAILY_GROUP_ORDER;
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(entry.getValue());
         return queryDailyByResultType(sql, args.toArray());
     }
@@ -684,19 +652,18 @@ public class DashboardService {
                 LIMIT ?
                 """,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
-                from.toString(), to.toString(), limit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     public List<NameResultTypeCount> refererTopUrlsByResultType(String refererLabel, Instant from, Instant to, int limit) {
-        return urlsByResultType("referer LIKE ?", List.of(from.toString(), to.toString(), "%" + refererLabel + "%"), limit);
+        return urlsByResultType("referer LIKE ?", List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), "%" + refererLabel + "%"), limit);
     }
 
     public List<DailyResultTypeCount> refererRequestsPerDay(String refererLabel, Instant from, Instant to) {
-        String exclusion = "";
         String sql = SQL_DAILY_SELECT +
                 "  AND referer LIKE ?\n" +
-                exclusion + SQL_DAILY_GROUP_ORDER;
-        return queryDailyByResultType(sql, from.toString(), to.toString(), "%" + refererLabel + "%");
+                SQL_DAILY_GROUP_ORDER;
+        return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), "%" + refererLabel + "%");
     }
 
     public List<NameResultTypeCount> trafficCategories(String country, Instant from, Instant to) {
@@ -719,11 +686,7 @@ public class DashboardService {
     private List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
                                                  Instant from, Instant to, boolean excludeWebp) {
         // No outer filtering needed — we count all result types from classified pairs.
-        String botClause = "";
-        String filterParts = Stream.of(additionalFilter, botClause)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.joining(AND_SEPARATOR));
-        String whereAfterRange = filterParts.isEmpty() ? "" : SQL_AND_INDENT + filterParts + "\n";
+        String whereAfterRange = additionalFilter.isEmpty() ? "" : SQL_AND_INDENT + additionalFilter + "\n";
         String outerWebpExclusion = excludeWebp ? "  AND c.uri_stem NOT LIKE '%.webp'\n" : "";
 
         String sql = """
@@ -755,9 +718,11 @@ public class DashboardService {
                 outerWebpExclusion
         );
 
-        var args = new ArrayList<Object>(List.of(from.toString(), to.toString()));
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        var args = new ArrayList<Object>(List.of(fromSql, toSql));
         args.addAll(extraArgs);
-        args.addAll(List.of(from.toString(), to.toString()));
+        args.addAll(List.of(fromSql, toSql));
 
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
@@ -789,8 +754,8 @@ public class DashboardService {
         return names.stream()
                 .map(name -> {
                     var entry = uriStemPredicate(name);
-                    args.add(from.toString());
-                    args.add(to.toString());
+                    args.add(TimestampFormat.sqlValue(from));
+                    args.add(TimestampFormat.sqlValue(to));
                     args.addAll(entry.getValue());
                     return selectFmt.apply(name).formatted(entry.getKey());
                 })
@@ -808,8 +773,8 @@ public class DashboardService {
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         var args = new ArrayList<>();
-        args.add(from.toString());
-        args.add(to.toString());
+        args.add(TimestampFormat.sqlValue(from));
+        args.add(TimestampFormat.sqlValue(to));
         args.addAll(entry.getValue());
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
@@ -829,14 +794,14 @@ public class DashboardService {
     }
 
     public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit) {
-        return urlsByResultType(categoryPairFilter(),
-                List.of(from.toString(), to.toString(), from.toString(), to.toString(), category),
-                limit);
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return urlsByResultType(categoryPairFilter(), List.of(fromSql, toSql, fromSql, toSql, category), limit);
     }
 
     public List<NameResultTypeCount> categoryTopUserAgentsByResultType(String category, Instant from, Instant to, int limit) {
         return uaResultTypesByFilter(categoryPairFilter(),
-                List.of(from.toString(), to.toString(), category), from, to, limit);
+                List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), category), from, to, limit);
     }
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
@@ -875,12 +840,12 @@ public class DashboardService {
                   AND timestamp >= ? AND timestamp < ?
                 ORDER BY timestamp DESC
                 """.formatted(RESULT_TYPE_GROUP_EXPR);
-        return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, from.toString(), to.toString());
+        return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<DailyResultTypeCount> requestsPerDayByUserAgent(String ua, Instant from, Instant to) {
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND user_agent = ?\n" + SQL_DAILY_GROUP_ORDER,
-                from.toString(), to.toString(), ua);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), ua);
     }
 
     // Browser-classified UAs active in nearly every hour of the day — humans show a
@@ -904,7 +869,7 @@ public class DashboardService {
                         rs.getLong(COUNT_FIELD),
                         rs.getLong("active_hours"),
                         rs.getLong("days")),
-                from.toString(), to.toString(), limit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
@@ -929,7 +894,7 @@ public class DashboardService {
                 """.formatted(SITE_CONFIG_PATHS_SQL_LIST, ResultTypeSql.FUNCTION_TYPE_LIST)
                 + LIMIT_PARAM,
                 SITE_CONFIG_FETCHER_MAPPER,
-                from.toString(), to.toString(), limit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     private static final String BOT_UA_GROUPS_FOR_IDENTITY_SHIFT = "'AI Bots','Search Bots','Other Bots'";
@@ -957,7 +922,7 @@ public class DashboardService {
                 """.formatted(BOT_UA_GROUPS_FOR_IDENTITY_SHIFT),
                 (rs, _) -> new IpSeen(rs.getString("ip"),
                         Instant.parse(rs.getString("first_seen")), Instant.parse(rs.getString("last_seen"))),
-                from.toString(), to.toString(), ipLimit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), ipLimit);
         if (ips.isEmpty()) return List.of();
 
         List<String> ipValues = ips.stream().map(IpSeen::ip).toList();
@@ -965,8 +930,8 @@ public class DashboardService {
 
         Map<String, List<NameCount>> userAgentsByIp = new LinkedHashMap<>();
         var uaArgs = new ArrayList<>();
-        uaArgs.add(from.toString());
-        uaArgs.add(to.toString());
+        uaArgs.add(TimestampFormat.sqlValue(from));
+        uaArgs.add(TimestampFormat.sqlValue(to));
         uaArgs.addAll(ipValues);
         uaArgs.add(uaLimit);
         jdbc.query("""
@@ -988,8 +953,8 @@ public class DashboardService {
         record UrlAgg(String ip, String name, long hit, long miss, long function, long error) {}
         List<UrlAgg> urlAggs = new ArrayList<>();
         var urlArgs = new ArrayList<>();
-        urlArgs.add(from.toString());
-        urlArgs.add(to.toString());
+        urlArgs.add(TimestampFormat.sqlValue(from));
+        urlArgs.add(TimestampFormat.sqlValue(to));
         urlArgs.addAll(ipValues);
         urlArgs.add(urlLimit);
         jdbc.query("""
@@ -1022,8 +987,8 @@ public class DashboardService {
         // scoped to that exact pair list so a prolific IP's thousands of other URLs aren't scanned.
         Map<String, Map<String, List<String>>> userAgentsByIpUrl = new LinkedHashMap<>();
         var pairArgs = new ArrayList<>();
-        pairArgs.add(from.toString());
-        pairArgs.add(to.toString());
+        pairArgs.add(TimestampFormat.sqlValue(from));
+        pairArgs.add(TimestampFormat.sqlValue(to));
         for (UrlAgg u : urlAggs) {
             pairArgs.add(u.ip());
             pairArgs.add(u.name());

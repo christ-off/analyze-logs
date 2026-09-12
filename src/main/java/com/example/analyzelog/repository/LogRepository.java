@@ -3,6 +3,7 @@ package com.example.analyzelog.repository;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.service.EdgeLocationResolver;
 import com.example.analyzelog.service.ReloadableClassifierService;
+import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +51,7 @@ public class LogRepository {
                     entries,
                     entries.size(),
                     (stmt, e) -> {
-                        stmt.setString(1, e.timestamp().toString());
+                        stmt.setString(1, TimestampFormat.sqlValue(e.timestamp()));
                         stmt.setString(2, e.edgeLocation());
                         stmt.setLong(3, e.scBytes());
                         stmt.setString(4, e.clientIp());
@@ -96,7 +97,7 @@ public class LogRepository {
     public int deleteOldLogs(int nbMonthsToKeep) {
         Instant cutoff = Instant.from(
                 ZonedDateTime.now(ZoneOffset.UTC).minus(nbMonthsToKeep, ChronoUnit.MONTHS));
-        String cutoffStr = cutoff.toString();
+        String cutoffStr = TimestampFormat.sqlValue(cutoff);
         return jdbc.update(
                 "DELETE FROM cloudfront_logs WHERE timestamp < ?",
                 cutoffStr);
