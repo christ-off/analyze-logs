@@ -120,6 +120,15 @@ selected date range — real bots each operate from their own infrastructure, so
 a strong UA-spoofing signal. Each entry shows first/last seen, the distinct user agents used (click one to
 open its `/ua-requests` page), and the URLs requested with a Hit/Miss/Filtered/Error bar per URL.
 
+### Social Referrals page
+
+Four stacked sections — Facebook, Discord, Twitter/X, WhatsApp — each listing the most recent webpage
+requests (URIs ending in `/`; static assets excluded) matching that network's known link-preview crawler
+user agent (`facebookexternalhit`, `Discordbot`, `Twitterbot`, `WhatsApp`) or a click-through `Referer` from
+its domain. Referer domains are host-anchored (scheme + optional `www.` + exact domain) so a substring like
+`x.com` never matches an unrelated domain. Each row shows its timestamp, a link to the user agent's
+`/ua-detail` page, the URI, and a Hit/Miss/Filtered/Error bar.
+
 ### Main dashboard
 
 Eight charts, all scoped to the selected date range:

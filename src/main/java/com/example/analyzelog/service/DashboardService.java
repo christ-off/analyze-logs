@@ -14,6 +14,7 @@ import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
+import com.example.analyzelog.model.SocialNetworkRequest;
 import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -1018,6 +1019,89 @@ public class DashboardService {
                         userAgentsByIp.getOrDefault(ip.ip(), List.of()),
                         urlsByIp.getOrDefault(ip.ip(), List.of())))
                 .toList();
+    }
+
+    // Link-preview crawler UA substrings and click-through referer domains for each known
+    // social/messaging network. Order matters: first match wins for requests that could match more than one.
+    private record SocialNetworkRule(String label, List<String> userAgentPatterns, List<String> refererDomains) {}
+
+    private static final List<SocialNetworkRule> SOCIAL_NETWORK_RULES = List.of(
+            // WhatsApp's in-app link preview fetcher never sends a Referer header — UA only.
+            new SocialNetworkRule("WhatsApp", List.of("%WhatsApp%"), List.of()),
+            new SocialNetworkRule("Facebook", List.of("%facebookexternalhit%", "%FacebookBot%"), List.of("facebook.com")),
+            new SocialNetworkRule("Discord", List.of("%Discordbot%"), List.of("discord.com")),
+            new SocialNetworkRule("Twitter/X", List.of("%Twitterbot%"), List.of("twitter.com", "x.com")));
+
+    // Builds "CASE WHEN ... THEN 'label' ... END", appending a '?' placeholder (and its value, in the
+    // same order) to params for every user-agent/referer pattern — referer domains are anchored to the
+    // whole host (scheme + optional "www." + domain, followed by "/", ":" or end-of-string) so e.g.
+    // "x.com" never matches "...netflix.com/..." (substring) nor "https://x.company.com/..." (prefix only).
+    private static String socialNetworkCaseSql(List<Object> params) {
+        StringBuilder sql = new StringBuilder("CASE\n");
+        for (SocialNetworkRule rule : SOCIAL_NETWORK_RULES) {
+            List<String> conditions = new ArrayList<>();
+            for (String uaPattern : rule.userAgentPatterns()) {
+                conditions.add("user_agent LIKE ?");
+                params.add(uaPattern);
+            }
+            for (String domain : rule.refererDomains()) {
+                for (String scheme : List.of("http://", "https://")) {
+                    for (String prefix : List.of("", "www.")) {
+                        String host = scheme + prefix + domain;
+                        conditions.add("(referer = ? OR referer LIKE ? OR referer LIKE ?)");
+                        params.add(host);
+                        params.add(host + "/%");
+                        params.add(host + ":%");
+                    }
+                }
+            }
+            sql.append("  WHEN ").append(String.join(" OR ", conditions)).append(" THEN '").append(rule.label()).append("'\n");
+        }
+        return sql.append("END").toString();
+    }
+
+    private static final RowMapper<SocialNetworkRequest> SOCIAL_NETWORK_REQUEST_MAPPER = (rs, _) -> {
+        String countryName = resolveCountryDisplayOrNull(rs.getString("country"));
+        if (countryName == null) countryName = "-";
+        return new SocialNetworkRequest(
+                rs.getString("network"), Instant.parse(rs.getString("timestamp")),
+                rs.getString("user_agent"), rs.getString("ua_name"), rs.getString("uri_stem"), countryName,
+                rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
+    };
+
+    // Most recent requests attributed to each known social/messaging network within the range,
+    // capped per network so one dominant network can't crowd the others out. Restricted to URIs
+    // ending in "/" (webpages) — static assets a preview crawler also fetches are noise here.
+    public Map<String, List<SocialNetworkRequest>> socialNetworkRequests(Instant from, Instant to, int limitPerNetwork) {
+        List<Object> params = new ArrayList<>();
+        String caseSql = socialNetworkCaseSql(params);
+        params.add(TimestampFormat.sqlValue(from));
+        params.add(TimestampFormat.sqlValue(to));
+        params.add(limitPerNetwork);
+
+        Map<String, List<SocialNetworkRequest>> byNetwork = new LinkedHashMap<>();
+        for (SocialNetworkRule rule : SOCIAL_NETWORK_RULES) byNetwork.put(rule.label(), new ArrayList<>());
+
+        List<SocialNetworkRequest> requests = jdbc.query("""
+                SELECT network, timestamp, user_agent, ua_name, uri_stem, country, hit, miss, function, error
+                FROM (
+                    SELECT *, ROW_NUMBER() OVER (PARTITION BY network ORDER BY timestamp DESC) AS rn
+                    FROM (
+                        SELECT timestamp, user_agent, ua_name, uri_stem, country,
+                               %s AS network,
+                               %s
+                        FROM cloudfront_logs
+                        WHERE timestamp BETWEEN ? AND ?
+                          AND uri_stem LIKE '%%/'
+                    )
+                    WHERE network IS NOT NULL
+                )
+                WHERE rn <= ?
+                ORDER BY network, timestamp DESC
+                """.formatted(caseSql, ResultTypeSql.resultTypeFlags("")),
+                SOCIAL_NETWORK_REQUEST_MAPPER, params.toArray());
+        for (SocialNetworkRequest r : requests) byNetwork.get(r.network()).add(r);
+        return byNetwork;
     }
 
 }

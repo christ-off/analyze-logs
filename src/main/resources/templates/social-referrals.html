@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Social Referrals', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Social Referrals</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"      th:content="${from}"/>
+    <meta name="cf-to"        th:content="${to}"/>
+    <meta name="cf-to-date"   th:content="${toDate}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <!-- Date range bar -->
+    <div class="card mb-4 cf-toolbar">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold me-2">Range:</span>
+            <a th:href="@{/social-referrals?range=1d}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+            <a th:href="@{/social-referrals?range=7d}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+            <a th:href="@{/social-referrals?range=30d}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+            <a th:href="@{/social-referrals?range=3m}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+
+            <form th:action="@{/social-referrals}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
+                <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
+                <label for="toDate" class="form-label mb-0 fw-semibold">&ndash;</label>
+                <input type="date" id="toDate" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
+                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="socialReferralsSections">
+        <div class="card mb-4" th:each="network : ${ {'WhatsApp','Facebook','Discord','Twitter/X'} }">
+            <div class="card-header fw-semibold" th:text="${network}"></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date / Time (UTC)</th>
+                                <th>User Agent</th>
+                                <th>URI</th>
+                                <th>Country</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody th:id="'sr-' + ${#strings.replace(network, '/', '')}" class="text-muted">
+                            <tr><td colspan="5" class="text-center py-3">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/social-referrals.js}"></script>
+</th:block>
+</html>

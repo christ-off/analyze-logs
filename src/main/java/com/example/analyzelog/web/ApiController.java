@@ -11,6 +11,7 @@ import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.SiteConfigFetcher;
+import com.example.analyzelog.model.SocialNetworkRequest;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -145,6 +147,12 @@ public class ApiController {
         var range = DateRange.fromParams(from, to);
         return dashboardService.identityShiftingIps(range.from(), range.to(),
                 appProperties.topDetailLimit(), appProperties.topDetailLimit(), appProperties.topUrlsLimit());
+    }
+
+    @GetMapping("/social-networks")
+    public Map<String, List<SocialNetworkRequest>> socialNetworks(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.socialNetworkRequests(range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
     @GetMapping("/ip-info/{ip}")

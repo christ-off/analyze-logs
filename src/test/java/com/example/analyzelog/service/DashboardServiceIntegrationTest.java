@@ -1359,4 +1359,73 @@ class DashboardServiceIntegrationTest {
 
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    void socialNetworkRequests_classifiesByUaAndByRefererDomain() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/social-networks-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/article/", null,
+                        "facebookexternalhit/1.1", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/article/", "https://www.twitter.com/some/status",
+                        "Mozilla/5.0 (real browser)", "US", "Miss"),
+                makeEntry(Instant.now(), "SFO53-P7", "3.3.3.3", "/", null,
+                        "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)", "US", "Error"),
+                makeEntry(Instant.now(), "SFO53-P7", "4.4.4.4", "/photo/", null,
+                        "WhatsApp/2.23.20.0 A", "US", "FunctionGeneratedResponse"),
+                // must not be misclassified as Twitter/X just because "x.com" is a prefix of the actual host
+                makeEntry(Instant.now(), "SFO53-P7", "5.5.5.5", "/blog/", "https://x.company.com/page",
+                        "Mozilla/5.0 (real browser)", "US", "Hit")
+        ));
+
+        var result = dashboardService.socialNetworkRequests(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(1, result.get("Facebook").size());
+        assertEquals("/article/", result.get("Facebook").getFirst().uriStem());
+        assertEquals(1, result.get("Facebook").getFirst().hit());
+        assertEquals("Facebook", result.get("Facebook").getFirst().uaName());
+        assertEquals("United States", result.get("Facebook").getFirst().country());
+
+        assertEquals(1, result.get("Twitter/X").size());
+        assertEquals(1, result.get("Twitter/X").getFirst().miss());
+
+        assertEquals(1, result.get("Discord").size());
+        assertEquals(1, result.get("Discord").getFirst().error());
+
+        assertEquals(1, result.get("WhatsApp").size());
+        assertEquals(1, result.get("WhatsApp").getFirst().function());
+
+        assertFalse(result.containsKey("Telegram"));
+    }
+
+    @Test
+    void socialNetworkRequests_excludesUrisNotEndingInSlash() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/social-networks-static-asset-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/hero.webp", null,
+                        "facebookexternalhit/1.1", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/article/", null,
+                        "facebookexternalhit/1.1", "US", "Hit")
+        ));
+
+        var result = dashboardService.socialNetworkRequests(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(1, result.get("Facebook").size());
+        assertEquals("/article/", result.get("Facebook").getFirst().uriStem());
+    }
+
+    @Test
+    void socialNetworkRequests_capsRowsPerNetwork() {
+        Instant from = Instant.now();
+        List<CloudFrontLogEntry> entries = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            entries.add(makeEntry(Instant.now().plusSeconds(i), "SFO53-P7", "1.1.1." + i, "/p" + i + "/", null,
+                    "facebookexternalhit/1.1", "US", "Hit"));
+        }
+        repository.saveEntries("logs/social-networks-cap-test.gz", entries);
+
+        var result = dashboardService.socialNetworkRequests(from, Instant.now().plusSeconds(10), 3);
+
+        assertEquals(3, result.get("Facebook").size());
+        assertEquals("/p4/", result.get("Facebook").getFirst().uriStem());
+    }
 }
