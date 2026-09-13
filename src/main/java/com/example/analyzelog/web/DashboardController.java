@@ -112,6 +112,16 @@ public class DashboardController extends DateRangeController {
         return "firefox";
     }
 
+    @GetMapping("/safari")
+    public String safari(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "safari";
+    }
+
     @GetMapping("/human")
     public String human(
             @RequestParam(required = false) String range,

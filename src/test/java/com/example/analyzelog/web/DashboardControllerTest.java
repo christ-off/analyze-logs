@@ -222,4 +222,17 @@ class DashboardControllerTest {
                 .model().containsEntry("firefoxEsrVersion", 115);
     }
 
+    @Test
+    void safariReturns200() {
+        assertThat(mvc.get().uri("/safari").exchange())
+                .hasStatusOk()
+                .hasViewName("safari");
+    }
+
+    @Test
+    void safariDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/safari").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
 }

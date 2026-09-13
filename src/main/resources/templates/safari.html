@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Safari', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Safari</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/safari')}"></th:block>
+
+    <div id="minSafariVersionBanner" class="alert alert-warning d-none mb-3" role="alert"></div>
+
+    <!-- Safari version list — every Safari ua_name variant, whatever the OS, grouped by major version -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Safari Versions</div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-striped table-hover mb-0" id="tableVersions">
+                <thead>
+                    <tr>
+                        <th style="width:2rem">#</th>
+                        <th class="cf-sortable" data-sort-key="version">Safari Version <span class="cf-sort-indicator"></span></th>
+                        <th class="text-end cf-sortable" data-sort-key="requests" style="width:6rem">Requests <span class="cf-sort-indicator"></span></th>
+                        <th class="text-end cf-sortable" data-sort-key="human" style="width:10rem">Proportion of requests from human IPs <span class="cf-sort-indicator"></span></th>
+                        <th style="width:180px"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyVersions">
+                    <tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/result-legend :: legend('versionBarLegend')}"></div>
+    </div>
+
+    <th:block th:replace="~{fragments/chart-rows :: chartRows}"></th:block>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/safari.js}"></script>
+</th:block>
+</html>
