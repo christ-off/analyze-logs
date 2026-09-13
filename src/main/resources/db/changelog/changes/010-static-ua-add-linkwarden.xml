@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Linkwarden (https://linkwarden.app) is a self-hosted bookmark manager: when a user saves
+         a page, its server does a server-side fetch that renders and archives the whole page
+         (stylesheet, svgs, images included), sending UA "Linkwarden (Server-Side Fetch)". That
+         thoroughness previously tripped the "Probable human"/Human-page evidence checks even
+         though it's an automated fetch, not a human visit — classify it as a bot instead. -->
+    <changeSet id="010-static-ua-add-linkwarden" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('Linkwarden', 'Other Bots', 'Linkwarden', 'Linkwarden', 77)
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

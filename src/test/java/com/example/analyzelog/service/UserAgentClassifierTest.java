@@ -68,6 +68,8 @@ class UserAgentClassifierTest {
         "'Hello from Palo Alto Networks, find out more about our scans', Palo Alto Scanner",
         "'visionheight.com/scan Mozilla/5.0', VisionHeight Scanner",
         "'2ip bot/1.1 (+https://2ip.io)', 2ip Scanner",
+        // Other bots
+        "'Linkwarden (Server-Side Fetch)', Linkwarden",
         // Feed readers
         "'Feedly/1.0 (+http://www.feedly.com/fetcher.html)', Feedly",
         "'Feedbin feed-id:2878303 - 1 subscribers', Feedbin",
