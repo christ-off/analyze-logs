@@ -1,10 +1,11 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../main/resources/static/js/utils.js', () => ({
-    buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
-    escapeHtml:      vi.fn((s) => s),
-    stackedBar:      vi.fn(() => '<div class="bar"></div>'),
-    detailUrl:       vi.fn((path, params) => `${path}?ua=${params.ua}`),
+    buildBaseParams:  vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
+    escapeHtml:       vi.fn((s) => s),
+    formatTimestamp:  vi.fn((iso) => iso),
+    stackedBar:       vi.fn(() => '<div class="bar"></div>'),
+    detailUrl:        vi.fn((path, params) => `${path}?ua=${params.ua}`),
 }));
 
 import { loadSocialReferrals } from '../../main/resources/static/js/social-referrals.js';

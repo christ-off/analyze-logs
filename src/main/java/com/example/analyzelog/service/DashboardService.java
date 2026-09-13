@@ -15,6 +15,7 @@ import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.model.SocialNetworkRequest;
+import com.example.analyzelog.model.UnknownUaRequest;
 import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -710,6 +711,20 @@ public class DashboardService {
         return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
+    // Individual qualifying "Human" page requests (see HUMAN_PAGE_FILTER) whose user agent
+    // UserAgentClassifier fell through to "Unknown" — surfaced on the Human page so an operator
+    // can see which raw UA strings are behind that bucket.
+    public List<UnknownUaRequest> unknownUaRequests(Instant from, Instant to, int limit) {
+        String sql = "SELECT timestamp, user_agent, uri_stem,\n" + ResultTypeSql.resultTypeFlags("") + "\n" +
+                "FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                "  AND ua_name = 'Unknown'\n" +
+                andClause(HUMAN_PAGE_FILTER) +
+                "ORDER BY timestamp DESC\n" +
+                LIMIT_PARAM;
+        return jdbc.query(sql, UNKNOWN_UA_REQUEST_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+    }
+
     private List<DailyResultTypeCount> queryDailyByResultType(String sql, Object... args) {
         return jdbc.query(sql, DAILY_RESULT_TYPE_COUNT_MAPPER, args);
     }
@@ -1148,6 +1163,10 @@ public class DashboardService {
         }
         return sql.append("END").toString();
     }
+
+    private static final RowMapper<UnknownUaRequest> UNKNOWN_UA_REQUEST_MAPPER = (rs, _) ->
+            new UnknownUaRequest(Instant.parse(rs.getString("timestamp")), rs.getString("user_agent"), rs.getString("uri_stem"),
+                    rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
 
     private static final RowMapper<SocialNetworkRequest> SOCIAL_NETWORK_REQUEST_MAPPER = (rs, _) -> {
         String countryName = resolveCountryDisplayOrNull(rs.getString("country"));

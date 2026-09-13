@@ -1488,6 +1488,47 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, totalHits);
     }
 
+    // UA string matching no static_ua pattern and none of Chrome/Firefox/Edge/Safari — classified "Unknown".
+    private static final String UA_UNCLASSIFIED = "SomeUnknownClient/9.9";
+
+    @Test
+    void unknownUaRequests_returnsOnlyQualifyingRequestsWithUnknownUa() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-unknown-ua-test.gz", List.of(
+                entryAt(base, "12.12.12.12", UA_UNCLASSIFIED, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "12.12.12.12", UA_UNCLASSIFIED, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "12.12.12.12", UA_UNCLASSIFIED, SVG_HUMAN_BADGE),
+                // Known browser UA — must not appear even though it also qualifies as human.
+                entryAt(base, "13.13.13.14", UA_CHROME_WINDOWS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "13.13.13.14", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "13.13.13.14", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE)
+        ));
+
+        var result = dashboardService.unknownUaRequests(base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertEquals(1, result.size());
+        var req = result.getFirst();
+        assertEquals(UA_UNCLASSIFIED, req.userAgent());
+        assertEquals("/", req.uriStem());
+        assertEquals(1, req.hit());
+        assertEquals(0, req.miss());
+        assertEquals(0, req.function());
+        assertEquals(0, req.error());
+    }
+
+    @Test
+    void unknownUaRequests_excludesUnknownUaWhenHumanEvidenceMissing() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-unknown-ua-no-evidence-test.gz", List.of(
+                // No /css/main.css or svg badge fetched — must not qualify as human.
+                entryAt(base, "14.14.14.14", UA_UNCLASSIFIED, "/")
+        ));
+
+        var result = dashboardService.unknownUaRequests(base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertTrue(result.isEmpty());
+    }
+
     @Test
     void identityShiftingIps_findsIpsClaimingMultipleBotIdentities() {
         Instant from = Instant.now();

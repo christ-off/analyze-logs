@@ -1,16 +1,12 @@
 'use strict';
 
-import { buildBaseParams, detailUrl, escapeHtml, stackedBar } from './utils.js';
+import { buildBaseParams, detailUrl, escapeHtml, formatTimestamp, stackedBar } from './utils.js';
 import { initRefresh } from './refresh.js';
 
 const NETWORKS = ['WhatsApp', 'Facebook', 'Discord', 'Twitter/X'];
 
 function containerId(network) {
     return 'sr-' + network.replaceAll('/', '');
-}
-
-function formatTimestamp(iso) {
-    return (iso || '?').replace('T', ' ').replace(/\.\d+Z?$/, '').replace(/Z$/, '');
 }
 
 function shortUa(name) {

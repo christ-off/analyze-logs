@@ -12,6 +12,7 @@ import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.model.SocialNetworkRequest;
+import com.example.analyzelog.model.UnknownUaRequest;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
@@ -110,6 +111,12 @@ public class ApiController {
     public List<DailyResultTypeCount> humanRequestsPerDay(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.humanRequestsPerDay(range.from(), range.to());
+    }
+
+    @GetMapping("/human-unknown-uas")
+    public List<UnknownUaRequest> humanUnknownUas(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.unknownUaRequests(range.from(), range.to(), appProperties.topDetailLimit());
     }
 
     @GetMapping("/edge-locations")

@@ -17,6 +17,30 @@
 
     <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
 
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>Unknown User Agents</span>
+            <span class="text-muted fw-normal small" id="humanUnknownUasCount"></span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date / Time (UTC)</th>
+                            <th>User Agent</th>
+                            <th>URI</th>
+                            <th style="width:120px">Hit / Miss / Filtered / Error</th>
+                        </tr>
+                    </thead>
+                    <tbody id="humanUnknownUas" class="text-muted">
+                        <tr><td colspan="4" class="text-center py-3">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </th:block>
 <th:block class="page-script">
     <script type="module" th:src="@{/js/human.js}"></script>
