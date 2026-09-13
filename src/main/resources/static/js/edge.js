@@ -1,6 +1,7 @@
 import { Charts } from './charts.js';
 import { buildBaseParams, renderMinVersionBanner } from './utils.js';
 import { aggregateByVersion as aggregateByVersionGeneric, sortVersions, createVersionTable } from './version-table.js';
+import { initRefresh } from './refresh.js';
 
 // Extract the Edge major version from a raw user_agent string, e.g.
 // "...Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0" -> 144. Reads the "Edg/" token, not the
@@ -18,7 +19,7 @@ export { sortVersions };
 
 const versionTable = createVersionTable('Edge');
 
-async function loadAllCharts() {
+export async function loadAllCharts() {
     const p = buildBaseParams({});
 
     Charts.loadChart(`edge/result-types?${p}`,     d => Charts.pie('chartResultTypes', d, Charts.RESULT_TYPE_COLORS));
@@ -41,3 +42,4 @@ async function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);

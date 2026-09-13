@@ -152,6 +152,19 @@ class DashboardControllerTest {
     }
 
     @Test
+    void humanReturns200() {
+        assertThat(mvc.get().uri("/human").exchange())
+                .hasStatusOk()
+                .hasViewName("human");
+    }
+
+    @Test
+    void humanDefaultRangeIs7Days() {
+        assertThat(mvc.get().uri("/human").exchange())
+                .model().containsEntry("activeRange", "7d");
+    }
+
+    @Test
     void securityReturns200() {
         assertThat(mvc.get().uri("/security").exchange())
                 .hasStatusOk()

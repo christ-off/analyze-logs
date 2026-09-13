@@ -82,6 +82,36 @@ public class ApiController {
         return dashboardService.requestsPerDay(range.from(), range.to());
     }
 
+    @GetMapping("/human-ua-names-split")
+    public List<NameResultTypeCount> humanUaNames(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanTopUserAgentsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
+    }
+
+    @GetMapping("/human-countries")
+    public List<CountryResultTypeCount> humanCountries(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanTopCountriesByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
+    }
+
+    @GetMapping("/human-top-urls-split")
+    public List<NameResultTypeCount> humanTopUrls(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanTopUrlsByResultType(range.from(), range.to(), appProperties.topUrlsLimit());
+    }
+
+    @GetMapping("/human-referers")
+    public List<NameCount> humanReferers(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanTopReferers(range.from(), range.to(), appProperties.topReferersLimit());
+    }
+
+    @GetMapping("/human-requests-per-day")
+    public List<DailyResultTypeCount> humanRequestsPerDay(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanRequestsPerDay(range.from(), range.to());
+    }
+
     @GetMapping("/edge-locations")
     public List<NameCount> edgeLocations(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

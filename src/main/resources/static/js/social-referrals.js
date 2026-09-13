@@ -1,6 +1,7 @@
 'use strict';
 
 import { buildBaseParams, detailUrl, escapeHtml, stackedBar } from './utils.js';
+import { initRefresh } from './refresh.js';
 
 const NETWORKS = ['WhatsApp', 'Facebook', 'Discord', 'Twitter/X'];
 
@@ -51,3 +52,4 @@ export function loadSocialReferrals() {
 }
 
 loadSocialReferrals();
+initRefresh(loadSocialReferrals);

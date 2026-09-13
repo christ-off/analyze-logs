@@ -11,76 +11,9 @@
     <!-- Flash messages -->
     <div th:replace="~{fragments/flash :: messages}"></div>
 
-    <!-- Date range bar -->
-    <div class="card mb-4 cf-toolbar">
-        <div class="card-body d-flex flex-wrap align-items-center gap-2">
-            <span class="fw-semibold me-2">Range:</span>
-            <a th:href="@{/?range=1d}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
-            <a th:href="@{/?range=7d}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
-            <a th:href="@{/?range=30d}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
-            <a th:href="@{/?range=3m}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/')}"></th:block>
 
-            <form th:action="@{/}" method="get" class="d-flex align-items-center gap-2 ms-2">
-                <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
-                <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
-                <span>&ndash;</span>
-                <label for="toDate" class="visually-hidden">To date</label>
-                <input type="date" id="toDate" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
-                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-            </form>
-
-            <div class="ms-auto d-inline-flex flex-column align-items-end gap-1">
-                <!-- Hidden form: th:action triggers Thymeleaf to inject the CSRF hidden input -->
-                <form id="refreshForm" th:action="@{/refresh}" method="post" class="d-none"></form>
-
-                <button type="button" id="refreshBtn" class="btn btn-sm btn-warning">
-                    Refresh from S3
-                </button>
-
-                <div id="refreshProgress" class="d-none" style="min-width:220px">
-                    <div class="progress mb-1" style="height:8px">
-                        <progress id="refreshBar" max="100" style="width:0%">
-                        </progress>
-                    </div>
-                    <div id="refreshStatus" class="cf-refresh-status"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts row 1: user agents + countries -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Top User Agents</div>
-                <div class="card-body"><canvas id="chartUaNames"></canvas></div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Top Countries</div>
-                <div class="card-body"><canvas id="chartCountries"></canvas></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts row 2: Top URLs + Top Referers -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Top URLs</div>
-                <div class="card-body" style="position:relative;height:420px">
-                    <canvas id="chartTopUrls"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">Top Referers</div>
-                <div class="card-body" style="position:relative;height:420px"><canvas id="chartReferers"></canvas></div>
-            </div>
-        </div>
-    </div>
+    <th:block th:replace="~{fragments/dashboard-rows :: topRows}"></th:block>
 
     <!-- Charts row 3: UA groups pie + Platforms pie -->
     <div class="row g-4 mb-4">
@@ -102,15 +35,7 @@
         </div>
     </div>
 
-    <!-- Charts row 4: requests per day full width -->
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header fw-semibold">Requests per Day</div>
-                <div class="card-body"><canvas id="chartRequestsPerDay"></canvas></div>
-            </div>
-        </div>
-    </div>
+    <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
 
 </th:block>
 <th:block class="page-script">

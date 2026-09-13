@@ -217,6 +217,76 @@ class ApiControllerTest {
     }
 
     @Test
+    void humanUaNamesReturnsJson() {
+        when(dashboardService.humanTopUserAgentsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("Chrome / Windows", 30, 5, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/human-ua-names-split")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("Chrome / Windows");
+    }
+
+    @Test
+    void humanCountriesReturnsJson() {
+        when(dashboardService.humanTopCountriesByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new CountryResultTypeCount("FR", "France", 12, 3, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/human-countries")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].code").isEqualTo("FR");
+    }
+
+    @Test
+    void humanTopUrlsReturnsJson() {
+        when(dashboardService.humanTopUrlsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("/about/", 9, 1, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/human-top-urls-split")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("/about/");
+    }
+
+    @Test
+    void humanReferersReturnsJson() {
+        when(dashboardService.humanTopReferers(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameCount("example.com", 7)));
+
+        assertThat(mvc.get().uri("/api/human-referers")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("example.com");
+    }
+
+    @Test
+    void humanRequestsPerDayReturnsJson() {
+        when(dashboardService.humanRequestsPerDay(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 9, 1, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/human-requests-per-day")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].day").isEqualTo("2026-01-15");
+    }
+
+    @Test
     void unexpectedErrorReturns500() {
         when(dashboardService.uaGroupCounts(any(Instant.class), any(Instant.class)))
                 .thenThrow(new RuntimeException("db failure"));

@@ -1,7 +1,8 @@
 import { Charts } from './charts.js';
 import { buildBaseParams, detailUrl } from './utils.js';
+import { initRefresh } from './refresh.js';
 
-function loadAllCharts() {
+export function loadAllCharts() {
     const p = buildBaseParams({});
 
     Charts.loadChart(`security/traffic-categories?${p}`, data =>
@@ -18,3 +19,4 @@ function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);

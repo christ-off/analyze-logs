@@ -111,12 +111,29 @@ public class DashboardService {
     private static final String SITE_CONFIG_PATHS_SQL_LIST =
             "'/robots.txt','/ads.txt','/sitemap.xml','/humans.txt','/security.txt'," +
             "'/.well-known/security.txt','/browserconfig.xml','/opensearch.xml'";
+    // Every ua_group considered a known bot — reused wherever "not a bot" or "known-bot identity" matters
+    // (identityShiftingIps, the Human page's bot exclusion).
+    private static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','Search Bots','Other Bots'";
+    // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
+    // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
+    // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
+    private static final String HUMAN_EVIDENCE_CSS_PATH = "/css/main.css";
+    private static final String HUMAN_EVIDENCE_SVG_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
+    // A "page" request (uri_stem ending in '/') from a non-bot ua_group, corroborated by requests from
+    // the same (client_ip, user_agent) for both evidence assets above, each within +/-1h — the Human
+    // page's definition of a genuine human page-view. Restricting to a 1h window (rather than "ever", as
+    // trafficCategories()/categoryCaseExpr do) rules out a bot that later replays a human IP/UA pair long
+    // after the human visit ended.
+    private static final String HUMAN_PAGE_FILTER =
+            "uri_stem LIKE '%/'\n" +
+            "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
+            "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_CSS_PATH) + "\n" +
+            "  " + withinOneHourExistsClause("m2", HUMAN_EVIDENCE_SVG_PATH);
     // Only Hit/Miss responses count as "Probable human" evidence — Error, RefreshHit and
     // FunctionGeneratedResponse rows (scanners, edge retries) must not qualify a pair.
     private static final String HUMAN_EVIDENCE_RESULT_TYPES = "edge_response_result_type IN ('Hit','Miss')";
-    // Evidence of a real browser fetching a rendered page: it also loaded the site stylesheet,
-    // which only a real browser rendering the page requests — bots/scanners never fetch it.
-    private static final String HUMAN_EVIDENCE_EXT_PREDICATE = "uri_stem = '/css/main.css'";
+    private static final String HUMAN_EVIDENCE_CSS_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_CSS_PATH + "'";
+    private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_SVG_PATH + "'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
     // Pair classification used to label rows (trafficCategories) and to scope human-traffic
@@ -131,11 +148,26 @@ public class DashboardService {
                     THEN 'Security'
                 WHEN MAX(CASE WHEN uri_stem LIKE '%%/' AND %s THEN 1 ELSE 0 END) = 1
                  AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
+                 AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
                     THEN 'Probable human'
                 WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
                     THEN 'Declared bots'
                 ELSE 'Other'
             END""";
+
+    // strftime (not datetime()) keeps the 'T'/'Z' ISO-8601 shape of the stored timestamp column —
+    // datetime() reformats to a space-separated string that would sort before/after it inconsistently in
+    // the BETWEEN comparison below, since cloudfront_logs.timestamp is TEXT compared lexicographically.
+    private static String withinOneHourExistsClause(String alias, String uriStem) {
+        return "AND EXISTS (\n" +
+                "    SELECT 1 FROM cloudfront_logs " + alias + "\n" +
+                "    WHERE " + alias + ".client_ip = cloudfront_logs.client_ip\n" +
+                "      AND " + alias + ".user_agent = cloudfront_logs.user_agent\n" +
+                "      AND " + alias + ".uri_stem = '" + uriStem + "'\n" +
+                "      AND " + alias + ".timestamp BETWEEN strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '-1 hour')\n" +
+                "                                       AND strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '+1 hour')\n" +
+                "  )";
+    }
 
     private static final String GROUP_BY_UA_NAME = "GROUP BY ua_name\n";
     private final String sqlUriByResultType;
@@ -182,7 +214,9 @@ public class DashboardService {
                 .map(UriStemGroupProperties.Group::name)
                 .toList();
         this.categoryCaseExpr = CATEGORY_CASE_EXPR_TEMPLATE.formatted(FEED_URI_LIST, securityUriStemWhenClause(),
-                HUMAN_EVIDENCE_RESULT_TYPES, HUMAN_EVIDENCE_EXT_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
+                HUMAN_EVIDENCE_RESULT_TYPES,
+                HUMAN_EVIDENCE_CSS_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES,
+                HUMAN_EVIDENCE_SVG_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
         this.sqlUriByResultType = "SELECT \n" +
                 buildUriStemNameCase(uriStemGroupProperties.groups()) +
                 RESULT_TYPE_SUMS + "\n" +
@@ -309,6 +343,11 @@ public class DashboardService {
         return uaResultTypesByFilter("", List.of(), from, to, limit);
     }
 
+    // Same aggregation, scoped to qualifying "Human" page requests — see HUMAN_PAGE_FILTER.
+    public List<NameResultTypeCount> humanTopUserAgentsByResultType(Instant from, Instant to, int limit) {
+        return uaResultTypesByFilter(HUMAN_PAGE_FILTER, List.of(), from, to, limit);
+    }
+
     private List<CountryResultTypeCount> countryResultTypesByFilter(String additionalFilter, List<Object> extraArgs,
                                                                       Instant from, Instant to, int limit) {
         String sql = SQL_SELECT_COUNTRY + RESULT_TYPE_SUMS + "\n" +
@@ -329,6 +368,11 @@ public class DashboardService {
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit) {
         return countryResultTypesByFilter("", List.of(), from, to, limit);
+    }
+
+    // Same aggregation, scoped to qualifying "Human" page requests — see HUMAN_PAGE_FILTER.
+    public List<CountryResultTypeCount> humanTopCountriesByResultType(Instant from, Instant to, int limit) {
+        return countryResultTypesByFilter(HUMAN_PAGE_FILTER, List.of(), from, to, limit);
     }
 
     public List<CountryResultTypeCount> topCountriesByFilteredRatio(Instant from, Instant to, int limit) {
@@ -363,6 +407,11 @@ public class DashboardService {
 
     public List<NameResultTypeCount> topUrlsByResultType(Instant from, Instant to, int limit) {
         return urlsByResultType("", List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to)), limit);
+    }
+
+    // Same aggregation, scoped to qualifying "Human" page requests — see HUMAN_PAGE_FILTER.
+    public List<NameResultTypeCount> humanTopUrlsByResultType(Instant from, Instant to, int limit) {
+        return urlsByResultType(HUMAN_PAGE_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to)), limit);
     }
 
     private List<NameResultTypeCount> urlsByResultType(String additionalFilter, List<Object> baseArgs, int limit) {
@@ -412,12 +461,23 @@ public class DashboardService {
     }
 
     public List<NameCount> topReferers(Instant from, Instant to, int limit) {
+        return topReferersByFilter("", List.of(), from, to, limit);
+    }
+
+    // Same referer aggregation, scoped to qualifying "Human" page requests — see HUMAN_PAGE_FILTER.
+    public List<NameCount> humanTopReferers(Instant from, Instant to, int limit) {
+        return topReferersByFilter(HUMAN_PAGE_FILTER, List.of(), from, to, limit);
+    }
+
+    private List<NameCount> topReferersByFilter(String additionalFilter, List<Object> extraArgs,
+                                                 Instant from, Instant to, int limit) {
         String sql = "SELECT referer as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND referer IS NOT NULL\n" +
                 "  AND " + RESULT_TYPE_EXCLUSION + "\n" +
                 andClause(selfExclusionClause) +
+                andClause(additionalFilter) +
                 "GROUP BY referer\n" +
                 "ORDER BY count DESC\n";
 
@@ -425,6 +485,7 @@ public class DashboardService {
         args.add(TimestampFormat.sqlValue(from));
         args.add(TimestampFormat.sqlValue(to));
         args.addAll(selfExclusionPatterns);
+        args.addAll(extraArgs);
 
         List<NameCount> raw = jdbc.query(sql, NAME_COUNT_MAPPER, args.toArray());
 
@@ -640,6 +701,12 @@ public class DashboardService {
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {
         String sql = SQL_DAILY_SELECT + SQL_DAILY_GROUP_ORDER;
+        return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+    }
+
+    // Same aggregation, scoped to qualifying "Human" page requests — see HUMAN_PAGE_FILTER.
+    public List<DailyResultTypeCount> humanRequestsPerDay(Instant from, Instant to) {
+        String sql = SQL_DAILY_SELECT + andClause(HUMAN_PAGE_FILTER) + SQL_DAILY_GROUP_ORDER;
         return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
@@ -922,8 +989,6 @@ public class DashboardService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
-    private static final String BOT_UA_GROUPS_FOR_IDENTITY_SHIFT = "'AI Bots','Search Bots','Other Bots'";
-
     private record IpSeen(String ip, Instant firstSeen, Instant lastSeen) {}
 
     private static String placeholders(int n) {
@@ -944,7 +1009,7 @@ public class DashboardService {
                 HAVING COUNT(DISTINCT c.ua_name) > 1
                 ORDER BY last_seen DESC
                 LIMIT ?
-                """.formatted(BOT_UA_GROUPS_FOR_IDENTITY_SHIFT),
+                """.formatted(BOT_UA_GROUPS_SQL_LIST),
                 (rs, _) -> new IpSeen(rs.getString("ip"),
                         Instant.parse(rs.getString("first_seen")), Instant.parse(rs.getString("last_seen"))),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), ipLimit);

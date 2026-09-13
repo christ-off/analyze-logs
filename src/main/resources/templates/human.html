@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Human', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Human</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/human')}"></th:block>
+
+    <th:block th:replace="~{fragments/dashboard-rows :: topRows}"></th:block>
+
+    <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/human.js}"></script>
+</th:block>
+</html>

@@ -1,6 +1,7 @@
 package com.example.analyzelog.service;
 
 import com.example.analyzelog.model.CloudFrontLogEntry;
+import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
@@ -268,6 +269,9 @@ class DashboardServiceIntegrationTest {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
     private static final String UA_EDGE_MACOS =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
+    // Matches DashboardService.HUMAN_EVIDENCE_SVG_PATH — the "written by a human" badge, required
+    // alongside /css/main.css as human evidence.
+    private static final String SVG_HUMAN_BADGE = "/assets/svgs/ecrit-par-un-humain.svg";
 
     @Test
     void topUserAgentsByResultType_countsPerResultType() {
@@ -452,8 +456,9 @@ class DashboardServiceIntegrationTest {
     void humanTrafficStats_excludesWebpDownloadsFromCounts() {
         Instant from = Instant.now();
         repository.saveEntries("logs/human-traffic-webp-test.gz", List.of(
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/"),                // qualifies as human evidence (page hit)
-                entryWithUaAndUri(UA_CHROME_WINDOWS, "/css/main.css"),    // qualifies as human evidence (stylesheet)
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/"),                // human evidence (page hit)
+                entryWithUaAndUri(UA_CHROME_WINDOWS, "/css/main.css"),    // human evidence (stylesheet)
+                entryWithUaAndUri(UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),    // human evidence (badge svg)
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/hero.webp"),
                 entryWithUaAndUri(UA_CHROME_WINDOWS, "/hero.webp")
         ));
@@ -461,8 +466,8 @@ class DashboardServiceIntegrationTest {
         HumanTrafficStats stats = dashboardService.humanTrafficStats(
                 UA_CHROME_WINDOWS, from, Instant.now().plusSeconds(5));
 
-        assertEquals(2, stats.totalRequests(), "webp downloads must not count toward total requests");
-        assertEquals(2, stats.humanRequests(), "webp downloads must not count toward human requests either");
+        assertEquals(3, stats.totalRequests(), "webp downloads must not count toward total requests");
+        assertEquals(3, stats.humanRequests(), "webp downloads must not count toward human requests either");
     }
 
     @Test
@@ -950,6 +955,7 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/ua-human-by-raw-ua-test.gz", List.of(
                 entryAt(Instant.now(), "1.2.3.4", uaChromeV1, "/"),               // human evidence (page hit)
                 entryAt(Instant.now(), "1.2.3.4", uaChromeV1, "/css/main.css"),   // human evidence (stylesheet)
+                entryAt(Instant.now(), "1.2.3.4", uaChromeV1, SVG_HUMAN_BADGE),   // human evidence (badge svg)
                 entryAt(Instant.now(), "5.6.7.8", uaChromeV2, "/api/data")        // no human evidence
         ));
 
@@ -957,8 +963,8 @@ class DashboardServiceIntegrationTest {
                 "Chrome / Windows", from, Instant.now().plusSeconds(5));
 
         var v1 = result.stream().filter(r -> uaChromeV1.equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, v1.totalRequests());
-        assertEquals(2, v1.humanRequests());
+        assertEquals(3, v1.totalRequests());
+        assertEquals(3, v1.humanRequests());
         assertEquals(100.0, v1.percentage());
 
         var v2 = result.stream().filter(r -> uaChromeV2.equals(r.name())).findFirst().orElseThrow();
@@ -990,6 +996,7 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/chrome-human-test.gz", List.of(
                 entryAt(Instant.now(), "1.2.3.4", UA_CHROME_MACOS, "/"),
                 entryAt(Instant.now(), "1.2.3.4", UA_CHROME_MACOS, "/css/main.css"),
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_MACOS, SVG_HUMAN_BADGE),
                 entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/"),
                 entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/css/main.css")
         ));
@@ -1000,8 +1007,8 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains(UA_CHROME_MACOS));
         assertFalse(names.contains(UA_FIREFOX_LINUX));
         var macos = result.stream().filter(r -> UA_CHROME_MACOS.equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, macos.humanRequests());
-        assertEquals(2, macos.totalRequests());
+        assertEquals(3, macos.humanRequests());
+        assertEquals(3, macos.totalRequests());
     }
 
     @Test
@@ -1061,6 +1068,7 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/edge-human-test.gz", List.of(
                 entryAt(Instant.now(), "1.2.3.4", UA_EDGE_MACOS, "/"),
                 entryAt(Instant.now(), "1.2.3.4", UA_EDGE_MACOS, "/css/main.css"),
+                entryAt(Instant.now(), "1.2.3.4", UA_EDGE_MACOS, SVG_HUMAN_BADGE),
                 entryAt(Instant.now(), "5.6.7.8", UA_CHROME_WINDOWS, "/"),
                 entryAt(Instant.now(), "5.6.7.8", UA_CHROME_WINDOWS, "/css/main.css")
         ));
@@ -1071,8 +1079,8 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains(UA_EDGE_MACOS));
         assertFalse(names.contains(UA_CHROME_WINDOWS));
         var macos = result.stream().filter(r -> UA_EDGE_MACOS.equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, macos.humanRequests());
-        assertEquals(2, macos.totalRequests());
+        assertEquals(3, macos.humanRequests());
+        assertEquals(3, macos.totalRequests());
     }
 
     @Test
@@ -1198,10 +1206,11 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/traffic-categories-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.2.3.4", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.2.3.4", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.2.3.4", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_GOOGLEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(6), "SFO53-P7", "3.4.5.6", "/index.html", null, UA_FIREFOX_LINUX, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.2.3.4", SVG_HUMAN_BADGE, null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "1.2.3.4", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.3.4.5", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(6), "SFO53-P7", "2.3.4.5", "/index.html", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(7), "SFO53-P7", "3.4.5.6", "/index.html", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
         var result = trafficCategories(base, base.plusSeconds(10));
@@ -1209,7 +1218,7 @@ class DashboardServiceIntegrationTest {
         assertEquals(3, result.size());
 
         var human = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(3, human.hit());
+        assertEquals(4, human.hit());
 
         var bot = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, bot.hit());
@@ -1219,22 +1228,28 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void trafficCategories_onlyMainCssStylesheetCountsAsHumanEvidence() {
+    void trafficCategories_requiresBothCssAndSvgBadgeAsHumanEvidence() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-images-test.gz", List.of(
-                // Pair A: requests "/" + /css/main.css → Probable human
+                // Pair A: requests "/" + /css/main.css + the svg badge → both evidence files present → Probable human
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                // Pair B: requests "/" + an image extension only (no /css/main.css) → Other
-                // (an image alone is no longer human evidence; a bot can fetch a single image directly)
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/photo.avif", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                // Pair C: requests "/" + only /robots.txt → Declared bots
-                makeEntry(base.plusSeconds(5), "SFO53-P7", "3.3.3.3", "/", null, UA_CLAUDEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", SVG_HUMAN_BADGE, null, UA_CHROME_WINDOWS, "US", "Hit"),
+                // Pair B: requests "/" + /css/main.css only, no svg badge → no longer enough on its own → Other
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit"),
+                // Pair C: requests "/" + the svg badge only, no css → also not enough on its own → Other
+                makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/", null, UA_EDGE_WINDOWS, "US", "Hit"),
+                makeEntry(base.plusSeconds(7), "SFO53-P7", "3.3.3.3", SVG_HUMAN_BADGE, null, UA_EDGE_WINDOWS, "US", "Hit"),
+                // Pair D: requests "/" + an arbitrary image, neither evidence file → Other
+                makeEntry(base.plusSeconds(8), "SFO53-P7", "4.4.4.4", "/", null, UA_CHROME_MACOS, "US", "Hit"),
+                makeEntry(base.plusSeconds(9), "SFO53-P7", "4.4.4.4", "/photo.avif", null, UA_CHROME_MACOS, "US", "Hit"),
+                // Pair E: requests "/" + only /robots.txt → Declared bots
+                makeEntry(base.plusSeconds(10), "SFO53-P7", "5.5.5.5", "/", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(11), "SFO53-P7", "5.5.5.5", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
-        var result = trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(15));
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
@@ -1242,13 +1257,13 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains("Other"));
 
         var probableHuman = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, probableHuman.hit());
+        assertEquals(3, probableHuman.hit());
 
         var declaredBots = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, declaredBots.hit());
 
         var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(2, other.hit());
+        assertEquals(6, other.hit()); // Pair B (2) + Pair C (2) + Pair D (2)
     }
 
     @Test
@@ -1268,12 +1283,13 @@ class DashboardServiceIntegrationTest {
 
     @Test
     void trafficCategories_probableHumanWinsOverDeclaredBots() {
-        // Pair with "/" + /css/main.css + "/robots.txt" → Probable human (higher priority, wins)
+        // Pair with "/" + /css/main.css + the svg badge + "/robots.txt" → Probable human (higher priority, wins)
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-js-test.gz", List.of(
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CLAUDEBOT, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit")
+                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plusSeconds(4), "SFO53-P7", "1.1.1.1", SVG_HUMAN_BADGE, null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
         var result = trafficCategories(base, base.plusSeconds(10));
@@ -1331,6 +1347,145 @@ class DashboardServiceIntegrationTest {
 
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {
         return makeEntry(ts, "SFO53-P7", ip, uri, null, ua, "US", "Hit");
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_countsPageRequestCorroboratedByCssAndSvgWithinOneHour() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-window-test.gz", List.of(
+                entryAt(base, "1.1.1.1", UA_CHROME_WINDOWS, "/"),
+                entryAt(base.plus(30, ChronoUnit.MINUTES), "1.1.1.1", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(45, ChronoUnit.MINUTES), "1.1.1.1", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                // Not a page (doesn't end in '/') — must not be counted even though the pair qualifies.
+                entryAt(base, "1.1.1.1", UA_CHROME_WINDOWS, "/about.html")
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, chrome.hit());
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_excludesPageWhenCssOutsideOneHourWindow() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-window-miss-test.gz", List.of(
+                entryAt(base, "2.2.2.2", UA_FIREFOX_LINUX, "/"),
+                entryAt(base.plus(61, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, SVG_HUMAN_BADGE)
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertFalse(result.stream().anyMatch(r -> "Firefox / Linux".equals(r.name())));
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_excludesPageWhenSvgBadgeMissing() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-svg-missing-test.gz", List.of(
+                // css is present within the window, but the svg badge is never requested at all —
+                // both are now required, so this must not count as human evidence.
+                entryAt(base, "13.13.13.13", UA_CHROME_MACOS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "13.13.13.13", UA_CHROME_MACOS, "/css/main.css")
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertFalse(result.stream().anyMatch(r -> "Chrome / macOS".equals(r.name())));
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_excludesKnownBotUserAgents() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-bot-exclusion-test.gz", List.of(
+                entryAt(base, "3.3.3.3", UA_CLAUDEBOT, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "3.3.3.3", UA_CLAUDEBOT, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "3.3.3.3", UA_CLAUDEBOT, SVG_HUMAN_BADGE)
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertFalse(result.stream().anyMatch(r -> UA_CLAUDEBOT.equals(r.name())));
+    }
+
+    @Test
+    void humanTopCountriesByResultType_excludesKnownBots() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-countries-test.gz", List.of(
+                makeEntry(base, "SFO53-P7", "4.4.4.4", "/", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "4.4.4.4", "/css/main.css", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "4.4.4.4", SVG_HUMAN_BADGE, null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(base, "SFO53-P7", "5.5.5.5", "/", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "5.5.5.5", "/css/main.css", null, UA_GOOGLEBOT, "US", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "5.5.5.5", SVG_HUMAN_BADGE, null, UA_GOOGLEBOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.humanTopCountriesByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        var codes = result.stream().map(CountryResultTypeCount::code).toList();
+        assertTrue(codes.contains("FR"));
+        assertFalse(codes.contains("US"));
+    }
+
+    @Test
+    void humanTopUrlsByResultType_countsOnlyQualifyingPageUrls() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-urls-test.gz", List.of(
+                entryAt(base, "6.6.6.6", UA_CHROME_WINDOWS, "/blog/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "6.6.6.6", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "6.6.6.6", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                entryAt(base, "7.7.7.7", UA_CLAUDEBOT, "/other/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "7.7.7.7", UA_CLAUDEBOT, "/css/main.css")
+        ));
+
+        var names = dashboardService.humanTopUrlsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10)
+                .stream().map(NameResultTypeCount::name).toList();
+
+        assertTrue(names.contains("/blog/"));
+        assertFalse(names.contains("/other/"));
+    }
+
+    @Test
+    void humanTopReferers_countsOnlyQualifyingPageRequests() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-referers-test.gz", List.of(
+                makeEntry(base, "SFO53-P7", "8.8.8.8", "/", "https://example.com/x", UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "8.8.8.8", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "8.8.8.8", SVG_HUMAN_BADGE, null, UA_CHROME_WINDOWS, "US", "Hit"),
+                makeEntry(base, "SFO53-P7", "9.9.9.1", "/", "https://bot-source.com/y", UA_CLAUDEBOT, "US", "Hit"),
+                makeEntry(base.plus(1, ChronoUnit.MINUTES), "SFO53-P7", "9.9.9.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit")
+        ));
+
+        var names = dashboardService.humanTopReferers(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10)
+                .stream().map(NameCount::name).toList();
+
+        assertTrue(names.contains("example.com"));
+        assertFalse(names.contains("bot-source.com"));
+    }
+
+    @Test
+    void humanRequestsPerDay_countsOnlyQualifyingPageRequests() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-per-day-test.gz", List.of(
+                entryAt(base, "10.10.10.10", UA_CHROME_WINDOWS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "10.10.10.10", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "10.10.10.10", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                entryAt(base, "11.11.11.11", UA_CLAUDEBOT, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "11.11.11.11", UA_CLAUDEBOT, "/css/main.css")
+        ));
+
+        var result = dashboardService.humanRequestsPerDay(base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS));
+
+        long totalHits = result.stream().mapToLong(DailyResultTypeCount::hit).sum();
+        assertEquals(1, totalHits);
     }
 
     @Test
