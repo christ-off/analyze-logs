@@ -1000,7 +1000,7 @@ public class DashboardService {
                 FROM cloudfront_logs
                 WHERE user_agent = ?
                   AND timestamp >= ? AND timestamp < ?
-                ORDER BY timestamp DESC
+                ORDER BY timestamp DESC, id DESC
                 """.formatted(RESULT_TYPE_GROUP_EXPR);
         return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }

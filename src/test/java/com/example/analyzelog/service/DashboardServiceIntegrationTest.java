@@ -1,5 +1,6 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
@@ -784,6 +785,25 @@ class DashboardServiceIntegrationTest {
         var result = dashboardService.requestsByUserAgent(UA_BOT, from, Instant.now().plusSeconds(5));
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void requestsByUserAgent_breaksSameSecondTiesByInsertionOrder() {
+        // CloudFront logs have only second-resolution timestamps, so requests within
+        // the same second share an identical timestamp value and must fall back to
+        // insertion order (id) to stay in their real chronological order.
+        Instant from = Instant.now();
+        Instant sameSecond = Instant.now().plusSeconds(1);
+        repository.saveEntries("logs/bot-ua-tie-test.gz", List.of(
+                makeEntry(sameSecond, "SFO53-P7", "1.2.3.4", "/first",  null, UA_BOT, "US", "Hit"),
+                makeEntry(sameSecond, "SFO53-P7", "1.2.3.4", "/second", null, UA_BOT, "US", "Hit"),
+                makeEntry(sameSecond, "SFO53-P7", "1.2.3.4", "/third",  null, UA_BOT, "US", "Hit")
+        ));
+
+        var result = dashboardService.requestsByUserAgent(UA_BOT, from, Instant.now().plusSeconds(5));
+
+        assertEquals(List.of("/third", "/second", "/first"),
+                result.stream().map(BotUaRequest::uriStem).toList());
     }
 
     @Test
