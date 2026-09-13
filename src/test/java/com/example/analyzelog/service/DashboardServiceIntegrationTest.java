@@ -1188,6 +1188,10 @@ class DashboardServiceIntegrationTest {
         assertEquals(0, result.get(1).otherRequests());
     }
 
+    private List<NameResultTypeCount> trafficCategories(Instant from, Instant to) {
+        return dashboardService.trafficCategories("", List.of(), from, to, false);
+    }
+
     @Test
     void trafficCategories_classifiesPairsIntoThreeCategories() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
@@ -1200,7 +1204,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.4.5.6", "/index.html", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         assertEquals(3, result.size());
 
@@ -1230,7 +1234,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/robots.txt", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
@@ -1257,7 +1261,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "FunctionGeneratedResponse")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
     }
@@ -1272,32 +1276,11 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CLAUDEBOT, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         var names = result.stream().map(r -> r.name()).toList();
         assertTrue(names.contains("Probable human"));
         assertFalse(names.contains("Declared bots"));
-    }
-
-    @Test
-    void trafficCategories_countryFiltersToSpecifiedCountry() {
-        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
-        repository.saveEntries("logs/traffic-categories-country-test.gz", List.of(
-                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "FR", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "FR", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit")
-        ));
-
-        var frResult = dashboardService.trafficCategories("FR", base, base.plusSeconds(10));
-        var usResult = dashboardService.trafficCategories("US", base, base.plusSeconds(10));
-
-        assertEquals(1, frResult.size());
-        assertEquals(1, usResult.size());
-        assertEquals("Probable human", frResult.getFirst().name());
-        assertEquals("Probable human", usResult.getFirst().name());
-        assertEquals(2, frResult.getFirst().hit());
-        assertEquals(2, usResult.getFirst().hit());
     }
 
     @Test
@@ -1313,7 +1296,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/rss.xml", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
 
@@ -1336,7 +1319,7 @@ class DashboardServiceIntegrationTest {
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/.env", null, UA_FIREFOX_LINUX, "US", "Hit")
         ));
 
-        var result = dashboardService.trafficCategories(base, base.plusSeconds(10));
+        var result = trafficCategories(base, base.plusSeconds(10));
 
         assertFalse(result.stream().anyMatch(r -> "Other".equals(r.name())));
         assertFalse(result.stream().anyMatch(r -> "Probable human".equals(r.name())));
@@ -1344,51 +1327,6 @@ class DashboardServiceIntegrationTest {
 
         var security = result.stream().filter(r -> "Security".equals(r.name())).findFirst().orElseThrow();
         assertEquals(5, security.hit());
-    }
-
-    @Test
-    void categoryUrlsByResultType_scopesUrlsToCategory() {
-        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
-        repository.saveEntries("logs/category-urls-test.gz", List.of(
-                // Probable human pair
-                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", "/about.html", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                // Declared bots pair
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
-        ));
-
-        var human = dashboardService.categoryUrlsByResultType("Probable human", base, base.plusSeconds(10), 10);
-        var bots  = dashboardService.categoryUrlsByResultType("Declared bots", base, base.plusSeconds(10), 10);
-
-        // /css/main.css itself is a configured excluded extension, so it drops out of the URL
-        // breakdown even though it's what qualified this pair as "Probable human".
-        assertEquals(2, human.size());
-        assertTrue(human.stream().map(NameResultTypeCount::name).toList().containsAll(List.of("/", "/about.html")));
-
-        assertEquals(2, bots.size());
-        assertTrue(bots.stream().map(NameResultTypeCount::name).toList().containsAll(List.of("/robots.txt", "/index.html")));
-    }
-
-    @Test
-    void categoryTopUserAgentsByResultType_scopesUserAgentsToCategory() {
-        Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
-        repository.saveEntries("logs/category-uas-test.gz", List.of(
-                makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
-                makeEntry(base.plusSeconds(3), "SFO53-P7", "2.2.2.2", "/robots.txt", null, UA_GOOGLEBOT, "US", "Hit"),
-                makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/index.html", null, UA_GOOGLEBOT, "US", "Hit")
-        ));
-
-        var human = dashboardService.categoryTopUserAgentsByResultType("Probable human", base, base.plusSeconds(10), 10);
-        var bots  = dashboardService.categoryTopUserAgentsByResultType("Declared bots", base, base.plusSeconds(10), 10);
-
-        assertEquals(1, human.size());
-        assertEquals("Chrome / Windows", human.getFirst().name());
-
-        assertEquals(1, bots.size());
-        assertEquals("Googlebot", bots.getFirst().name());
     }
 
     private CloudFrontLogEntry entryAt(Instant ts, String ip, String ua, String uri) {

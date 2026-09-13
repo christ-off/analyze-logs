@@ -53,9 +53,9 @@ function progress() { return document.getElementById('refreshProgress'); }
 describe('loadAllCharts', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('calls Charts.loadChart exactly 8 times', () => {
+    it('calls Charts.loadChart exactly 7 times', () => {
         loadAllCharts();
-        expect(Charts.loadChart).toHaveBeenCalledTimes(8);
+        expect(Charts.loadChart).toHaveBeenCalledTimes(7);
     });
 
 

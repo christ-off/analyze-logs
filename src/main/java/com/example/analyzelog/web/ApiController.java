@@ -124,12 +124,6 @@ public class ApiController {
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
     }
 
-    @GetMapping("/traffic-categories")
-    public List<NameResultTypeCount> trafficCategories(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.trafficCategories(range.from(), range.to());
-    }
-
     @GetMapping("/robots-disobedient")
     public List<DisobedientBot> robotsDisobedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

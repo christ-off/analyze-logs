@@ -14,8 +14,6 @@ export function loadAllCharts() {
     Charts.loadChart(`referers?${p}`,         data => Charts.horizontalBar('chartReferers', data,
         d => detailUrl('/referer-detail', { referer: d.name })));
     Charts.loadChart(`requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay',   data));
-    Charts.loadChart(`traffic-categories?${p}`, data => Charts.horizontalStackedBar('chartTrafficCategories', data,
-        d => detailUrl('/category-detail', { category: d.name })));
 }
 
 // ── Refresh from S3 with progress bar ──────────────────────────────────────

@@ -122,16 +122,4 @@ public class DashboardController extends DateRangeController {
         return "security";
     }
 
-    @GetMapping("/category-detail")
-    public String categoryDetail(
-            @RequestParam String category,
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            Model model) {
-        model.addAttribute("categoryName", category);
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        return "category-detail";
-    }
-
 }

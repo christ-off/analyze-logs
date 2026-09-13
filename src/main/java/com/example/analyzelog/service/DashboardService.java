@@ -119,8 +119,8 @@ public class DashboardService {
     private static final String HUMAN_EVIDENCE_EXT_PREDICATE = "uri_stem = '/css/main.css'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
-    // Pair classification used both to label rows (trafficCategories) and to filter rows
-    // belonging to a given category (categoryPairFilter) — kept as one expression so the two stay in sync.
+    // Pair classification used to label rows (trafficCategories) and to scope human-traffic
+    // stats to a UA or country (humanTrafficStats/countryHumanTrafficStats).
     // Built per-instance (rather than a static constant) because the 'Security' branch depends on the
     // configured uri-stem-groups flagged security: true.
     private static final String CATEGORY_CASE_EXPR_TEMPLATE = """
@@ -726,24 +726,12 @@ public class DashboardService {
         return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), "%" + refererLabel + "%");
     }
 
-    public List<NameResultTypeCount> trafficCategories(String country, Instant from, Instant to) {
-        return trafficCategories(COUNTRY_FILTER, List.of(country), from, to);
-    }
-
-    public List<NameResultTypeCount> trafficCategories(Instant from, Instant to) {
-        return trafficCategories("", List.of(), from, to);
-    }
-
-    // package-private, extra filter reserved for later reuse (e.g. "ua_name = ?", "country = ?")
-    List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
-                                                 Instant from, Instant to) {
-        return trafficCategories(additionalFilter, extraArgs, from, to, false);
-    }
-
+    // package-private (exercised directly by DashboardServiceIntegrationTest); additionalFilter is
+    // reserved for reuse (e.g. "ua_name = ?", "country = ?") beyond the current humanTrafficStats callers.
     // excludeWebp: drop .webp requests from the outer per-request count (they're kept as
     // "Probable human" evidence in the pair_class CTE) — used for the human-traffic proportion,
     // where bulk webp asset downloads shouldn't inflate the request totals.
-    private List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
+    List<NameResultTypeCount> trafficCategories(String additionalFilter, List<Object> extraArgs,
                                                  Instant from, Instant to, boolean excludeWebp) {
         // No outer filtering needed — we count all result types from classified pairs.
         String whereAfterRange = additionalFilter.isEmpty() ? "" : SQL_AND_INDENT + additionalFilter + "\n";
@@ -840,29 +828,6 @@ public class DashboardService {
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
 
-
-    // Matches a row's effective category — same pair classification used in trafficCategories().
-    private String categoryPairFilter() {
-        return """
-                (client_ip, user_agent) IN (
-                    SELECT client_ip, user_agent
-                    FROM cloudfront_logs
-                    WHERE timestamp BETWEEN ? AND ?
-                    GROUP BY client_ip, user_agent
-                    HAVING %s = ?
-                )""".formatted(categoryCaseExpr);
-    }
-
-    public List<NameResultTypeCount> categoryUrlsByResultType(String category, Instant from, Instant to, int limit) {
-        String fromSql = TimestampFormat.sqlValue(from);
-        String toSql = TimestampFormat.sqlValue(to);
-        return urlsByResultType(categoryPairFilter(), List.of(fromSql, toSql, fromSql, toSql, category), limit);
-    }
-
-    public List<NameResultTypeCount> categoryTopUserAgentsByResultType(String category, Instant from, Instant to, int limit) {
-        return uaResultTypesByFilter(categoryPairFilter(),
-                List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), category), from, to, limit);
-    }
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
     public HumanTrafficStats humanTrafficStats(String ua, Instant from, Instant to) {
