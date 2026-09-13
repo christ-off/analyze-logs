@@ -119,6 +119,12 @@ public class ApiController {
         return dashboardService.unknownUaRequests(range.from(), range.to(), appProperties.topDetailLimit());
     }
 
+    @GetMapping("/automated-user-agents")
+    public List<NameCount> automatedUserAgents(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.neverHumanUserAgents(range.from(), range.to(), appProperties.topLimit());
+    }
+
     @GetMapping("/edge-locations")
     public List<NameCount> edgeLocations(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

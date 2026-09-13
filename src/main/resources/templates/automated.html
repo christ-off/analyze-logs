@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Automated', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Automated</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"    th:content="${from}"/>
+    <meta name="cf-to"      th:content="${to}"/>
+    <meta name="cf-to-date" th:content="${toDate}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/automated')}"></th:block>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>User Agents Never Seen as Human</span>
+            <span class="text-muted fw-normal small" id="automatedUasCount"></span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>User Agent</th>
+                            <th class="text-end" style="width:140px">Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody id="automatedUas" class="text-muted">
+                        <tr><td colspan="2" class="text-center py-3">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/automated.js}"></script>
+</th:block>
+</html>

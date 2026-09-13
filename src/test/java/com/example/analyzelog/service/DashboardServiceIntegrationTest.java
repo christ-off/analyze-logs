@@ -974,6 +974,33 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void neverHumanUserAgents_excludesUasWithAnyHumanEvidenceAndSortsByCountDesc() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/never-human-test.gz", List.of(
+                // Human evidence for this UA: none of its requests should be excluded from the listing.
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_WINDOWS, "/"),
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(Instant.now(), "1.2.3.4", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                // No human evidence ever — smaller volume.
+                entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/api/data"),
+                entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/api/more"),
+                // No human evidence ever — larger volume, should sort first.
+                entryAt(Instant.now(), "9.9.9.9", "curl/8.0", "/api/a"),
+                entryAt(Instant.now(), "9.9.9.9", "curl/8.0", "/api/b"),
+                entryAt(Instant.now(), "9.9.9.9", "curl/8.0", "/api/c")
+        ));
+
+        var result = dashboardService.neverHumanUserAgents(from, Instant.now().plusSeconds(5), 50);
+
+        var names = result.stream().map(NameCount::name).toList();
+        assertFalse(names.contains(UA_CHROME_WINDOWS));
+        assertTrue(names.contains(UA_FIREFOX_LINUX));
+        assertTrue(names.contains("curl/8.0"));
+        assertEquals("curl/8.0", result.get(0).name());
+        assertEquals(3, result.get(0).count());
+    }
+
+    @Test
     void chromeRawUserAgents_aggregatesEveryOsVariantButExcludesOtherBrowsers() {
         Instant from = Instant.now();
         repository.saveEntries("logs/chrome-raw-test.gz", List.of(
