@@ -90,6 +90,22 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void countryTopUserAgentsByResultType_countsRefreshHitAsHit() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-ua-refreshhit-test.gz", List.of(
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Hit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "RefreshHit"),
+                entryWithUaAndCountryAndResultType(UA_CHROME_WINDOWS, "FR", "Miss")
+        ));
+
+        var result = dashboardService.countryTopUserAgentsByResultType("FR", from, Instant.now().plusSeconds(5), 10);
+
+        var chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, chrome.hit());
+        assertEquals(1, chrome.miss());
+    }
+
+    @Test
     void topUrlsByResultType_excludesStaticExtensions() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-filter-test.gz", List.of(

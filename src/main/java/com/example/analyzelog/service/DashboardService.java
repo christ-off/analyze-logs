@@ -65,8 +65,9 @@ public class DashboardService {
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
     private static final String RESULT_TYPE_GROUP_EXPR =
-            "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") " +
-            "THEN 'Filtered' ELSE edge_response_result_type END";
+            "CASE WHEN edge_response_result_type IN (" + ResultTypeSql.FUNCTION_TYPE_LIST + ") THEN 'Filtered' " +
+            "WHEN edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ") THEN 'Hit' " +
+            "ELSE edge_response_result_type END";
     private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> {
         String iso = rs.getString("country");
         String countryName = resolveCountryDisplayOrNull(iso);
@@ -133,9 +134,10 @@ public class DashboardService {
             "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
             "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_CSS_PATH) + "\n" +
             "  " + withinOneHourExistsClause("m2", HUMAN_EVIDENCE_SVG_PATH);
-    // Only Hit/Miss responses count as real traffic — Error, RefreshHit and FunctionGeneratedResponse
-    // rows (scanners, edge retries, filtered requests) are excluded from these predicates.
-    private static final String RESULT_TYPE_HIT_OR_MISS = "edge_response_result_type IN ('Hit', 'Miss')";
+    // Only Hit/Miss responses count as real traffic — Error and FunctionGeneratedResponse rows
+    // (scanners, filtered requests) are excluded from these predicates. RefreshHit counts as a Hit.
+    private static final String RESULT_TYPE_HIT_OR_MISS =
+            "edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ", 'Miss')";
     private static final String HUMAN_EVIDENCE_CSS_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_CSS_PATH + "'";
     private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_SVG_PATH + "'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
@@ -837,7 +839,7 @@ public class DashboardService {
     public List<NameResultTypeCount> probableBots(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent as name,
-                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Hit' THEN 1 ELSE 0 END) AS hit,
+                SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type IN ('Hit','RefreshHit') THEN 1 ELSE 0 END) AS hit,
                 SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Miss' THEN 1 ELSE 0 END) AS miss,
                 SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type IN ('FunctionGeneratedResponse','FunctionExecutionError','FunctionThrottledError') THEN 1 ELSE 0 END) AS function,
                 SUM(CASE WHEN uri_stem NOT LIKE '%.%' AND uri_stem != '/' AND edge_response_result_type = 'Error' THEN 1 ELSE 0 END) AS error,
@@ -1044,7 +1046,7 @@ public class DashboardService {
     public List<SiteConfigFetcher> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent AS name,
-                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Hit'  THEN 1 ELSE 0 END) AS hit,
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN ('Hit','RefreshHit') THEN 1 ELSE 0 END) AS hit,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Miss' THEN 1 ELSE 0 END) AS miss,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN (%2$s) THEN 1 ELSE 0 END) AS function,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Error' THEN 1 ELSE 0 END) AS error,
