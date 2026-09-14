@@ -2,7 +2,6 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
-import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.service.AdminService;
 import com.example.analyzelog.util.StringUtils;
 import org.springframework.stereotype.Controller;
@@ -41,7 +40,6 @@ public class AdminController {
     public String admin(Model model) {
         model.addAttribute("userAgents", adminService.allUa());
         model.addAttribute("refererRules", adminService.allReferers());
-        model.addAttribute("noiseRules", adminService.allNoiseRules());
         return "admin";
     }
 
@@ -105,22 +103,6 @@ public class AdminController {
     @PostMapping("/referer/delete")
     public String deleteReferer(@RequestParam long id, RedirectAttributes ra) {
         return adminAction(ra, "Referer rule deleted.", () -> adminService.deleteReferer(id));
-    }
-
-    @PostMapping("/noise/add")
-    public String addNoiseRule(@RequestParam String uaName,
-                               @RequestParam String uriStem,
-                               RedirectAttributes ra) {
-        return adminAction(ra, "Noise rule '%s %s' added.".formatted(uaName, uriStem),
-                () -> adminService.addNoiseRule(new NoiseFilterEntry(uaName, uriStem)));
-    }
-
-    @PostMapping("/noise/delete")
-    public String deleteNoiseRule(@RequestParam String uaName,
-                                  @RequestParam String uriStem,
-                                  RedirectAttributes ra) {
-        return adminAction(ra, "Noise rule '%s %s' deleted.".formatted(uaName, uriStem),
-                () -> adminService.deleteNoiseRule(uaName, uriStem));
     }
 
     @PostMapping("/reload")

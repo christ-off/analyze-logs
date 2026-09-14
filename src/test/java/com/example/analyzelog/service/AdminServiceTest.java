@@ -1,6 +1,5 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
 import org.junit.jupiter.api.Test;
@@ -50,18 +49,6 @@ class AdminServiceTest {
 
         assertEquals(1, result.size());
         assertEquals("Google", result.getFirst().label());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void allNoiseRules_returnsListFromDb() {
-        NoiseFilterEntry entry = new NoiseFilterEntry("Feedly", "/feed");
-        when(jdbc.query(anyString(), any(RowMapper.class))).thenReturn(List.of(entry));
-
-        List<NoiseFilterEntry> result = service.allNoiseRules();
-
-        assertEquals(1, result.size());
-        assertEquals("Feedly", result.getFirst().uaName());
     }
 
     @Test
@@ -128,20 +115,6 @@ class AdminServiceTest {
     void deleteReferer_deletesByRowid() {
         service.deleteReferer(7L);
         verify(jdbc).update("DELETE FROM static_referer WHERE rowid = ?", 7L);
-    }
-
-    @Test
-    void addNoiseRule_insertsRow() {
-        service.addNoiseRule(new NoiseFilterEntry("Fediverse", "/"));
-        verify(jdbc).update("INSERT INTO noise_filter (ua_name, uri_stem) VALUES (?, ?)",
-                "Fediverse", "/");
-    }
-
-    @Test
-    void deleteNoiseRule_deletesByPrimaryKey() {
-        service.deleteNoiseRule("Feedly", "/feed.xml");
-        verify(jdbc).update("DELETE FROM noise_filter WHERE ua_name = ? AND uri_stem = ?",
-                "Feedly", "/feed.xml");
     }
 
     @Test

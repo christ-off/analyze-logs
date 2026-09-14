@@ -1,6 +1,5 @@
 package com.example.analyzelog.service;
 
-import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
 import com.example.analyzelog.util.StringUtils;
@@ -81,21 +80,6 @@ public class AdminService {
 
     public void deleteReferer(long id) {
         jdbc.update("DELETE FROM static_referer WHERE rowid = ?", id);
-    }
-
-    public List<NoiseFilterEntry> allNoiseRules() {
-        return jdbc.query(
-                "SELECT ua_name, uri_stem FROM noise_filter ORDER BY ua_name, uri_stem",
-                (rs, _) -> new NoiseFilterEntry(rs.getString("ua_name"), rs.getString("uri_stem")));
-    }
-
-    public void addNoiseRule(NoiseFilterEntry entry) {
-        jdbc.update("INSERT INTO noise_filter (ua_name, uri_stem) VALUES (?, ?)",
-                entry.uaName(), entry.uriStem());
-    }
-
-    public void deleteNoiseRule(String uaName, String uriStem) {
-        jdbc.update("DELETE FROM noise_filter WHERE ua_name = ? AND uri_stem = ?", uaName, uriStem);
     }
 
     public void reloadConfiguration() {

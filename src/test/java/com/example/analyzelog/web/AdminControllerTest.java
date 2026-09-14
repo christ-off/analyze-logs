@@ -1,6 +1,5 @@
 package com.example.analyzelog.web;
 
-import com.example.analyzelog.model.NoiseFilterEntry;
 import com.example.analyzelog.model.StaticRefererEntry;
 import com.example.analyzelog.model.StaticUaEntry;
 import com.example.analyzelog.service.AdminService;
@@ -33,7 +32,6 @@ class AdminControllerTest {
     void get_admin_returnsAdminView() {
         when(adminService.allUa()).thenReturn(List.of());
         when(adminService.allReferers()).thenReturn(List.of());
-        when(adminService.allNoiseRules()).thenReturn(List.of());
 
         assertThat(mvc.get().uri("/admin").exchange())
                 .hasStatusOk()
@@ -207,56 +205,6 @@ class AdminControllerTest {
 
         assertThat(mvc.post().uri("/admin/referer/delete").with(csrf())
                         .param("id", "3")
-                        .exchange())
-                .hasStatus3xxRedirection()
-                .hasRedirectedUrl("/admin");
-    }
-
-    // ── Noise filter endpoints ────────────────────────────────────────────────
-
-    @Test
-    void post_addNoiseRule_redirectsToAdmin() {
-        assertThat(mvc.post().uri("/admin/noise/add").with(csrf())
-                        .param("uaName", "TestBot")
-                        .param("uriStem", "/wp-login.php")
-                        .exchange())
-                .hasStatus3xxRedirection()
-                .hasRedirectedUrl("/admin");
-
-        verify(adminService).addNoiseRule(any(NoiseFilterEntry.class));
-    }
-
-    @Test
-    void post_addNoiseRule_onError_redirectsToAdmin() {
-        doThrow(new RuntimeException("duplicate")).when(adminService).addNoiseRule(any());
-
-        assertThat(mvc.post().uri("/admin/noise/add").with(csrf())
-                        .param("uaName", "TestBot")
-                        .param("uriStem", "/wp-login.php")
-                        .exchange())
-                .hasStatus3xxRedirection()
-                .hasRedirectedUrl("/admin");
-    }
-
-    @Test
-    void post_deleteNoiseRule_redirectsToAdmin() {
-        assertThat(mvc.post().uri("/admin/noise/delete").with(csrf())
-                        .param("uaName", "TestBot")
-                        .param("uriStem", "/wp-login.php")
-                        .exchange())
-                .hasStatus3xxRedirection()
-                .hasRedirectedUrl("/admin");
-
-        verify(adminService).deleteNoiseRule("TestBot", "/wp-login.php");
-    }
-
-    @Test
-    void post_deleteNoiseRule_onError_redirectsToAdmin() {
-        doThrow(new RuntimeException("not found")).when(adminService).deleteNoiseRule(anyString(), anyString());
-
-        assertThat(mvc.post().uri("/admin/noise/delete").with(csrf())
-                        .param("uaName", "TestBot")
-                        .param("uriStem", "/wp-login.php")
                         .exchange())
                 .hasStatus3xxRedirection()
                 .hasRedirectedUrl("/admin");
