@@ -833,6 +833,8 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // → Browsers (Chrome / Windows)
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),  // → Browsers
                 entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Miss"), // → Browsers (Firefox / Linux)
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"), // excluded (Error result type)
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionGeneratedResponse"), // excluded (Filtered)
                 entryWithUaAndResultType("ClaudeBot/1.0",   "Hit"),  // → AI Bots (ua_name = "ClaudeBot")
                 entryWithUaAndResultType(null,              "Hit")   // excluded (ua_name = "(no user agent)")
         ));
@@ -851,6 +853,26 @@ class DashboardServiceIntegrationTest {
 
         // sorted by count DESC
         assertTrue(result.get(0).count() >= result.get(result.size() - 1).count());
+    }
+
+    @Test
+    void platformCounts_countsOnlyHitAndMiss() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/platform-counts-test.gz", List.of(
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit"),   // → Windows
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Miss"),  // → Windows
+                entryWithUaAndResultType(UA_FIREFOX_LINUX,  "Hit"),   // → Linux
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error"), // excluded (Error result type)
+                entryWithUaAndResultType(UA_CHROME_WINDOWS, "FunctionGeneratedResponse") // excluded (Filtered)
+        ));
+
+        var result = dashboardService.platformCounts(from, Instant.now().plusSeconds(5));
+
+        var windows = result.stream().filter(r -> "Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(2, windows.count());
+
+        var linux = result.stream().filter(r -> "Linux".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, linux.count());
     }
 
     @Test

@@ -133,9 +133,9 @@ public class DashboardService {
             "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
             "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_CSS_PATH) + "\n" +
             "  " + withinOneHourExistsClause("m2", HUMAN_EVIDENCE_SVG_PATH);
-    // Only Hit/Miss responses count as "Probable human" evidence — Error, RefreshHit and
-    // FunctionGeneratedResponse rows (scanners, edge retries) must not qualify a pair.
-    private static final String HUMAN_EVIDENCE_RESULT_TYPES = "edge_response_result_type IN ('Hit','Miss')";
+    // Only Hit/Miss responses count as real traffic — Error, RefreshHit and FunctionGeneratedResponse
+    // rows (scanners, edge retries, filtered requests) are excluded from these predicates.
+    private static final String RESULT_TYPE_HIT_OR_MISS = "edge_response_result_type IN ('Hit', 'Miss')";
     private static final String HUMAN_EVIDENCE_CSS_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_CSS_PATH + "'";
     private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_SVG_PATH + "'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
@@ -218,9 +218,9 @@ public class DashboardService {
                 .map(UriStemGroupProperties.Group::name)
                 .toList();
         this.categoryCaseExpr = CATEGORY_CASE_EXPR_TEMPLATE.formatted(FEED_URI_LIST, securityUriStemWhenClause(),
-                HUMAN_EVIDENCE_RESULT_TYPES,
-                HUMAN_EVIDENCE_CSS_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES,
-                HUMAN_EVIDENCE_SVG_PREDICATE, HUMAN_EVIDENCE_RESULT_TYPES);
+                RESULT_TYPE_HIT_OR_MISS,
+                HUMAN_EVIDENCE_CSS_PREDICATE, RESULT_TYPE_HIT_OR_MISS,
+                HUMAN_EVIDENCE_SVG_PREDICATE, RESULT_TYPE_HIT_OR_MISS);
         this.sqlUriByResultType = "SELECT \n" +
                 buildUriStemNameCase(uriStemGroupProperties.groups()) +
                 RESULT_TYPE_SUMS + "\n" +
@@ -308,6 +308,7 @@ public class DashboardService {
                      "FROM cloudfront_logs c\n" +
                      "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
                      "WHERE c.timestamp BETWEEN ? AND ?\n" +
+                     "  AND c." + RESULT_TYPE_HIT_OR_MISS + "\n" +
                      "GROUP BY s.ua_group\n" +
                      "ORDER BY count DESC";
         return jdbc.query(sql, NAME_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
@@ -458,6 +459,8 @@ public class DashboardService {
                 COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
+                  AND\s""" + RESULT_TYPE_HIT_OR_MISS + """
+
                 GROUP BY name
                 ORDER BY count DESC
                 """;
