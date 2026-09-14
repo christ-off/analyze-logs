@@ -1046,7 +1046,7 @@ public class DashboardService {
     public List<SiteConfigFetcher> browserConfigFetches(Instant from, Instant to, int limit) {
         return jdbc.query("""
                 SELECT c.user_agent AS name,
-                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN ('Hit','RefreshHit') THEN 1 ELSE 0 END) AS hit,
+                       SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN (%3$s) THEN 1 ELSE 0 END) AS hit,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Miss' THEN 1 ELSE 0 END) AS miss,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type IN (%2$s) THEN 1 ELSE 0 END) AS function,
                        SUM(CASE WHEN c.uri_stem IN (%1$s) AND c.edge_response_result_type = 'Error' THEN 1 ELSE 0 END) AS error,
@@ -1058,7 +1058,7 @@ public class DashboardService {
                 GROUP BY c.user_agent
                 HAVING (hit + miss + function + error) > 0
                 ORDER BY other_requests DESC
-                """.formatted(SITE_CONFIG_PATHS_SQL_LIST, ResultTypeSql.FUNCTION_TYPE_LIST)
+                """.formatted(SITE_CONFIG_PATHS_SQL_LIST, ResultTypeSql.FUNCTION_TYPE_LIST, ResultTypeSql.HIT_TYPE_LIST)
                 + LIMIT_PARAM,
                 SITE_CONFIG_FETCHER_MAPPER,
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
