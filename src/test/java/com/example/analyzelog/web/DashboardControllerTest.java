@@ -165,19 +165,6 @@ class DashboardControllerTest {
     }
 
     @Test
-    void automatedReturns200() {
-        assertThat(mvc.get().uri("/automated").exchange())
-                .hasStatusOk()
-                .hasViewName("automated");
-    }
-
-    @Test
-    void automatedDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/automated").exchange())
-                .model().containsEntry("activeRange", "7d");
-    }
-
-    @Test
     void securityReturns200() {
         assertThat(mvc.get().uri("/security").exchange())
                 .hasStatusOk()

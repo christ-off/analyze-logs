@@ -637,32 +637,6 @@ public class DashboardService {
         return humanTrafficByUserAgent(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
     }
 
-    // Every raw user_agent string across the whole log whose (client_ip, user_agent) pairs never
-    // classify as "Probable human" (see categoryCaseExpr) — i.e. fully automated traffic. Sorted by
-    // request volume desc, the Automated page's sole listing.
-    public List<NameCount> neverHumanUserAgents(Instant from, Instant to, int limit) {
-        String sql = """
-                WITH pair_class AS (
-                    SELECT client_ip, user_agent,
-                        %s AS category
-                    FROM cloudfront_logs
-                    WHERE timestamp BETWEEN ? AND ?
-                    GROUP BY client_ip, user_agent
-                )
-                SELECT c.user_agent AS name, COUNT(*) AS count
-                FROM cloudfront_logs c
-                JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
-                WHERE c.timestamp BETWEEN ? AND ?
-                GROUP BY c.user_agent
-                HAVING SUM(CASE WHEN pc.category = 'Probable human' THEN 1 ELSE 0 END) = 0
-                ORDER BY count DESC
-                LIMIT ?
-                """.formatted(categoryCaseExpr);
-        String fromSql = TimestampFormat.sqlValue(from);
-        String toSql = TimestampFormat.sqlValue(to);
-        return jdbc.query(sql, NAME_COUNT_MAPPER, fromSql, toSql, fromSql, toSql, limit);
-    }
-
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
         return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to);
     }

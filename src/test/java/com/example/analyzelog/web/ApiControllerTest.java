@@ -183,20 +183,6 @@ class ApiControllerTest {
     }
 
     @Test
-    void automatedUserAgentsReturnsJson() {
-        when(dashboardService.neverHumanUserAgents(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("bad-bot/1.0", 300)));
-
-        assertThat(mvc.get().uri("/api/automated-user-agents")
-                .param("from", "2026-01-01").param("to", "2026-01-31")
-                .exchange())
-                .hasStatusOk()
-                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                .bodyJson()
-                .extractingPath("$[0].name").isEqualTo("bad-bot/1.0");
-    }
-
-    @Test
     void missingParamsReturns400() {
         assertThat(mvc.get().uri("/api/ua-names-split").exchange())
                 .hasStatus(HttpStatus.BAD_REQUEST);
