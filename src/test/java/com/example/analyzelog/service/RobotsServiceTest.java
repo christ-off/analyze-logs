@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
+import com.example.analyzelog.model.RobotsTxtSkippingBot;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ class RobotsServiceTest {
     @BeforeEach
     void clearTable() {
         jdbc.update("DELETE FROM robots_disallowed");
+        jdbc.update("DELETE FROM cloudfront_logs");
     }
 
     // ClaudeBot/1.0 classifies to ua_name="ClaudeBot", Googlebot/2.1 to "Googlebot"
@@ -125,6 +127,81 @@ class RobotsServiceTest {
     void findObedientBots_emptyWhenNoData() {
         Instant from = Instant.now();
         List<ObedientBot> result = robotsService.findObedientBots(from, Instant.now().plusSeconds(5));
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findBotsSkippingRobotsTxt_excludesBotsThatFetchedRobotsTxt() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/robots-skipped-test.gz", List.of(
+                entryWithUaAndUri(UA_GOOGLEBOT, "/robots.txt", "Hit"),   // has robots.txt evidence: excluded
+                entryWithUaAndUri(UA_GOOGLEBOT, "/index.html", "Hit"),
+                entryWithUaAndUri(UA_CLAUDEBOT, "/index.html", "Hit"),   // no robots.txt evidence: included
+                entryWithUaAndUri(UA_CLAUDEBOT, "/about.html", "Miss")
+        ));
+
+        List<RobotsTxtSkippingBot> result = robotsService.findBotsSkippingRobotsTxt(from, Instant.now().plusSeconds(5));
+
+        assertEquals(1, result.size());
+        RobotsTxtSkippingBot bot = result.getFirst();
+        assertEquals(UA_CLAUDEBOT, bot.userAgent());
+        assertEquals(2, bot.count());
+        assertEquals(1, bot.hit());
+        assertEquals(1, bot.miss());
+    }
+
+    @Test
+    void findBotsSkippingRobotsTxt_groupsByRawUserAgentNotClassifiedName() {
+        String claudeBotV2 = "ClaudeBot/2.0";
+
+        Instant from = Instant.now();
+        repository.saveEntries("logs/robots-skipped-variants-test.gz", List.of(
+                entryWithUaAndUri(UA_CLAUDEBOT, "/index.html", "Hit"),
+                entryWithUaAndUri(claudeBotV2, "/index.html", "Hit"),
+                entryWithUaAndUri(claudeBotV2, "/about.html", "Hit")
+        ));
+
+        List<RobotsTxtSkippingBot> result = robotsService.findBotsSkippingRobotsTxt(from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.size());
+        var byUa = result.stream().collect(java.util.stream.Collectors.toMap(RobotsTxtSkippingBot::userAgent, b -> b));
+        assertEquals(1, byUa.get(UA_CLAUDEBOT).count());
+        assertEquals(2, byUa.get(claudeBotV2).count());
+    }
+
+    @Test
+    void findBotsSkippingRobotsTxt_checksRobotsTxtAcrossFullLogNotJustSelectedRange() {
+        // Written before `from`, so it falls outside the queried range but is still in the full log.
+        repository.saveEntries("logs/robots-skipped-history-test.gz", List.of(
+                entryWithUaAndUri(UA_GOOGLEBOT, "/robots.txt", "Hit")
+        ));
+
+        Instant from = Instant.now();
+        repository.saveEntries("logs/robots-skipped-recent-test.gz", List.of(
+                entryWithUaAndUri(UA_GOOGLEBOT, "/index.html", "Hit")    // the only entry within [from, to]
+        ));
+
+        List<RobotsTxtSkippingBot> result = robotsService.findBotsSkippingRobotsTxt(from, Instant.now().plusSeconds(5));
+
+        assertTrue(result.isEmpty(), "Googlebot's earlier robots.txt fetch should still exclude it");
+    }
+
+    @Test
+    void findBotsSkippingRobotsTxt_onlyIncludesKnownBotGroups() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/robots-skipped-nonbot-test.gz", List.of(
+                entryWithUaAndUri("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36", "/index.html", "Hit")
+        ));
+
+        List<RobotsTxtSkippingBot> result = robotsService.findBotsSkippingRobotsTxt(from, Instant.now().plusSeconds(5));
+
+        assertTrue(result.isEmpty(), "non-bot UAs must not appear in the skipped-robots-txt listing");
+    }
+
+    @Test
+    void findBotsSkippingRobotsTxt_emptyWhenNoData() {
+        Instant from = Instant.now();
+        List<RobotsTxtSkippingBot> result = robotsService.findBotsSkippingRobotsTxt(from, Instant.now().plusSeconds(5));
         assertTrue(result.isEmpty());
     }
 

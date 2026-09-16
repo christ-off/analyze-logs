@@ -8,6 +8,7 @@ import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.RobotsTxtSkippingBot;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.service.DashboardService;
 import com.example.analyzelog.service.IpInfoService;
@@ -355,6 +356,20 @@ class ApiControllerTest {
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson()
                 .extractingPath("$[0].userAgent").isEqualTo("ClaudeBot");
+    }
+
+    @Test
+    void robotsSkippedReturnsJson() {
+        when(robotsService.findBotsSkippingRobotsTxt(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new RobotsTxtSkippingBot("Baiduspider", 10, 8, 2, 0, 0)));
+
+        assertThat(mvc.get().uri("/api/robots-skipped")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].userAgent").isEqualTo("Baiduspider");
     }
 
     @Test

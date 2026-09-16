@@ -10,6 +10,7 @@ import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.ObedientBot;
+import com.example.analyzelog.model.RobotsTxtSkippingBot;
 import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.model.SocialNetworkRequest;
 import com.example.analyzelog.model.UnknownUaRequest;
@@ -171,6 +172,12 @@ public class ApiController {
     public List<ObedientBot> robotsObedient(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return robotsService.findObedientBots(range.from(), range.to());
+    }
+
+    @GetMapping("/robots-skipped")
+    public List<RobotsTxtSkippingBot> robotsSkipped(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return robotsService.findBotsSkippingRobotsTxt(range.from(), range.to());
     }
 
     @GetMapping("/identity-shifts")

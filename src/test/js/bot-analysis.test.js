@@ -18,7 +18,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
-import { loadDisobedientSection, loadObedientSection, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
+import { loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
 
 async function flushPromises() {
     for (let i = 0; i < 10; i++) await Promise.resolve();
@@ -116,6 +116,53 @@ describe('loadObedientSection', () => {
         await flushPromises();
 
         expect(document.getElementById('obedientBotsTable').textContent)
+            .toContain('Failed to load');
+    });
+});
+
+const SKIPPED_HTML = `
+    <table>
+        <tbody id="robotsSkippedTable"><tr><td colspan="3">Loading...</td></tr></tbody>
+    </table>
+`;
+
+describe('loadRobotsSkippedBots', () => {
+    beforeEach(() => {
+        document.body.innerHTML = SKIPPED_HTML;
+        vi.clearAllMocks();
+    });
+
+    it('renders rows for each bot', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            json: () => Promise.resolve([SAMPLE_BOT]),
+        }));
+        loadRobotsSkippedBots();
+        await flushPromises();
+
+        expect(fetch.mock.calls[0][0]).toContain('/api/robots-skipped?');
+        const rows = document.querySelectorAll('#robotsSkippedTable tr');
+        expect(rows).toHaveLength(1);
+        expect(rows[0].textContent).toContain('BadBot/1.0');
+        expect(rows[0].textContent).toContain('5');
+    });
+
+    it('shows empty state when array is empty', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            json: () => Promise.resolve([]),
+        }));
+        loadRobotsSkippedBots();
+        await flushPromises();
+
+        expect(document.getElementById('robotsSkippedTable').textContent)
+            .toContain('No bots skipping robots.txt found');
+    });
+
+    it('shows error state on fetch failure', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
+        loadRobotsSkippedBots();
+        await flushPromises();
+
+        expect(document.getElementById('robotsSkippedTable').textContent)
             .toContain('Failed to load');
     });
 });

@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
+import com.example.analyzelog.model.RobotsTxtSkippingBot;
 import com.example.analyzelog.util.TimestampFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -104,6 +105,35 @@ public class RobotsService {
                 "HAVING SUM(CASE WHEN c.uri_stem != '/robots.txt' THEN 1 ELSE 0 END) = 0\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new ObedientBot(
+                        rs.getString("user_agent"),
+                        rs.getLong("count"),
+                        rs.getLong("hit"),
+                        rs.getLong("miss"),
+                        rs.getLong("error"),
+                        rs.getLong("function")),
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+    }
+
+    // Known bots (static_ua ua_group) active in [from, to], grouped by their raw user_agent string,
+    // whose ua_name family never appears against /robots.txt anywhere in the full log — not just
+    // within the selected range.
+    public List<RobotsTxtSkippingBot> findBotsSkippingRobotsTxt(Instant from, Instant to) {
+        return jdbc.query(
+                "WITH robots_txt_fetchers AS (\n" +
+                "    SELECT DISTINCT ua_name FROM cloudfront_logs WHERE uri_stem = '/robots.txt'\n" +
+                ")\n" +
+                "SELECT c.user_agent,\n" +
+                "       COUNT(*) AS count,\n" +
+                ResultTypeSql.resultTypeSums("c") + "\n" +
+                "FROM cloudfront_logs c\n" +
+                "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
+                "LEFT JOIN robots_txt_fetchers r ON c.ua_name = r.ua_name\n" +
+                "WHERE c.timestamp BETWEEN ? AND ?\n" +
+                "  AND s.ua_group IN ('AI Bots','Search Bots','Other Bots')\n" +
+                "  AND r.ua_name IS NULL\n" +
+                "GROUP BY c.user_agent\n" +
+                "ORDER BY count DESC\n",
+                (rs, _) -> new RobotsTxtSkippingBot(
                         rs.getString("user_agent"),
                         rs.getLong("count"),
                         rs.getLong("hit"),

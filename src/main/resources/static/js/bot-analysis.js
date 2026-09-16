@@ -71,54 +71,43 @@ export function loadBrowserConfigFetches() {
     </tr>`, 'No browser UAs fetched site config files in the selected date range.');
 }
 
-function loadDisobedientBots(data) {
-    const tbody = document.getElementById('disobedientBotsTable');
-    if (!tbody) return;
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No disobedient bots found. Try refreshing robots.txt first.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = data.map(b => `<tr>
-        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
-        <td class="text-end">${b.count.toLocaleString()}</td>
-        <td class="align-middle px-2">${stackedBar(b, null)}</td>
-    </tr>`).join('');
+// Shared by the three robots.txt sections: a UA/count/stacked-bar table keyed by `userAgent`.
+function loadUaStatsTable(url, tbodyId, emptyMsg) {
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            tbody.innerHTML = data.length === 0
+                ? `<tr><td colspan="3" class="text-center text-muted py-3">${emptyMsg}</td></tr>`
+                : data.map(b => `<tr>
+                    <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
+                    <td class="text-end">${b.count.toLocaleString()}</td>
+                    <td class="align-middle px-2">${stackedBar(b, null)}</td>
+                </tr>`).join('');
+        })
+        .catch(() => {
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
+        });
 }
 
 export function loadDisobedientSection() {
     const p = buildBaseParams({});
-    fetch('/api/robots-disobedient?' + p)
-        .then(r => r.json())
-        .then(loadDisobedientBots)
-        .catch(() => {
-            const tbody = document.getElementById('disobedientBotsTable');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
-        });
-}
-
-function loadObedientBots(data) {
-    const tbody = document.getElementById('obedientBotsTable');
-    if (!tbody) return;
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No obedient bots found. Try refreshing robots.txt first.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = data.map(b => `<tr>
-        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
-        <td class="text-end">${b.count.toLocaleString()}</td>
-        <td class="align-middle px-2">${stackedBar(b, null)}</td>
-    </tr>`).join('');
+    loadUaStatsTable('/api/robots-disobedient?' + p, 'disobedientBotsTable',
+        'No disobedient bots found. Try refreshing robots.txt first.');
 }
 
 export function loadObedientSection() {
     const p = buildBaseParams({});
-    fetch('/api/robots-obedient?' + p)
-        .then(r => r.json())
-        .then(loadObedientBots)
-        .catch(() => {
-            const tbody = document.getElementById('obedientBotsTable');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Failed to load data.</td></tr>';
-        });
+    loadUaStatsTable('/api/robots-obedient?' + p, 'obedientBotsTable',
+        'No obedient bots found. Try refreshing robots.txt first.');
+}
+
+export function loadRobotsSkippedBots() {
+    const p = buildBaseParams({});
+    loadUaStatsTable('/api/robots-skipped?' + p, 'robotsSkippedTable',
+        'No bots skipping robots.txt found for the selected date range.');
 }
 
 export function initRobotsRefresh() {
@@ -160,6 +149,7 @@ export function loadAllCharts() {
     loadBrowserConfigFetches();
     loadDisobedientSection();
     loadObedientSection();
+    loadRobotsSkippedBots();
 }
 
 loadAllCharts();
