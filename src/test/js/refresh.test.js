@@ -1,6 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 
 import { initRefresh } from '../../main/resources/static/js/refresh.js';
+import { flushPromises } from './test-helpers.js';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -16,11 +17,6 @@ const REFRESH_HTML = `
         <div id="refreshStatus"></div>
     </div>
 `;
-
-/** Flush pending microtasks (promise chains). */
-async function flushPromises() {
-    for (let i = 0; i < 10; i++) await Promise.resolve();
-}
 
 function bar()    { return document.getElementById('refreshBar'); }
 function status() { return document.getElementById('refreshStatus'); }

@@ -9,7 +9,8 @@ vi.mock('../../main/resources/static/js/charts.js', () => ({
     },
 }));
 
-vi.mock('../../main/resources/static/js/utils.js', () => ({
+vi.mock('../../main/resources/static/js/utils.js', async (importOriginal) => ({
+    ...(await importOriginal()),
     buildBaseParams: vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
     escapeHtml:      vi.fn((s) => s),
     readMeta:        vi.fn(() => '2026-01-01'),
@@ -19,10 +20,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
 }));
 
 import { loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
-
-async function flushPromises() {
-    for (let i = 0; i < 10; i++) await Promise.resolve();
-}
+import { flushPromises } from './test-helpers.js';
 
 const BOTS_HTML = `
     <table>

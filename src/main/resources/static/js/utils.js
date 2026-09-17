@@ -37,6 +37,26 @@ export function detailUrl(path, params) {
     return path + '?' + new URLSearchParams({ ...params, from, to }).toString();
 }
 
+// Fetches `url`, renders one `<tr>` per row (via rowFn) into the tbody `tbodyId`,
+// falling back to a colspan-wide message on an empty result or a fetch/parse failure.
+// `onRendered(tbody)` runs only after a non-empty render — e.g. to update a row-count label.
+export function loadSimpleTable(url, tbodyId, cols, rowFn, emptyMsg, onRendered) {
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            tbody.innerHTML = data.length === 0
+                ? `<tr><td colspan="${cols}" class="text-center text-muted">${emptyMsg}</td></tr>`
+                : data.map(rowFn).join('');
+            if (data.length > 0 && onRendered) onRendered(tbody, data);
+        })
+        .catch(() => {
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted py-3">Failed to load data.</td></tr>`;
+        });
+}
+
 const SEGMENTS = [
     { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
     { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },

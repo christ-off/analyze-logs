@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('404 &amp; Errors', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>404 &amp; Errors</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/errors-404')}"></th:block>
+
+    <!-- Requests table -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>404 &amp; Error URIs</span>
+            <span id="errors404Count" class="text-muted fw-normal small">(sorted by count)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>URI</th>
+                        <th class="text-end">Count</th>
+                    </tr>
+                </thead>
+                <tbody id="errors404Table">
+                    <tr><td colspan="2" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/errors-404.js}"></script>
+</th:block>
+</html>

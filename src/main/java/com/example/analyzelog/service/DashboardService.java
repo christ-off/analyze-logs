@@ -1246,4 +1246,19 @@ public class DashboardService {
         return byNetwork;
     }
 
+    // uri_stems behind 404/Error requests, most frequent first.
+    public List<NameCount> errors404UriCounts(Instant from, Instant to, int limit) {
+        String sql = """
+                SELECT uri_stem as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND status = 404 AND edge_response_result_type = 'Error'
+                GROUP BY uri_stem
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+        return jdbc.query(sql, NAME_COUNT_MAPPER,
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+    }
+
 }

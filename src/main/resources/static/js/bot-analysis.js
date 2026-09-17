@@ -1,7 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
-import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl } from './utils.js';
+import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl, loadSimpleTable } from './utils.js';
 
 function uaDetailUrl(uaName) {
     return detailUrl('/ua-detail', { ua: uaName });
@@ -33,23 +33,6 @@ function loadBotTable(url, tbodyId, emptyMsg) {
 function loadProbableBots() {
     const p = buildBaseParams({});
     loadBotTable('/api/probable-bots?' + p, 'probableBotsTable', 'No extless-only bots found for the selected date range.');
-}
-
-function loadSimpleTable(url, tbodyId, cols, rowFn, emptyMsg, onRendered) {
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            const tbody = document.getElementById(tbodyId);
-            if (!tbody) return;
-            tbody.innerHTML = data.length === 0
-                ? `<tr><td colspan="${cols}" class="text-center text-muted">${emptyMsg}</td></tr>`
-                : data.map(rowFn).join('');
-            if (data.length > 0 && onRendered) onRendered(tbody);
-        })
-        .catch(() => {
-            const tbody = document.getElementById(tbodyId);
-            if (tbody) tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted py-3">Failed to load data.</td></tr>`;
-        });
 }
 
 export function loadFakeBrowsers() {

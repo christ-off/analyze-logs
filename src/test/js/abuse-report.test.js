@@ -1,8 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-
-async function flushPromises() {
-    for (let i = 0; i < 10; i++) await Promise.resolve();
-}
+import { flushPromises } from './test-helpers.js';
 
 const GOOGLE_INFO = {
     ip: '34.73.59.67',

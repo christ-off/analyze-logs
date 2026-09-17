@@ -9,10 +9,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
 }));
 
 import { loadSocialReferrals } from '../../main/resources/static/js/social-referrals.js';
-
-async function flushPromises() {
-    for (let i = 0; i < 10; i++) await Promise.resolve();
-}
+import { flushPromises } from './test-helpers.js';
 
 const HTML = `
     <table><tbody id="sr-Facebook"><tr><td colspan="5">Loading...</td></tr></tbody></table>

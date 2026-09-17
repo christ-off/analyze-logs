@@ -16,10 +16,7 @@ vi.mock('../../main/resources/static/js/refresh.js', () => ({
 }));
 
 import { loadAllCharts } from '../../main/resources/static/js/human.js';
-
-async function flushPromises() {
-    for (let i = 0; i < 10; i++) await Promise.resolve();
-}
+import { flushPromises } from './test-helpers.js';
 
 const HTML = `
     <span id="humanUnknownUasCount"></span>
