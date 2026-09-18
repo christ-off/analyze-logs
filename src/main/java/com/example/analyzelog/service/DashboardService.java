@@ -1261,4 +1261,20 @@ public class DashboardService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
+    // .zip uri_stems requested, excluding the legitimate DeDRM plugin asset, most frequent first.
+    public List<NameCount> zipUriCounts(Instant from, Instant to, int limit) {
+        String sql = """
+                SELECT uri_stem as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND uri_stem LIKE '%.zip'
+                  AND uri_stem != '/assets/posts_other/DeDRM_plugin.zip'
+                GROUP BY uri_stem
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+        return jdbc.query(sql, NAME_COUNT_MAPPER,
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+    }
+
 }

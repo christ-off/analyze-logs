@@ -42,4 +42,15 @@ class SecurityConfigTest {
                 .hasValue("X-Content-Type-Options", "nosniff")
                 .hasValue("X-Frame-Options", "DENY");
     }
+
+    @Test
+    void csrfTokenIsSavedToSessionOnPlainGet() {
+        // The CSRF token is normally loaded lazily, only once something (e.g. Thymeleaf's
+        // th:action processor) reads it. A dedicated filter forces that read up front so the
+        // token is saved to the session before the view starts streaming its response body —
+        // guards against "Cannot create a session after the response has been committed".
+        var result = mvc.get().uri("/").exchange();
+        assertThat(result).hasStatusOk();
+        assertThat(result.getRequest().getSession(false)).isNotNull();
+    }
 }

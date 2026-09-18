@@ -1743,4 +1743,27 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, result.size());
         assertEquals("/both.html", result.getFirst().name());
     }
+
+    @Test
+    void zipUriCounts_excludesLegitimateAssetAndSortsByCountDesc() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/zip-requests-test.gz", List.of(
+                entryAt(Instant.now(), "1.1.1.1", "scanner/1.0", "/backup.zip"),
+                entryAt(Instant.now().plusSeconds(1), "1.1.1.2", "scanner/2.0", "/backup.zip"),
+                entryAt(Instant.now().plusSeconds(2), "1.1.1.3", "scanner/3.0", "/old.zip"),
+                // Legitimate asset must be excluded
+                entryAt(Instant.now().plusSeconds(3), "1.1.1.4", "Mozilla/5.0", "/assets/posts_other/DeDRM_plugin.zip"),
+                // Non-zip must be excluded
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.5", "Mozilla/5.0", "/index.html")
+        ));
+
+        var result = dashboardService.zipUriCounts(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        assertEquals("/backup.zip", result.get(0).name());
+        assertEquals(2, result.get(0).count());
+        assertEquals("/old.zip", result.get(1).name());
+        assertEquals(1, result.get(1).count());
+        assertTrue(result.stream().noneMatch(r -> "/assets/posts_other/DeDRM_plugin.zip".equals(r.name())));
+    }
 }
