@@ -5,8 +5,8 @@ import { flushPromises } from './test-helpers.js';
 globalThis.Chart = vi.fn();
 
 // Rendering behaviour itself is covered by the loadUriCountTable tests in utils.test.js.
-describe('errors-404 page', () => {
-    it('loads the 404 & error uris into the page table', async () => {
+describe('zip-requests page', () => {
+    it('loads the zip uris into the page table', async () => {
         // The page module loads its table as soon as it is imported, so the meta tags and
         // the tbody it renders into have to be in place before the import.
         document.head.innerHTML = `
@@ -14,19 +14,19 @@ describe('errors-404 page', () => {
             <meta name="cf-to"   content="2026-01-31T00:00:00Z">
         `;
         document.body.innerHTML = `
-            <span id="errors404Count"></span>
-            <table><tbody id="errors404Table"><tr><td colspan="2">Loading...</td></tr></tbody></table>
+            <span id="zipRequestsCount"></span>
+            <table><tbody id="zipRequestsTable"><tr><td colspan="2">Loading...</td></tr></tbody></table>
         `;
         const fetchMock = vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: '/.env', count: 44 }]),
+            json: () => Promise.resolve([{ name: '/backup.zip', count: 44 }]),
         });
         vi.stubGlobal('fetch', fetchMock);
 
-        await import('../../main/resources/static/js/pages/errors-404.js');
+        await import('../../main/resources/static/js/pages/zip-requests.js');
         await flushPromises();
 
-        expect(fetchMock.mock.calls[0][0]).toContain('/api/errors-404/uris?from=');
-        expect(document.querySelector('#errors404Table tr').textContent).toContain('/.env');
-        expect(document.getElementById('errors404Count').textContent).toContain('1');
+        expect(fetchMock.mock.calls[0][0]).toContain('/api/zip-requests/uris?from=');
+        expect(document.querySelector('#zipRequestsTable tr').textContent).toContain('/backup.zip');
+        expect(document.getElementById('zipRequestsCount').textContent).toContain('1');
     });
 });

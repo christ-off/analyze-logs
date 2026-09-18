@@ -6,15 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -31,21 +23,18 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
-                // CSRF enabled (default) — protects POST /refresh
-                // Thymeleaf injects tokens automatically via th:action
+                // CSRF enabled (default) — protects POST /refresh.
+                // Thymeleaf injects tokens automatically via th:action, but it only reads the
+                // token when its th:action processor reaches a <form> deep in the page; by then
+                // the markup rendered ahead of it can already have committed the response, so
+                // creating the session to store the token fails with "Cannot create a session
+                // after the response has been committed". Opting out of deferred loading (a null
+                // request-attribute name) resolves the token before the view renders.
+                .csrf(csrf -> csrf.csrfTokenRequestHandler(eagerCsrfTokenRequestHandler()))
 
                 // No form login or HTTP Basic
                 .formLogin(fl -> fl.disable())
-                .httpBasic(hb -> hb.disable())
-
-                // Resolve the (by default lazily-loaded) CSRF token right away, before the
-                // Thymeleaf view starts streaming the response body. Without this, the token
-                // is only loaded when Thymeleaf's th:action processor first reaches a <form>
-                // tag deep in the page (e.g. in the toolbar fragment); by then the sidebar nav
-                // markup rendered ahead of it can already have filled Tomcat's output buffer
-                // and committed the response, so creating the session to store the token fails
-                // with "Cannot create a session after the response has been committed".
-                .addFilterAfter(csrfTokenEagerLoadFilter(), CsrfFilter.class);
+                .httpBasic(hb -> hb.disable());
 
             return http.build();
         } catch (Exception e) {
@@ -53,18 +42,9 @@ public class SecurityConfig {
         }
     }
 
-    private OncePerRequestFilter csrfTokenEagerLoadFilter() {
-        return new OncePerRequestFilter() {
-            @Override
-            protected void doFilterInternal(HttpServletRequest request,
-                                             HttpServletResponse response,
-                                             FilterChain filterChain) throws ServletException, IOException {
-                CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-                if (csrfToken != null) {
-                    csrfToken.getToken();
-                }
-                filterChain.doFilter(request, response);
-            }
-        };
+    private XorCsrfTokenRequestAttributeHandler eagerCsrfTokenRequestHandler() {
+        var handler = new XorCsrfTokenRequestAttributeHandler();
+        handler.setCsrfRequestAttributeName(null);
+        return handler;
     }
 }

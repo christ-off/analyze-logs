@@ -12,7 +12,7 @@ Fetches log files from S3, stores them in a local SQLite database, and displays 
 **This application is intended for local, single-user use only.**
 
 - There is **no authentication or authorization**. Anyone who can reach port 8080 can view the dashboard and trigger S3 fetches.
-- There is **no CSRF protection**. The application uses no Spring Security, so state-changing operations are not protected against cross-site request forgery. The `Refresh from S3` action uses a GET request to mitigate this for the one write-like operation, but the application should not be exposed to untrusted networks.
+- **CSRF protection is enabled** (Spring Security defaults). The one state-changing operation, `Refresh from S3`, is a POST whose token Thymeleaf injects via `th:action`. The application should still not be exposed to untrusted networks, since anyone who can reach it can load the form and submit it.
 
 **Do not expose this application on a public interface or behind a shared reverse proxy without adding authentication (e.g. Spring Security with HTTP Basic, or an authenticating proxy such as nginx/Authelia).**
 
@@ -26,6 +26,7 @@ A security review found no exploitable vulnerabilities. The following controls a
 | XSS (server-side) | All Thymeleaf templates use `th:text` / `th:content` for user-controlled output, which applies automatic HTML entity escaping. `th:utext` is not used anywhere. |
 | XSS (client-side) | API responses are rendered onto `<canvas>` via Chart.js. Canvas drawing APIs do not interpret HTML or JavaScript. `encodeURIComponent()` is applied to all user-derived values placed into URLs. |
 | Path traversal | No file-serving endpoints with user-controlled paths exist. S3 object keys come from AWS API responses, not from user input. |
+| CSRF | Spring Security's CSRF filter is enabled with session-backed tokens, and the token is resolved before the view renders (deferred loading is disabled). The only state-changing endpoint, `POST /refresh`, is therefore token-protected. |
 | Data exposure | API endpoints return only CloudFront access-log data, which is the application's stated purpose. No credentials or internal state are exposed. |
 
 ## Build & run
