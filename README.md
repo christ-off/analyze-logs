@@ -268,17 +268,16 @@ cloudfront_logs (
     referer                   TEXT,
     user_agent                TEXT,
     edge_result_type          TEXT,
-    protocol                  TEXT,
     cs_bytes                  INTEGER,
     time_taken                REAL,
     edge_response_result_type TEXT,
-    protocol_version          TEXT,
     time_to_first_byte        REAL,
     edge_detailed_result_type TEXT,
     content_type              TEXT,
     content_length            INTEGER,
     country                   TEXT,            -- ISO 3166-1 alpha-2
-    ua_name                   TEXT             -- classified user-agent label
+    ua_name                   TEXT,            -- classified user-agent label
+    edge_location_iata        TEXT             -- IATA code from edge_location
 )
 
 fetched_files (
