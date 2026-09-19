@@ -1046,7 +1046,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
         ));
 
-        var result = dashboardService.chromeRawUserAgents(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserRawUserAgents("Chrome", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.containsAll(List.of(UA_CHROME_WINDOWS, UA_CHROME_MACOS, UA_CHROME_ANDROID)));
@@ -1064,7 +1064,7 @@ class DashboardServiceIntegrationTest {
                 entryAt(Instant.now(), "5.6.7.8", UA_FIREFOX_LINUX, "/css/main.css")
         ));
 
-        var result = dashboardService.chromeHumanTraffic(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserHumanTraffic("Chrome", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameHumanTrafficStats::name).toList();
         assertTrue(names.contains(UA_CHROME_MACOS));
@@ -1084,7 +1084,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Error")
         ));
 
-        var result = dashboardService.chromeResultTypes(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserResultTypes("Chrome", from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
@@ -1101,7 +1101,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_FIREFOX_LINUX, "Hit")
         ));
 
-        var result = dashboardService.chromeRequestsPerDay(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserRequestsPerDay("Chrome", from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         var today = result.getLast();
@@ -1118,7 +1118,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")
         ));
 
-        var result = dashboardService.edgeRawUserAgents(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserRawUserAgents("Edge", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameResultTypeCount::name).toList();
         assertTrue(names.containsAll(List.of(UA_EDGE_WINDOWS, UA_EDGE_MACOS)));
@@ -1136,7 +1136,7 @@ class DashboardServiceIntegrationTest {
                 entryAt(Instant.now(), "5.6.7.8", UA_CHROME_WINDOWS, "/css/main.css")
         ));
 
-        var result = dashboardService.edgeHumanTraffic(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserHumanTraffic("Edge", from, Instant.now().plusSeconds(5));
 
         var names = result.stream().map(NameHumanTrafficStats::name).toList();
         assertTrue(names.contains(UA_EDGE_MACOS));
@@ -1156,7 +1156,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Error")
         ));
 
-        var result = dashboardService.edgeResultTypes(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserResultTypes("Edge", from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.stream().filter(n -> "Hit".equals(n.name())).findFirst().orElseThrow().count());
         assertEquals(1, result.stream().filter(n -> "Miss".equals(n.name())).findFirst().orElseThrow().count());
@@ -1173,7 +1173,7 @@ class DashboardServiceIntegrationTest {
                 entryWithUaAndResultType(UA_CHROME_WINDOWS, "Hit")
         ));
 
-        var result = dashboardService.edgeRequestsPerDay(from, Instant.now().plusSeconds(5));
+        var result = dashboardService.browserRequestsPerDay("Edge", from, Instant.now().plusSeconds(5));
 
         assertFalse(result.isEmpty());
         var today = result.getLast();

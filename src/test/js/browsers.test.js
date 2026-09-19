@@ -1,23 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../main/resources/static/js/charts.js', () => ({
-    Charts: {
-        loadChart: vi.fn(),
-        pie:       vi.fn(),
-        horizontalStackedBar: vi.fn(),
-        stackedBarByDay:      vi.fn(),
-    },
-}));
-
 vi.mock('../../main/resources/static/js/utils.js', () => ({
-    buildBaseParams:       vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
-    resultTotal:           row => row.hit + row.miss + row['function'] + row.error,
-    stackedBar:             vi.fn(),
-    renderMinVersionBanner: vi.fn(),
-    readMeta:               vi.fn(() => '115'),
+    resultTotal: row => row.hit + row.miss + row['function'] + row.error,
+    stackedBar:  vi.fn(),
 }));
 
-import { firefoxMajorVersion, aggregateByVersion, sortVersions } from '../../main/resources/static/js/firefox.js';
+import { majorVersion, aggregateByVersion, sortVersions } from '../../main/resources/static/js/browsers.js';
 
 function raw(name, hit, miss, fn, error) {
     return { name, hit, miss, function: fn, error };
@@ -31,51 +19,71 @@ function versionRow(version, { hit = 0, miss = 0, fn = 0, error = 0, human = 0, 
     return { version, hit, miss, function: fn, error, human, total };
 }
 
-describe('firefoxMajorVersion', () => {
-    it('extracts the major version from a raw UA string', () => {
-        expect(firefoxMajorVersion('Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0')).toBe(151);
+const UA_CHROME  = 'Mozilla/5.0 (Windows NT 10.0) ... Chrome/120.0.0.0 Safari/537.36';
+const UA_EDGE    = 'Mozilla/5.0 ... Chrome/144.0.0.0 Safari/537.36 Edg/143.0.0.0';
+const UA_FIREFOX = 'Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0';
+const UA_SAFARI  = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15';
+const UA_SAFARI_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 Version/26.4 Mobile/15E148 Safari/604.1';
+const UA_BOT     = 'Mozilla/5.0 (compatible; Googlebot/2.1)';
+
+describe('majorVersion', () => {
+    it.each([
+        ['chrome',  UA_CHROME,        120],
+        ['edge',    UA_EDGE,          143],   // the Edg/ token, not the Chrome/ one
+        ['firefox', UA_FIREFOX,       151],
+        ['safari',  UA_SAFARI,        26],    // the Version/ token, not the Safari/ build number
+        ['safari',  UA_SAFARI_MOBILE, 26],
+    ])('%s: extracts the major version from %#', (browser, ua, expected) => {
+        expect(majorVersion(browser, ua)).toBe(expected);
     });
 
-    it('returns null when the UA has no Firefox token', () => {
-        expect(firefoxMajorVersion('Mozilla/5.0 (compatible; Googlebot/2.1)')).toBeNull();
+    it.each(['chrome', 'edge', 'firefox', 'safari'])('%s: returns null when the UA has no matching token', browser => {
+        expect(majorVersion(browser, UA_BOT)).toBeNull();
+    });
+
+    it('edge and safari do not match on the Chrome/ or Safari/ tokens', () => {
+        expect(majorVersion('edge', UA_CHROME)).toBeNull();
+        expect(majorVersion('safari', UA_CHROME)).toBeNull();
     });
 });
 
 describe('aggregateByVersion', () => {
     it('sums result-type counts across raw UA strings sharing the same major version, whatever the OS', () => {
         const rawUserAgents = [
-            raw('Mozilla/5.0 (Windows NT 10.0; rv:120.0) Gecko/20100101 Firefox/120.0', 10, 2, 0, 1),
-            raw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:120.0) Gecko/20100101 Firefox/120.0', 5, 0, 0, 0),
-            raw('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0', 3, 1, 0, 0),
-            raw('Mozilla/5.0 (X11; Linux x86_64; rv:119.0) Gecko/20100101 Firefox/119.0', 1, 0, 0, 0),
+            raw('Mozilla/5.0 (Windows NT 10.0) ... Chrome/120.0.0.0 Safari/537.36', 10, 2, 0, 1),
+            raw('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ... Chrome/120.0.0.0 Safari/537.36', 5, 0, 0, 0),
+            raw('Mozilla/5.0 (Linux; Android 10) ... Chrome/120.0.0.0 Mobile Safari/537.36', 3, 1, 0, 0),
+            raw('Mozilla/5.0 (X11; Linux x86_64) ... Chrome/119.0.0.0 Safari/537.36', 1, 0, 0, 0),
         ];
 
-        const result = aggregateByVersion(rawUserAgents, []);
+        const result = aggregateByVersion('chrome', rawUserAgents, []);
 
         const v120 = result.find(r => r.version === 120);
         expect(v120.hit).toBe(18);
         expect(v120.miss).toBe(3);
         expect(v120.error).toBe(1);
-
-        const v119 = result.find(r => r.version === 119);
-        expect(v119.hit).toBe(1);
+        expect(result.find(r => r.version === 119).hit).toBe(1);
     });
 
     it('joins human-traffic stats onto the matching raw UA string and sums them per version', () => {
-        const uaWin = 'Mozilla/5.0 (Windows NT 10.0; rv:120.0) Gecko/20100101 Firefox/120.0';
-        const uaLinux = 'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0';
-        const rawUserAgents = [raw(uaWin, 10, 0, 0, 0), raw(uaLinux, 5, 0, 0, 0)];
-        const humanStats = [human(uaWin, 8, 10), human(uaLinux, 0, 5)];
+        const uaWin = 'Mozilla/5.0 (Windows NT 10.0) ... Chrome/120.0.0.0 Safari/537.36';
+        const uaMac = 'Mozilla/5.0 (Macintosh) ... Chrome/120.0.0.0 Safari/537.36';
+        const rawUserAgents = [raw(uaWin, 10, 0, 0, 0), raw(uaMac, 5, 0, 0, 0)];
+        const humanStats = [human(uaWin, 8, 10), human(uaMac, 0, 5)];
 
-        const [row] = aggregateByVersion(rawUserAgents, humanStats);
+        const [row] = aggregateByVersion('chrome', rawUserAgents, humanStats);
 
         expect(row.human).toBe(8);
         expect(row.total).toBe(15);
     });
 
-    it('ignores raw UA strings without a matching Firefox version', () => {
-        const rawUserAgents = [raw('Mozilla/5.0 (compatible; Googlebot/2.1)', 5, 0, 0, 0)];
-        expect(aggregateByVersion(rawUserAgents, [])).toEqual([]);
+    it('ignores raw UA strings without a matching version', () => {
+        expect(aggregateByVersion('chrome', [raw(UA_BOT, 5, 0, 0, 0)], [])).toEqual([]);
+    });
+
+    it('groups by the browser-specific token', () => {
+        const [row] = aggregateByVersion('edge', [raw(UA_EDGE, 4, 0, 0, 0)], []);
+        expect(row.version).toBe(143);
     });
 });
 

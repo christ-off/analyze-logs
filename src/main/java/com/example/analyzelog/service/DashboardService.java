@@ -47,20 +47,9 @@ public class DashboardService {
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
     private static final String UA_NAME_FILTER = "ua_name = ?";
-    // Shared by any single-browser dashboard filtering on "ua_name LIKE '<Browser> / %'".
+    // Every ua_name variant of a browser (desktop and mobile) is "<Browser> / <OS>" — the browser
+    // dashboards aggregate across all of them regardless of OS.
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
-    // Every Chrome ua_name variant (desktop and mobile) shares this "Chrome / <OS>" prefix —
-    // the Chrome dashboard aggregates across all of them regardless of OS.
-    private static final String CHROME_UA_PATTERN = "Chrome / %";
-    // Every Edge ua_name variant (desktop and mobile) shares this "Edge / <OS>" prefix —
-    // the Edge dashboard aggregates across all of them regardless of OS.
-    private static final String EDGE_UA_PATTERN = "Edge / %";
-    // Every Firefox ua_name variant (desktop and mobile) shares this "Firefox / <OS>" prefix —
-    // the Firefox dashboard aggregates across all of them regardless of OS.
-    private static final String FIREFOX_UA_PATTERN = "Firefox / %";
-    // Every Safari ua_name variant (desktop and mobile) shares this "Safari / <OS>" prefix —
-    // the Safari dashboard aggregates across all of them regardless of OS.
-    private static final String SAFARI_UA_PATTERN = "Safari / %";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
@@ -555,6 +544,10 @@ public class DashboardService {
         return null;
     }
 
+    private static String browserUaPattern(String browser) {
+        return browser + " / %";
+    }
+
     private List<NameResultTypeCount> rawUserAgentsByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
@@ -570,24 +563,8 @@ public class DashboardService {
         return rawUserAgentsByFilter(UA_NAME_FILTER, uaName, from, to);
     }
 
-    // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
-    public List<NameResultTypeCount> chromeRawUserAgents(Instant from, Instant to) {
-        return rawUserAgentsByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
-    }
-
-    // Every raw Edge user_agent string, whatever the OS (ua_name LIKE 'Edge / %').
-    public List<NameResultTypeCount> edgeRawUserAgents(Instant from, Instant to) {
-        return rawUserAgentsByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
-    }
-
-    // Every raw Firefox user_agent string, whatever the OS (ua_name LIKE 'Firefox / %').
-    public List<NameResultTypeCount> firefoxRawUserAgents(Instant from, Instant to) {
-        return rawUserAgentsByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
-    }
-
-    // Every raw Safari user_agent string, whatever the OS (ua_name LIKE 'Safari / %').
-    public List<NameResultTypeCount> safariRawUserAgents(Instant from, Instant to) {
-        return rawUserAgentsByFilter(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
+    public List<NameResultTypeCount> browserRawUserAgents(String browser, Instant from, Instant to) {
+        return rawUserAgentsByFilter(BROWSER_UA_FILTER, browserUaPattern(browser), from, to);
     }
 
     // Per raw user_agent string, proportion of requests whose (client_ip, user_agent) pair
@@ -622,44 +599,16 @@ public class DashboardService {
         return humanTrafficByUserAgent(UA_NAME_FILTER, uaName, from, to);
     }
 
-    // Every raw Chrome user_agent string, whatever the OS (ua_name LIKE 'Chrome / %').
-    public List<NameHumanTrafficStats> chromeHumanTraffic(Instant from, Instant to) {
-        return humanTrafficByUserAgent(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
-    }
-
-    // Every raw Edge user_agent string, whatever the OS (ua_name LIKE 'Edge / %').
-    public List<NameHumanTrafficStats> edgeHumanTraffic(Instant from, Instant to) {
-        return humanTrafficByUserAgent(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
-    }
-
-    // Every raw Firefox user_agent string, whatever the OS (ua_name LIKE 'Firefox / %').
-    public List<NameHumanTrafficStats> firefoxHumanTraffic(Instant from, Instant to) {
-        return humanTrafficByUserAgent(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
-    }
-
-    // Every raw Safari user_agent string, whatever the OS (ua_name LIKE 'Safari / %').
-    public List<NameHumanTrafficStats> safariHumanTraffic(Instant from, Instant to) {
-        return humanTrafficByUserAgent(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
+    public List<NameHumanTrafficStats> browserHumanTraffic(String browser, Instant from, Instant to) {
+        return humanTrafficByUserAgent(BROWSER_UA_FILTER, browserUaPattern(browser), from, to);
     }
 
     public List<NameCount> uaResultTypes(String uaName, Instant from, Instant to) {
         return queryResultTypesByFilter(UA_NAME_FILTER, uaName, from, to);
     }
 
-    public List<NameCount> chromeResultTypes(Instant from, Instant to) {
-        return queryResultTypesByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> edgeResultTypes(Instant from, Instant to) {
-        return queryResultTypesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> firefoxResultTypes(Instant from, Instant to) {
-        return queryResultTypesByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> safariResultTypes(Instant from, Instant to) {
-        return queryResultTypesByFilter(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
+    public List<NameCount> browserResultTypes(String browser, Instant from, Instant to) {
+        return queryResultTypesByFilter(BROWSER_UA_FILTER, browserUaPattern(browser), from, to);
     }
 
     private List<NameCount> countriesByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -678,40 +627,16 @@ public class DashboardService {
         return countriesByFilter(UA_NAME_FILTER, uaName, from, to);
     }
 
-    public List<NameCount> chromeCountries(Instant from, Instant to) {
-        return countriesByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> edgeCountries(Instant from, Instant to) {
-        return countriesByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> firefoxCountries(Instant from, Instant to) {
-        return countriesByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
-    }
-
-    public List<NameCount> safariCountries(Instant from, Instant to) {
-        return countriesByFilter(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
+    public List<NameCount> browserCountries(String browser, Instant from, Instant to) {
+        return countriesByFilter(BROWSER_UA_FILTER, browserUaPattern(browser), from, to);
     }
 
     public List<NameResultTypeCount> uaUrlsByResultType(String uaName, Instant from, Instant to, int limit) {
         return urlsByResultType(UA_NAME_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), uaName), limit);
     }
 
-    public List<NameResultTypeCount> chromeUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), CHROME_UA_PATTERN), limit);
-    }
-
-    public List<NameResultTypeCount> edgeUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), EDGE_UA_PATTERN), limit);
-    }
-
-    public List<NameResultTypeCount> firefoxUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), FIREFOX_UA_PATTERN), limit);
-    }
-
-    public List<NameResultTypeCount> safariUrlsByResultType(Instant from, Instant to, int limit) {
-        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), SAFARI_UA_PATTERN), limit);
+    public List<NameResultTypeCount> browserUrlsByResultType(String browser, Instant from, Instant to, int limit) {
+        return urlsByResultType(BROWSER_UA_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), browserUaPattern(browser)), limit);
     }
 
     private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
@@ -723,20 +648,8 @@ public class DashboardService {
         return requestsPerDayByFilter(UA_NAME_FILTER, uaName, from, to);
     }
 
-    public List<DailyResultTypeCount> chromeRequestsPerDay(Instant from, Instant to) {
-        return requestsPerDayByFilter(BROWSER_UA_FILTER, CHROME_UA_PATTERN, from, to);
-    }
-
-    public List<DailyResultTypeCount> edgeRequestsPerDay(Instant from, Instant to) {
-        return requestsPerDayByFilter(BROWSER_UA_FILTER, EDGE_UA_PATTERN, from, to);
-    }
-
-    public List<DailyResultTypeCount> firefoxRequestsPerDay(Instant from, Instant to) {
-        return requestsPerDayByFilter(BROWSER_UA_FILTER, FIREFOX_UA_PATTERN, from, to);
-    }
-
-    public List<DailyResultTypeCount> safariRequestsPerDay(Instant from, Instant to) {
-        return requestsPerDayByFilter(BROWSER_UA_FILTER, SAFARI_UA_PATTERN, from, to);
+    public List<DailyResultTypeCount> browserRequestsPerDay(String browser, Instant from, Instant to) {
+        return requestsPerDayByFilter(BROWSER_UA_FILTER, browserUaPattern(browser), from, to);
     }
 
     public List<DailyResultTypeCount> requestsPerDay(Instant from, Instant to) {

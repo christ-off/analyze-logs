@@ -513,12 +513,6 @@ input[type="date"] { font-family: var(--cf-font-mono); }
   font-size: .875rem;
 }
 
-/* ── Badges ───────────────────────────────────────────────────────────────── */
-.badge {
-  font-weight: 600;
-  letter-spacing: .02em;
-}
-
 /* ── Scrollbar (Webkit) ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

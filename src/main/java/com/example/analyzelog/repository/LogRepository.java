@@ -80,19 +80,6 @@ public class LogRepository {
                 s3Key, ZonedDateTime.now(ZoneOffset.UTC).toString());
     }
 
-    public Stats getStats() {
-        return jdbc.queryForObject("""
-                SELECT COUNT(*) as total, MIN(timestamp) as earliest, MAX(timestamp) as latest
-                FROM cloudfront_logs
-                """,
-                (rs, _) -> new Stats(
-                        rs.getLong("total"),
-                        rs.getString("earliest"),
-                        rs.getString("latest")));
-    }
-
-    public record Stats(long totalEntries, String earliest, String latest) {}
-
     @Transactional
     public int deleteOldLogs(int nbMonthsToKeep) {
         Instant cutoff = Instant.from(

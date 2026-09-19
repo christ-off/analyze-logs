@@ -44,11 +44,8 @@ class LogRepositoryTest {
     }
 
     @Test
-    void initialStatsAreEmpty() {
-        var stats = repo.getStats();
-        assertEquals(0, stats.totalEntries());
-        assertNull(stats.earliest());
-        assertNull(stats.latest());
+    void initialTableIsEmpty() {
+        assertEquals(0, countEntries());
     }
 
     @Test
@@ -56,8 +53,7 @@ class LogRepositoryTest {
         var entries = List.of(entry(200), entry(404));
         repo.saveEntries("AWSLogs/123/CloudFront/dist.2026-01-01.gz", entries);
 
-        var stats = repo.getStats();
-        assertTrue(stats.totalEntries() >= 2);
+        assertTrue(countEntries() >= 2);
     }
 
     @Test
@@ -113,8 +109,11 @@ class LogRepositoryTest {
         int deleted = repo.deleteOldLogs(3);
 
         assertEquals(1, deleted);
-        var stats = repo.getStats();
-        assertEquals(1, stats.totalEntries());
+        assertEquals(1, countEntries());
+    }
+
+    private int countEntries() {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM cloudfront_logs", Integer.class);
     }
 
     private CloudFrontLogEntry entry(int status) {

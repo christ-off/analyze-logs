@@ -5,6 +5,8 @@ import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -177,43 +179,16 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
-    @Test
-    void chromeReturns200() {
-        assertThat(mvc.get().uri("/chrome").exchange())
+    @ParameterizedTest
+    @CsvSource({"chrome,Chrome", "edge,Edge", "firefox,Firefox", "safari,Safari"})
+    void browserPageRendersBrowserViewWithDefaultRange(String key, String label) {
+        assertThat(mvc.get().uri("/" + key).exchange())
                 .hasStatusOk()
-                .hasViewName("chrome");
-    }
-
-    @Test
-    void chromeDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/chrome").exchange())
-                .model().containsEntry("activeRange", "7d");
-    }
-
-    @Test
-    void edgeReturns200() {
-        assertThat(mvc.get().uri("/edge").exchange())
-                .hasStatusOk()
-                .hasViewName("edge");
-    }
-
-    @Test
-    void edgeDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/edge").exchange())
-                .model().containsEntry("activeRange", "7d");
-    }
-
-    @Test
-    void firefoxReturns200() {
-        assertThat(mvc.get().uri("/firefox").exchange())
-                .hasStatusOk()
-                .hasViewName("firefox");
-    }
-
-    @Test
-    void firefoxDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/firefox").exchange())
-                .model().containsEntry("activeRange", "7d");
+                .hasViewName("browser")
+                .model()
+                .containsEntry("browserKey", key)
+                .containsEntry("browserLabel", label)
+                .containsEntry("activeRange", "7d");
     }
 
     @Test
@@ -223,16 +198,8 @@ class DashboardControllerTest {
     }
 
     @Test
-    void safariReturns200() {
-        assertThat(mvc.get().uri("/safari").exchange())
-                .hasStatusOk()
-                .hasViewName("safari");
+    void nonFirefoxModelHasNoEsrVersion() {
+        assertThat(mvc.get().uri("/chrome").exchange())
+                .model().doesNotContainKey("firefoxEsrVersion");
     }
-
-    @Test
-    void safariDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/safari").exchange())
-                .model().containsEntry("activeRange", "7d");
-    }
-
 }

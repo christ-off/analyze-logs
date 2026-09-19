@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: page('Chrome', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
-<head><title>Chrome</title></head>
+      th:replace="~{layout :: page(${browserLabel}, ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Browser</title></head>
 <th:block class="extra-head">
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
+    <meta name="cf-browser" th:content="${browserKey}"/>
+    <meta name="cf-firefox-esr" th:if="${firefoxEsrVersion != null}" th:content="${firefoxEsrVersion}"/>
 </th:block>
 <th:block class="page-content">
 
-    <th:block th:replace="~{fragments/toolbar :: toolbar('/chrome')}"></th:block>
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/' + ${browserKey})}"></th:block>
 
-    <div id="minChromeVersionBanner" class="alert alert-warning d-none mb-3" role="alert"></div>
+    <div id="minVersionBanner" class="alert alert-warning d-none mb-3" role="alert"></div>
 
-    <!-- Chrome version list — every Chrome ua_name variant, whatever the OS, grouped by major version -->
+    <!-- Version list — every ua_name variant of the browser, whatever the OS, grouped by major version -->
     <div class="card mb-4">
-        <div class="card-header fw-semibold">Chrome Versions</div>
+        <div class="card-header fw-semibold"><span th:text="${browserLabel}"></span> Versions</div>
         <div class="card-body p-0">
             <table class="table table-sm table-striped table-hover mb-0" id="tableVersions">
                 <thead>
                     <tr>
                         <th style="width:2rem">#</th>
-                        <th class="cf-sortable" data-sort-key="version">Chrome Version <span class="cf-sort-indicator"></span></th>
+                        <th class="cf-sortable" data-sort-key="version"><span th:text="${browserLabel}"></span> Version <span class="cf-sort-indicator"></span></th>
                         <th class="text-end cf-sortable" data-sort-key="requests" style="width:6rem">Requests <span class="cf-sort-indicator"></span></th>
                         <th class="text-end cf-sortable" data-sort-key="human" style="width:10rem">Proportion of requests from human IPs <span class="cf-sort-indicator"></span></th>
                         <th style="width:180px"></th>
@@ -38,6 +40,6 @@
 
 </th:block>
 <th:block class="page-script">
-    <script type="module" th:src="@{/js/chrome.js}"></script>
+    <script type="module" th:src="@{/js/browser.js}"></script>
 </th:block>
 </html>

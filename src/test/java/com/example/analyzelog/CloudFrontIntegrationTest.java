@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -40,6 +41,9 @@ class CloudFrontIntegrationTest {
 
     @Autowired
     LogRepository repository;
+
+    @Autowired
+    JdbcTemplate jdbc;
 
     private String decompress(String resource) throws IOException {
         try (InputStream raw = getClass().getResourceAsStream(resource);
@@ -94,10 +98,7 @@ class CloudFrontIntegrationTest {
 
         repository.saveEntries(s3Key, entries);
 
-        var stats = repository.getStats();
-        assertTrue(stats.totalEntries() >= 3);
-        assertNotNull(stats.earliest());
-        assertNotNull(stats.latest());
+        assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM cloudfront_logs", Integer.class) >= 3);
         assertTrue(repository.isAlreadyFetched(s3Key));
     }
 }

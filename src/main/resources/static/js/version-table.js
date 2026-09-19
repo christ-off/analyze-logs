@@ -45,7 +45,7 @@ export function sortVersions(versions, key, dir) {
 }
 
 // Wires up the #tableVersions / #tbodyVersions / #versionBarLegend markup shared by the
-// Chrome/Edge/Firefox version dashboards: sortable header clicks and rendering the current rows.
+// browser version dashboards: sortable header clicks and rendering the current rows.
 export function createVersionTable(browserLabel) {
     let currentVersions = [];
     let sortKey = 'version';

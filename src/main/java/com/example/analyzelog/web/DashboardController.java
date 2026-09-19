@@ -6,6 +6,7 @@ import java.util.Locale;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
@@ -81,45 +82,21 @@ public class DashboardController extends DateRangeController {
         return "url-detail";
     }
 
-    @GetMapping("/chrome")
-    public String chrome(
+    @GetMapping("/{browser:" + Browser.KEYS + "}")
+    public String browser(
+            @PathVariable String browser,
             @RequestParam(required = false) String range,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             Model model) {
+        var b = Browser.fromKey(browser);
         addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        return "chrome";
-    }
-
-    @GetMapping("/edge")
-    public String edge(
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            Model model) {
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        return "edge";
-    }
-
-    @GetMapping("/firefox")
-    public String firefox(
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            Model model) {
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        model.addAttribute("firefoxEsrVersion", appProperties.firefoxEsrVersion());
-        return "firefox";
-    }
-
-    @GetMapping("/safari")
-    public String safari(
-            @RequestParam(required = false) String range,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            Model model) {
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
-        return "safari";
+        model.addAttribute("browserKey", b.key());
+        model.addAttribute("browserLabel", b.label());
+        if (b == Browser.FIREFOX) {
+            model.addAttribute("firefoxEsrVersion", appProperties.firefoxEsrVersion());
+        }
+        return "browser";
     }
 
     @GetMapping("/human")
