@@ -20,6 +20,15 @@ class SocialReferralsControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
+    // social-referrals.js discovers the sections to fill from these attributes.
+    @Test
+    void rendersOneTaggedSectionPerNetwork() {
+        assertThat(mvc.get().uri("/social-referrals").exchange())
+                .hasStatusOk()
+                .bodyText()
+                .contains("data-network=\"Mastodon\"", "data-network=\"WhatsApp\"", "data-network=\"Facebook\"");
+    }
+
     @Test
     void customRangeSetsDateAttributes() {
         assertThat(mvc.get().uri("/social-referrals")

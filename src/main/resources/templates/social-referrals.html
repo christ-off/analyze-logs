@@ -15,7 +15,7 @@
     <th:block th:replace="~{fragments/toolbar :: toolbar('/social-referrals')}"></th:block>
 
     <div id="socialReferralsSections">
-        <div class="card mb-4" th:each="network : ${ {'WhatsApp','Facebook','Discord','Twitter/X'} }">
+        <div class="card mb-4" th:each="network : ${ {'Mastodon','WhatsApp','Facebook'} }">
             <div class="card-header fw-semibold" th:text="${network}"></div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -26,11 +26,10 @@
                                 <th>User Agent</th>
                                 <th>URI</th>
                                 <th>Country</th>
-                                <th>Result</th>
                             </tr>
                         </thead>
-                        <tbody th:id="'sr-' + ${#strings.replace(network, '/', '')}" class="text-muted">
-                            <tr><td colspan="5" class="text-center py-3">Loading...</td></tr>
+                        <tbody th:data-network="${network}" class="text-muted">
+                            <tr><td colspan="4" class="text-center py-3">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>

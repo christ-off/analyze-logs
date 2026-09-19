@@ -4,7 +4,6 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     buildBaseParams:  vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
     escapeHtml:       vi.fn((s) => s),
     formatTimestamp:  vi.fn((iso) => iso),
-    stackedBar:       vi.fn(() => '<div class="bar"></div>'),
     detailUrl:        vi.fn((path, params) => `${path}?ua=${params.ua}`),
 }));
 
@@ -12,21 +11,23 @@ import { loadSocialReferrals } from '../../main/resources/static/js/social-refer
 import { flushPromises } from './test-helpers.js';
 
 const HTML = `
-    <table><tbody id="sr-Facebook"><tr><td colspan="5">Loading...</td></tr></tbody></table>
-    <table><tbody id="sr-Discord"><tr><td colspan="5">Loading...</td></tr></tbody></table>
-    <table><tbody id="sr-TwitterX"><tr><td colspan="5">Loading...</td></tr></tbody></table>
-    <table><tbody id="sr-WhatsApp"><tr><td colspan="5">Loading...</td></tr></tbody></table>
+    <div id="socialReferralsSections">
+        <table><tbody data-network="Facebook"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+        <table><tbody data-network="Mastodon"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+        <table><tbody data-network="WhatsApp"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+    </div>
 `;
+
+const section = (network) => document.querySelector(`tbody[data-network="${network}"]`);
 
 const SAMPLE_RESPONSE = {
     Facebook: [
-        { network: 'Facebook', timestamp: '2026-08-24T11:06:46Z', userAgent: 'facebookexternalhit/1.1',
-            uaName: 'Facebook', uriStem: '/article/', country: 'United States', hit: 1, miss: 0, function: 0, error: 0 },
+        { timestamp: '2026-08-24T11:06:46Z', userAgent: 'facebookexternalhit/1.1',
+            uaName: 'Facebook', uriStem: '/article/', country: 'United States' },
     ],
-    Discord: [],
-    'Twitter/X': [
-        { network: 'Twitter/X', timestamp: '2026-08-24T12:00:00Z', userAgent: 'Twitterbot/1.0',
-            uaName: 'Unknown', uriStem: '/photo/', country: '-', hit: 0, miss: 1, function: 0, error: 0 },
+    Mastodon: [
+        { timestamp: '2026-08-24T12:00:00Z', userAgent: 'http.rb/5.1.1 (Mastodon/4.2.17)',
+            uaName: 'Mastodon', uriStem: '/toot/', country: '-' },
     ],
     WhatsApp: [],
 };
@@ -44,16 +45,16 @@ describe('loadSocialReferrals', () => {
         loadSocialReferrals();
         await flushPromises();
 
-        const fb = document.getElementById('sr-Facebook');
+        const fb = section('Facebook');
         expect(fb.textContent).toContain('/article/');
         expect(fb.textContent).toContain('United States');
         const uaLink = fb.querySelector('a');
         expect(uaLink.getAttribute('href')).toBe('/ua-detail?ua=Facebook');
         expect(uaLink.textContent).toContain('facebookexternalhit/1.1');
-        expect(fb.querySelector('.bar')).not.toBeNull();
+        expect(fb.querySelectorAll('td')).toHaveLength(4);
 
-        const twitter = document.getElementById('sr-TwitterX');
-        expect(twitter.textContent).toContain('/photo/');
+        const mastodon = section('Mastodon');
+        expect(mastodon.textContent).toContain('/toot/');
     });
 
     it('shows an empty state for networks with no hits', async () => {
@@ -63,7 +64,7 @@ describe('loadSocialReferrals', () => {
         loadSocialReferrals();
         await flushPromises();
 
-        expect(document.getElementById('sr-Discord').textContent).toContain('No hits from this network');
+        expect(section('WhatsApp').textContent).toContain('No hits from this network');
     });
 
     it('shows a failure message in every section when the fetch rejects', async () => {
@@ -71,7 +72,7 @@ describe('loadSocialReferrals', () => {
         loadSocialReferrals();
         await flushPromises();
 
-        expect(document.getElementById('sr-Facebook').textContent).toContain('Failed to load data.');
-        expect(document.getElementById('sr-WhatsApp').textContent).toContain('Failed to load data.');
+        expect(section('Facebook').textContent).toContain('Failed to load data.');
+        expect(section('WhatsApp').textContent).toContain('Failed to load data.');
     });
 });

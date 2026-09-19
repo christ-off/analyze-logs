@@ -9,6 +9,7 @@ import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
+import com.example.analyzelog.model.SocialNetworkRequest;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1637,35 +1638,60 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/social-networks-test.gz", List.of(
                 makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/article/", null,
                         "facebookexternalhit/1.1", "US", "Hit"),
-                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/article/", "https://www.twitter.com/some/status",
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/shared/", "https://www.facebook.com/some/post",
                         "Mozilla/5.0 (real browser)", "US", "Miss"),
-                makeEntry(Instant.now(), "SFO53-P7", "3.3.3.3", "/", null,
-                        "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)", "US", "Error"),
+                makeEntry(Instant.now(), "SFO53-P7", "3.3.3.3", "/toot/", null,
+                        "http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)", "US", "RefreshHit"),
+                // the home page is polled by every fediverse instance — too noisy to list
+                makeEntry(Instant.now(), "SFO53-P7", "3.3.3.4", "/", null,
+                        "http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)", "US", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "4.4.4.4", "/photo/", null,
-                        "WhatsApp/2.23.20.0 A", "US", "FunctionGeneratedResponse"),
-                // must not be misclassified as Twitter/X just because "x.com" is a prefix of the actual host
-                makeEntry(Instant.now(), "SFO53-P7", "5.5.5.5", "/blog/", "https://x.company.com/page",
+                        "WhatsApp/2.23.20.0 A", "US", "Hit"),
+                // must not be misclassified as Facebook just because "facebook.com" is a prefix of the actual host
+                makeEntry(Instant.now(), "SFO53-P7", "5.5.5.5", "/blog/", "https://facebook.com.evil.example/page",
                         "Mozilla/5.0 (real browser)", "US", "Hit")
         ));
 
         var result = dashboardService.socialNetworkRequests(from, Instant.now().plusSeconds(5), 10);
 
-        assertEquals(1, result.get("Facebook").size());
-        assertEquals("/article/", result.get("Facebook").getFirst().uriStem());
-        assertEquals(1, result.get("Facebook").getFirst().hit());
-        assertEquals("Facebook", result.get("Facebook").getFirst().uaName());
-        assertEquals("United States", result.get("Facebook").getFirst().country());
+        // the crawler UA hit and the click-through referer hit — the look-alike host is not Facebook
+        List<SocialNetworkRequest> facebook = result.get("Facebook");
+        assertEquals(List.of("/article/", "/shared/"),
+                facebook.stream().map(SocialNetworkRequest::uriStem).sorted().toList());
+        SocialNetworkRequest crawlerHit = facebook.stream()
+                .filter(r -> "/article/".equals(r.uriStem())).findFirst().orElseThrow();
+        assertEquals("Facebook", crawlerHit.uaName());
+        assertEquals("United States", crawlerHit.country());
 
-        assertEquals(1, result.get("Twitter/X").size());
-        assertEquals(1, result.get("Twitter/X").getFirst().miss());
-
-        assertEquals(1, result.get("Discord").size());
-        assertEquals(1, result.get("Discord").getFirst().error());
+        assertEquals(1, result.get("Mastodon").size());
+        assertEquals("/toot/", result.get("Mastodon").getFirst().uriStem());
 
         assertEquals(1, result.get("WhatsApp").size());
-        assertEquals(1, result.get("WhatsApp").getFirst().function());
+        assertEquals("/photo/", result.get("WhatsApp").getFirst().uriStem());
 
         assertFalse(result.containsKey("Telegram"));
+    }
+
+    @Test
+    void socialNetworkRequests_keepsOnlyHitAndMissResults() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/social-networks-result-type-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/hit/", null,
+                        "facebookexternalhit/1.1", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.2", "/refresh-hit/", null,
+                        "facebookexternalhit/1.1", "US", "RefreshHit"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.3", "/miss/", null,
+                        "facebookexternalhit/1.1", "US", "Miss"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.4", "/filtered/", null,
+                        "facebookexternalhit/1.1", "US", "FunctionGeneratedResponse"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.5", "/error/", null,
+                        "facebookexternalhit/1.1", "US", "Error")
+        ));
+
+        var result = dashboardService.socialNetworkRequests(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(List.of("/hit/", "/miss/", "/refresh-hit/"),
+                result.get("Facebook").stream().map(SocialNetworkRequest::uriStem).sorted().toList());
     }
 
     @Test
