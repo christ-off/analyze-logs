@@ -1,5 +1,6 @@
 import { Charts } from './charts.js';
 import { readMeta, escapeHtml, buildBaseParams, detailUrl, resultTotal, stackedBar } from './utils.js';
+import { initRefresh } from './refresh.js';
 
 const urlName = readMeta('cf-url');
 
@@ -46,3 +47,4 @@ function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);

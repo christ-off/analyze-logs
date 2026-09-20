@@ -1,5 +1,6 @@
 import { Charts } from './charts.js';
 import { readMeta, escapeHtml, buildBaseParams, resultTotal, stackedBar } from './utils.js';
+import { initRefresh } from './refresh.js';
 
 const refererName = readMeta('cf-referer');
 
@@ -36,3 +37,4 @@ function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);

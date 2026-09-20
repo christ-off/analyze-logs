@@ -1,6 +1,7 @@
 'use strict';
 
 import { Charts } from './charts.js';
+import { initRefresh } from './refresh.js';
 import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl, loadSimpleTable } from './utils.js';
 
 function uaDetailUrl(uaName) {
@@ -138,3 +139,4 @@ export function loadAllCharts() {
 loadAllCharts();
 
 initRobotsRefresh();
+initRefresh(loadAllCharts);

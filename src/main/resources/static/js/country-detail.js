@@ -1,5 +1,6 @@
 import { Charts } from './charts.js';
 import { readMeta, buildBaseParams } from './utils.js';
+import { initRefresh } from './refresh.js';
 
 const country = readMeta('cf-country');
 
@@ -13,3 +14,4 @@ function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);

@@ -4,6 +4,7 @@ import { Charts } from '../charts.js';
 import { readMeta, buildBaseParams } from '../utils.js';
 import { initIpLookup } from '../ip-info.js';
 import { initAbuseReportButtons, initBulkAbuseReport, initSelectSameIp } from '../abuse-report.js';
+import { initRefresh } from '../refresh.js';
 
 function loadRequestsPerDayChart() {
     const ua = readMeta('cf-ua');
@@ -20,3 +21,4 @@ export function init() {
 }
 
 init();
+initRefresh(() => location.reload());

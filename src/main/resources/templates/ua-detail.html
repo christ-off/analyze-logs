@@ -10,39 +10,7 @@
 </th:block>
 <th:block class="page-content">
 
-    <!-- info + date range bar -->
-    <div class="card mb-4 cf-toolbar">
-        <div class="card-body">
-            <div class="d-flex align-items-center gap-3 mb-2">
-                <div>
-                    <div class="cf-detail-title" th:text="${uaName}">User Agent</div>
-                    <div class="cf-detail-subtitle">
-                        <span th:text="${fromDate}"></span> &rarr; <span th:text="${toDate}"></span>
-                    </div>
-                </div>
-                <a th:href="@{/(from=${fromDate},to=${toDate})}"
-                   class="btn btn-sm btn-outline-secondary ms-auto">&#8592; Back</a>
-            </div>
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="fw-semibold me-2">Range:</span>
-                <a th:href="@{/ua-detail(ua=${uaName},range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
-                <a th:href="@{/ua-detail(ua=${uaName},range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
-                <a th:href="@{/ua-detail(ua=${uaName},range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
-                <a th:href="@{/ua-detail(ua=${uaName},range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
-
-                <form th:action="@{/ua-detail}" method="get" class="d-flex align-items-center gap-2 ms-2">
-                    <input type="hidden" name="ua" th:value="${uaName}"/>
-                    <label for="fromDateUa" class="form-label mb-0 fw-semibold">Custom:</label>
-                    <input type="date" id="fromDateUa" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
-                    <span>&ndash;</span>
-                    <label for="toDateUa" class="visually-hidden">To date</label>
-                    <input type="date" id="toDateUa" name="to"   class="form-control form-control-sm" th:value="${toDate}"   style="width:150px"/>
-                    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-                </form>
-
-            </div>
-        </div>
-    </div>
+    <th:block th:replace="~{fragments/toolbar :: detailToolbar('/ua-detail', 'ua', ${uaName}, ${uaName})}"></th:block>
 
     <div id="browserMinHumanVersionBanner" class="alert alert-warning d-none mb-3" role="alert"></div>
 

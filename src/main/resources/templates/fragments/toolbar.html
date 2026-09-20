@@ -5,15 +5,39 @@
 <!-- Date range bar, shared by every dashboard page. `path` is the page's own GET mapping
      (e.g. '/', '/chrome', '/human'), reused both for the range links and the custom-range form. -->
 <th:block th:fragment="toolbar(path)">
+    <th:block th:replace="~{:: toolbarWith(${path}, null, null)}"></th:block>
+</th:block>
+
+<!-- Detail pages: title/back header card followed by the shared bar, scoped to `key`=`value`. -->
+<th:block th:fragment="detailToolbar(path, key, value, title)">
+    <div class="card mb-4">
+        <div class="card-body d-flex align-items-center gap-3">
+            <div>
+                <div class="cf-detail-title" th:text="${title}">Title</div>
+                <div class="cf-detail-subtitle">
+                    <span th:text="${fromDate}"></span> &rarr; <span th:text="${toDate}"></span>
+                </div>
+            </div>
+            <a th:href="@{/(from=${fromDate},to=${toDate})}"
+               class="btn btn-sm btn-outline-secondary ms-auto">&#8592; Back</a>
+        </div>
+    </div>
+    <th:block th:replace="~{:: toolbarWith(${path}, ${key}, ${value})}"></th:block>
+</th:block>
+
+<!-- Same bar for detail pages: `key`/`value` is the page's identifying query param (e.g. ua, country). -->
+<th:block th:fragment="toolbarWith(path, key, value)"
+          th:with="base=${key == null ? path : path + '?' + key + '=' + #uris.escapeQueryParam(value)}">
     <div class="card mb-4 cf-toolbar">
         <div class="card-body d-flex flex-wrap align-items-center gap-2">
             <span class="fw-semibold me-2">Range:</span>
-            <a th:href="@{${path}(range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
-            <a th:href="@{${path}(range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
-            <a th:href="@{${path}(range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
-            <a th:href="@{${path}(range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
+            <a th:href="@{${base}(range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+            <a th:href="@{${base}(range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
+            <a th:href="@{${base}(range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
+            <a th:href="@{${base}(range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>
 
             <form th:action="@{${path}}" method="get" class="d-flex align-items-center gap-2 ms-2">
+                <input type="hidden" th:if="${key != null}" th:name="${key}" th:value="${value}"/>
                 <label for="fromDate" class="form-label mb-0 fw-semibold">Custom:</label>
                 <input type="date" id="fromDate" name="from" class="form-control form-control-sm" th:value="${fromDate}" style="width:150px"/>
                 <span>&ndash;</span>

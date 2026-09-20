@@ -1,5 +1,6 @@
 import { Charts } from './charts.js';
 import { readMeta, escapeHtml, buildBaseParams, resultTotal, stackedBar, uaRequestsUrl, renderMinVersionBanner } from './utils.js';
+import { initRefresh } from './refresh.js';
 
 const ua = readMeta('cf-ua');
 const DESKTOP_BROWSER_UAS = {
@@ -51,3 +52,4 @@ async function loadAllCharts() {
 }
 
 loadAllCharts();
+initRefresh(loadAllCharts);
