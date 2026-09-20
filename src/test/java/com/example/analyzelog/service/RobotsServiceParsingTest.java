@@ -1,5 +1,6 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.service.RobotsService.RobotsRule;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -8,110 +9,81 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RobotsServiceParsingTest {
 
+    private static final String ALLOW_LIST_ROBOTS = """
+            Sitemap: https://example.com/sitemap.xml
+
+            # Allowed search engines.
+            User-agent: Googlebot
+            User-agent: Bingbot
+            Allow: /
+            Disallow: /assets
+            Disallow: /pagefind
+
+            # Everyone else is blocked
+            User-agent: *
+            Disallow: /
+            """;
+
     @Test
-    void parsesSimpleDisallowedAgent() {
-        String robots = """
-                User-agent: Googlebot
-                Disallow: /private
-                """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertEquals(List.of("Googlebot"), result);
+    void parsesAllowListWithDisallowedPathsAndWildcard() {
+        assertEquals(List.of(
+                new RobotsRule("Googlebot", "/assets"),
+                new RobotsRule("Googlebot", "/pagefind"),
+                new RobotsRule("Bingbot", "/assets"),
+                new RobotsRule("Bingbot", "/pagefind"),
+                new RobotsRule("*", "/")),
+                RobotsService.parseRules(ALLOW_LIST_ROBOTS));
     }
 
     @Test
-    void skipsWildcard() {
-        String robots = """
-                User-agent: *
-                Disallow: /
-
-                User-agent: Googlebot
-                Disallow: /private
-                """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertFalse(result.contains("*"));
-        assertTrue(result.contains("Googlebot"));
-    }
-
-    @Test
-    void skipsAgentWithNoDisallow() {
+    void namedGroupWithoutDisallowGetsEmptyPath() {
         String robots = """
                 User-agent: Googlebot
                 Allow: /
                 """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertTrue(result.isEmpty());
+        assertEquals(List.of(new RobotsRule("Googlebot", "")), RobotsService.parseRules(robots));
     }
 
     @Test
-    void skipsAgentWithEmptyDisallow() {
+    void emptyDisallowMeansNothingDisallowed() {
         String robots = """
                 User-agent: Googlebot
                 Disallow:
                 """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertTrue(result.isEmpty());
+        assertEquals(List.of(new RobotsRule("Googlebot", "")), RobotsService.parseRules(robots));
     }
 
     @Test
-    void multipleAgentsInOneBlock() {
+    void ignoresCommentsSitemapAndCase() {
         String robots = """
-                User-agent: BadBot
-                User-agent: EvilBot
-                Disallow: /
+                # comment
+                user-agent: Googlebot
+                DISALLOW: /private
                 """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertTrue(result.contains("BadBot"));
-        assertTrue(result.contains("EvilBot"));
+        assertEquals(List.of(new RobotsRule("Googlebot", "/private")), RobotsService.parseRules(robots));
     }
 
     @Test
-    void multipleAgentsInOneBlockSkipsWildcard() {
+    void handlesWindowsLineEndings() {
+        String robots = "User-agent: A\r\nDisallow: /a\r\n\r\nUser-agent: B\r\nDisallow: /b\r\n";
+        assertEquals(List.of(new RobotsRule("A", "/a"), new RobotsRule("B", "/b")), RobotsService.parseRules(robots));
+    }
+
+    @Test
+    void deduplicatesRules() {
         String robots = """
-                User-agent: *
-                User-agent: BadBot
-                Disallow: /
+                User-agent: A
+                Disallow: /x
+
+                User-agent: A
+                Disallow: /x
                 """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertFalse(result.contains("*"));
-        assertTrue(result.contains("BadBot"));
+        assertEquals(List.of(new RobotsRule("A", "/x")), RobotsService.parseRules(robots));
     }
 
     @Test
-    void handlesComments() {
-        String robots = """
-                # This is a comment
-                User-agent: SpamBot
-                Disallow: /
-                """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertTrue(result.contains("SpamBot"));
-    }
-
-    @Test
-    void handlesMultipleBlocks() {
-        String robots = """
-                User-agent: BotA
-                Disallow: /secret
-
-                User-agent: BotB
-                Allow: /
-
-                User-agent: BotC
-                Disallow: /admin
-                """;
-        List<String> result = RobotsService.parseDisallowedAgents(robots);
-        assertTrue(result.contains("BotA"));
-        assertFalse(result.contains("BotB"));
-        assertTrue(result.contains("BotC"));
-    }
-
-    @Test
-    void returnsEmptyForNullInput() {
-        assertTrue(RobotsService.parseDisallowedAgents(null).isEmpty());
-    }
-
-    @Test
-    void returnsEmptyForEmptyInput() {
-        assertTrue(RobotsService.parseDisallowedAgents("").isEmpty());
+    void nullOrBlankReturnsEmpty() {
+        assertTrue(RobotsService.parseRules(null).isEmpty());
+        assertTrue(RobotsService.parseRules("").isEmpty());
     }
 }

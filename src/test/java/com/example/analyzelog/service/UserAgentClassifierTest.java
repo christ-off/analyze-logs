@@ -70,6 +70,8 @@ class UserAgentClassifierTest {
         "'2ip bot/1.1 (+https://2ip.io)', 2ip Scanner",
         // Other bots
         "'Linkwarden (Server-Side Fetch)', Linkwarden",
+        "'SpiderLing (a Web spider for linguistics) http://nlp.fi.muni.cz/projekty/spiderling/', SpiderLing",
+        "'Mozilla/5.0 (compatible; SketchEngine; +https://www.sketchengine.eu/)', SketchEngine",
         // Feed readers
         "'Feedly/1.0 (+http://www.feedly.com/fetcher.html)', Feedly",
         "'Feedbin feed-id:2878303 - 1 subscribers', Feedbin",

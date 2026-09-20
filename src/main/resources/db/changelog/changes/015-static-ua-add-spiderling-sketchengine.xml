@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- SpiderLing and SketchEngine are linguistic-corpus crawlers explicitly allowed in robots.txt.
+         Classify them as known bots so the robots.txt obedience sections cover them, and
+         reclassify log rows ingested before the patterns existed. -->
+    <changeSet id="015-static-ua-add-spiderling-sketchengine" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('SpiderLing',   'Other Bots', 'SpiderLing',   'SpiderLing',   78),
+            ('SketchEngine', 'Other Bots', 'SketchEngine', 'SketchEngine', 79);
+            UPDATE cloudfront_logs SET ua_name = 'SpiderLing'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%SpiderLing%';
+            UPDATE cloudfront_logs SET ua_name = 'SketchEngine'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%SketchEngine%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -107,8 +107,8 @@ Four detection methods, all scoped to the selected date range:
 |---------|-----------------|
 | **Top Probable Bots** | IPs that fetched `/robots.txt` and then crawled another URL within 1 hour using the same IP and user agent. |
 | **No Static Assets Bots** | IPs whose every request (per IP+UA pair) contains zero CSS, JS, WebP, ICO, or SVG fetches — real browsers always load static assets. Feed readers (`/feed.xml`, `/rss.xml`) are excluded. |
-| **Robots.txt Disobedient Bots** | User agents that requested disallowed paths after the current `robots.txt` rules were in place. Requires a **Refresh Robots** to load the latest rules. |
-| **Robots.txt Obedient Bots** | User agents disallowed by the current `robots.txt` rules that only ever fetched `/robots.txt` — the well-behaved counterpart to Disobedient Bots. |
+| **Robots.txt Disobedient Bots** | Known bots that requested a path their `robots.txt` group disallows (a bot with no named group falls back to `User-agent: *`; `/robots.txt` itself is always allowed). Requires a **Refresh Robots** to load the latest rules. |
+| **Robots.txt Obedient Bots** | Known bots that fetched `/robots.txt` and never requested a path disallowed for them; the count is their other content requests (excluding `/robots.txt`); the bar covers all their requests. |
 
 The **Bot vs Human Traffic Over Time** chart shows daily request volume split between known bots (AI Bots, Search Bots, Other Bots, Apps) and human browsers.
 

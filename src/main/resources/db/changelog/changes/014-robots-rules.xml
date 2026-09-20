@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- One row per (user agent group, Disallow path). path '' = named group with nothing disallowed. '*' = wildcard group. -->
+    <changeSet id="014-robots-rules" author="analyze-logs">
+        <sql>
+            DROP TABLE robots_disallowed;
+            CREATE TABLE robots_rules (
+                user_agent   TEXT NOT NULL,
+                path         TEXT NOT NULL,
+                refreshed_at TEXT NOT NULL,
+                PRIMARY KEY (user_agent, path)
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

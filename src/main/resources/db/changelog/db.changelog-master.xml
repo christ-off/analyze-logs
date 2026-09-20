@@ -18,5 +18,7 @@
     <include file="db/changelog/changes/011-reclassify-linkwarden-logs.xml"/>
     <include file="db/changelog/changes/012-drop-noise-filter.xml"/>
     <include file="db/changelog/changes/013-drop-protocol-version.xml"/>
+    <include file="db/changelog/changes/014-robots-rules.xml"/>
+    <include file="db/changelog/changes/015-static-ua-add-spiderling-sketchengine.xml"/>
 
 </databaseChangeLog>

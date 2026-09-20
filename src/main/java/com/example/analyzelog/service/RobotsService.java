@@ -36,39 +36,61 @@ public class RobotsService {
                 .retrieve()
                 .body(String.class);
 
-        List<String> disallowed = parseDisallowedAgents(body);
+        List<RobotsRule> rules = parseRules(body);
         String now = TimestampFormat.sqlValue(Instant.now());
-        jdbc.update("DELETE FROM robots_disallowed");
-        for (String ua : disallowed) {
-            jdbc.update("INSERT INTO robots_disallowed (user_agent, refreshed_at) VALUES (?, ?)", ua, now);
+        jdbc.update("DELETE FROM robots_rules");
+        for (RobotsRule rule : rules) {
+            jdbc.update("INSERT INTO robots_rules (user_agent, path, refreshed_at) VALUES (?, ?, ?)",
+                    rule.userAgent(), rule.path(), now);
         }
     }
 
-    static List<String> parseDisallowedAgents(String robotsTxt) {
+    // path "" marks a group with nothing disallowed; "*" is the wildcard group.
+    record RobotsRule(String userAgent, String path) {}
+
+    static List<RobotsRule> parseRules(String robotsTxt) {
         if (robotsTxt == null || robotsTxt.isBlank()) return List.of();
-        LinkedHashSet<String> result = new LinkedHashSet<>();
+        LinkedHashSet<RobotsRule> result = new LinkedHashSet<>();
         for (String block : robotsTxt.split("\\r?\\n\\s*\\r?\\n")) {
-            collectDisallowedAgents(block, result);
+            collectRules(block, result);
         }
         return new ArrayList<>(result);
     }
 
-    private static void collectDisallowedAgents(String block, Set<String> result) {
+    private static void collectRules(String block, Set<RobotsRule> result) {
         List<String> agents = new ArrayList<>();
-        boolean hasDisallow = false;
+        List<String> paths = new ArrayList<>();
         for (String raw : block.lines().toList()) {
             String line = raw.trim();
-            if (line.startsWith("#") || line.isEmpty()) continue;
-            if (line.toLowerCase().startsWith("user-agent:")) {
+            String lower = line.toLowerCase();
+            if (lower.startsWith("user-agent:")) {
                 agents.add(line.substring("user-agent:".length()).trim());
-            } else if (line.toLowerCase().startsWith("disallow:") && !line.substring("disallow:".length()).trim().isEmpty()) {
-                hasDisallow = true;
+            } else if (lower.startsWith("disallow:")) {
+                String path = line.substring("disallow:".length()).trim();
+                if (!path.isEmpty()) paths.add(path);
             }
         }
-        if (hasDisallow) {
-            agents.stream().filter(a -> !a.equals("*")).forEach(result::add);
+        for (String agent : agents) {
+            if (paths.isEmpty()) result.add(new RobotsRule(agent, ""));
+            paths.forEach(p -> result.add(new RobotsRule(agent, p)));
         }
     }
+
+    // A crawler follows its own named group if robots.txt has one, otherwise the "*" group.
+    // Scope: known bots (static_ua) plus any agent named in robots.txt.
+    private static final String BOT_SCOPE =
+            "c.user_agent != ''\n" +
+            "  AND c.timestamp BETWEEN ? AND ?\n" +
+            "  AND (c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + DashboardService.BOT_UA_GROUPS_SQL_LIST + "))\n" +
+            "       OR EXISTS (SELECT 1 FROM robots_rules n WHERE n.user_agent = c.ua_name))\n";
+
+    private static final String VIOLATION =
+            "(c.uri_stem != '/robots.txt' AND EXISTS (\n" +
+            "    SELECT 1 FROM robots_rules r\n" +
+            "    WHERE r.path != ''\n" +
+            "      AND substr(c.uri_stem, 1, length(r.path)) = r.path\n" +
+            "      AND r.user_agent = CASE WHEN EXISTS (SELECT 1 FROM robots_rules n WHERE n.user_agent = c.ua_name)\n" +
+            "                              THEN c.ua_name ELSE '*' END))";
 
     public List<DisobedientBot> findDisobedientBots(Instant from, Instant to) {
         return jdbc.query(
@@ -76,10 +98,8 @@ public class RobotsService {
                 "       COUNT(*) AS count,\n" +
                 ResultTypeSql.resultTypeSums("c") + "\n" +
                 "FROM cloudfront_logs c\n" +
-                "INNER JOIN robots_disallowed r ON c.ua_name = r.user_agent\n" +
-                "WHERE c.uri_stem != '/robots.txt'\n" +
-                "  AND c.user_agent != ''\n" +
-                "  AND c.timestamp BETWEEN ? AND ?\n" +
+                "WHERE " + BOT_SCOPE +
+                "  AND " + VIOLATION + "\n" +
                 "GROUP BY c.user_agent\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new DisobedientBot(
@@ -92,17 +112,17 @@ public class RobotsService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
+    // count = other content requests (excluding /robots.txt); the hit/miss/... bar covers all requests.
     public List<ObedientBot> findObedientBots(Instant from, Instant to) {
         return jdbc.query(
                 "SELECT c.user_agent,\n" +
-                "       COUNT(*) AS count,\n" +
+                "       SUM(CASE WHEN c.uri_stem != '/robots.txt' THEN 1 ELSE 0 END) AS count,\n" +
                 ResultTypeSql.resultTypeSums("c") + "\n" +
                 "FROM cloudfront_logs c\n" +
-                "INNER JOIN robots_disallowed r ON c.ua_name = r.user_agent\n" +
-                "WHERE c.user_agent != ''\n" +
-                "  AND c.timestamp BETWEEN ? AND ?\n" +
+                "WHERE " + BOT_SCOPE +
                 "GROUP BY c.user_agent\n" +
-                "HAVING SUM(CASE WHEN c.uri_stem != '/robots.txt' THEN 1 ELSE 0 END) = 0\n" +
+                "HAVING SUM(" + VIOLATION + ") = 0\n" +
+                "   AND SUM(CASE WHEN c.uri_stem = '/robots.txt' THEN 1 ELSE 0 END) > 0\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new ObedientBot(
                         rs.getString("user_agent"),
@@ -129,7 +149,7 @@ public class RobotsService {
                 "INNER JOIN static_ua s ON c.ua_name = s.ua_name\n" +
                 "LEFT JOIN robots_txt_fetchers r ON c.ua_name = r.ua_name\n" +
                 "WHERE c.timestamp BETWEEN ? AND ?\n" +
-                "  AND s.ua_group IN ('AI Bots','Search Bots','Other Bots')\n" +
+                "  AND s.ua_group IN (" + DashboardService.BOT_UA_GROUPS_SQL_LIST + ")\n" +
                 "  AND r.ua_name IS NULL\n" +
                 "GROUP BY c.user_agent\n" +
                 "ORDER BY count DESC\n",
@@ -146,7 +166,7 @@ public class RobotsService {
     public Optional<String> getRefreshedAt() {
         return Optional.ofNullable(
                 jdbc.queryForObject(
-                        "SELECT MAX(refreshed_at) FROM robots_disallowed",
+                        "SELECT MAX(refreshed_at) FROM robots_rules",
                         String.class));
     }
 }

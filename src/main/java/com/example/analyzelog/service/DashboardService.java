@@ -109,7 +109,7 @@ public class DashboardService {
             "'/.well-known/security.txt','/browserconfig.xml','/opensearch.xml'";
     // Every ua_group considered a known bot — reused wherever "not a bot" or "known-bot identity" matters
     // (identityShiftingIps, the Human page's bot exclusion).
-    private static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','Search Bots','Other Bots'";
+    static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','Search Bots','Other Bots'";
     // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
     // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
     // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
