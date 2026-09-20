@@ -143,16 +143,15 @@ describe('bulk report toolbar', () => {
         expect(boxes.every(b => b.checked)).toBe(true);
     });
 
-    it('builds a combined report for selected Google rows and warns about non-Google ones', async () => {
+    it('copies all selected rows without opening a form when only some are Google', async () => {
         vi.stubGlobal('fetch', vi.fn((url) => {
             const info = url.includes(encodeURIComponent(GOOGLE_INFO.ip)) ? GOOGLE_INFO : OTHER_INFO;
             return Promise.resolve({ json: () => Promise.resolve(info) });
         }));
         const writeText = vi.fn().mockResolvedValue();
         vi.stubGlobal('navigator', { clipboard: { writeText } });
-        vi.stubGlobal('open', vi.fn());
-        const alertMock = vi.fn();
-        vi.stubGlobal('alert', alertMock);
+        const openMock = vi.fn();
+        vi.stubGlobal('open', openMock);
 
         abuseReport.initBulkAbuseReport();
         const boxes = document.querySelectorAll('.row-select');
@@ -162,12 +161,13 @@ describe('bulk report toolbar', () => {
         document.querySelector('#bulkReportBtn').click();
         await flushPromises();
 
-        expect(alertMock).toHaveBeenCalledTimes(1);
+        expect(openMock).not.toHaveBeenCalled();
         expect(writeText).toHaveBeenCalledTimes(1);
-        expect(writeText.mock.calls[0][0]).toBe('2026-08-29 08:47:02 UTC  34.73.59.67  /i.php\n');
+        expect(writeText.mock.calls[0][0]).toContain('2026-08-29 08:47:02 UTC  34.73.59.67  /i.php\n');
+        expect(writeText.mock.calls[0][0]).toContain('/wp-login.php');
     });
 
-    it('warns and does nothing when selected rows span multiple providers', async () => {
+    it('copies all rows without opening a form when rows span multiple providers', async () => {
         document.querySelector('table').remove();
         document.body.insertAdjacentHTML('beforeend', `
         <table><tbody>
@@ -186,16 +186,15 @@ describe('bulk report toolbar', () => {
         }));
         const writeText = vi.fn().mockResolvedValue();
         vi.stubGlobal('navigator', { clipboard: { writeText } });
-        vi.stubGlobal('open', vi.fn());
-        const alertMock = vi.fn();
-        vi.stubGlobal('alert', alertMock);
+        const openMock = vi.fn();
+        vi.stubGlobal('open', openMock);
 
         abuseReport.initBulkAbuseReport();
         document.querySelector('#bulkReportBtn').click();
         await flushPromises();
 
-        expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('multiple providers'));
-        expect(writeText).not.toHaveBeenCalled();
+        expect(openMock).not.toHaveBeenCalled();
+        expect(writeText).toHaveBeenCalledTimes(1);
     });
 
     it('builds a report and opens the Microsoft form for selected Microsoft rows', async () => {

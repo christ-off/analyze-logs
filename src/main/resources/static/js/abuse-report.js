@@ -140,31 +140,15 @@ export function initBulkAbuseReport(root = document) {
             return entry;
         }));
 
-        // Group by the first helper each entry matches, so a mixed selection (e.g. some
-        // Google IPs, some Microsoft IPs) doesn't get silently merged into one report.
-        const groups = new Map();
-        const unmatched = [];
-        entries.forEach(entry => {
-            const helper = findHelpers(entry.info)[0];
-            if (!helper) { unmatched.push(entry); return; }
-            if (!groups.has(helper.id)) groups.set(helper.id, { helper, entries: [] });
-            groups.get(helper.id).entries.push(entry);
-        });
-
-        if (groups.size === 0) {
-            alert('None of the selected rows originate from a provider with a known abuse-report form.');
+        // Always copy to the clipboard. Only open a provider's abuse form when every
+        // selected row belongs to that one provider; otherwise the report is for email.
+        const helpers = new Set(entries.map(e => findHelpers(e.info)[0]));
+        const helper = helpers.size === 1 ? helpers.values().next().value : null;
+        if (!helper) {
+            await navigator.clipboard.writeText(buildPlainReportText(entries).text).catch(() => {});
             return;
         }
-        if (groups.size > 1) {
-            const names = Array.from(groups.values()).map(g => `${g.entries.length} ${g.helper.label.replace('Report to ', '')}`).join(', ');
-            alert(`Selected rows span multiple providers (${names}). Select rows for one provider at a time.`);
-            return;
-        }
-        const { helper, entries: matched } = groups.values().next().value;
-        if (unmatched.length > 0) {
-            alert(`${unmatched.length} selected row(s) do not match ${helper.label.replace('Report to ', '')} and were left out of the report.`);
-        }
-        const { text, omitted } = helper.buildReport(matched);
+        const { text, omitted } = helper.buildReport(entries);
         if (omitted > 0) {
             alert(`${omitted} more request(s) left out: ${helper.label.replace('Report to ', '')}'s form is limited to ${MAX_REPORT_CHARS} characters.`);
         }
