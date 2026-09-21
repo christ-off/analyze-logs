@@ -36,5 +36,5 @@ export async function loadAllCharts() {
     versionTable.setVersions(aggregateByVersion(browser, rawUserAgents, humanStats));
 }
 
-loadAllCharts();
 initRefresh(loadAllCharts);
+await loadAllCharts();

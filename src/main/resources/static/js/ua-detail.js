@@ -51,5 +51,5 @@ async function loadAllCharts() {
     }
 }
 
-loadAllCharts();
 initRefresh(loadAllCharts);
+await loadAllCharts();

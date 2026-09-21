@@ -84,13 +84,18 @@ public class RobotsService {
             "  AND (c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + DashboardService.BOT_UA_GROUPS_SQL_LIST + "))\n" +
             "       OR EXISTS (SELECT 1 FROM robots_rules n WHERE n.user_agent = c.ua_name))\n";
 
-    private static final String VIOLATION =
-            "(c.uri_stem != '/robots.txt' AND EXISTS (\n" +
-            "    SELECT 1 FROM robots_rules r\n" +
-            "    WHERE r.path != ''\n" +
-            "      AND substr(c.uri_stem, 1, length(r.path)) = r.path\n" +
-            "      AND r.user_agent = CASE WHEN EXISTS (SELECT 1 FROM robots_rules n WHERE n.user_agent = c.ua_name)\n" +
-            "                              THEN c.ua_name ELSE '*' END))";
+    private static final String VIOLATION = """
+            (c.uri_stem != '/robots.txt' AND EXISTS (
+                SELECT 1 FROM robots_rules r
+                WHERE r.path != ''
+                  AND substr(c.uri_stem, 1, length(r.path)) = r.path
+                  AND r.user_agent = CASE WHEN EXISTS (SELECT 1 FROM robots_rules n WHERE n.user_agent = c.ua_name)
+                                          THEN c.ua_name ELSE '*' END))""";
+
+    private static final String COL_USER_AGENT = "user_agent";
+    private static final String COL_COUNT = "count";
+    private static final String COL_ERROR = "error";
+    private static final String COL_FUNCTION = "function";
 
     public List<DisobedientBot> findDisobedientBots(Instant from, Instant to) {
         return jdbc.query(
@@ -103,12 +108,12 @@ public class RobotsService {
                 "GROUP BY c.user_agent\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new DisobedientBot(
-                        rs.getString("user_agent"),
-                        rs.getLong("count"),
+                        rs.getString(COL_USER_AGENT),
+                        rs.getLong(COL_COUNT),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("error"),
-                        rs.getLong("function")),
+                        rs.getLong(COL_ERROR),
+                        rs.getLong(COL_FUNCTION)),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
@@ -125,12 +130,12 @@ public class RobotsService {
                 "   AND SUM(CASE WHEN c.uri_stem = '/robots.txt' THEN 1 ELSE 0 END) > 0\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new ObedientBot(
-                        rs.getString("user_agent"),
-                        rs.getLong("count"),
+                        rs.getString(COL_USER_AGENT),
+                        rs.getLong(COL_COUNT),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("error"),
-                        rs.getLong("function")),
+                        rs.getLong(COL_ERROR),
+                        rs.getLong(COL_FUNCTION)),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
@@ -154,12 +159,12 @@ public class RobotsService {
                 "GROUP BY c.user_agent\n" +
                 "ORDER BY count DESC\n",
                 (rs, _) -> new RobotsTxtSkippingBot(
-                        rs.getString("user_agent"),
-                        rs.getLong("count"),
+                        rs.getString(COL_USER_AGENT),
+                        rs.getLong(COL_COUNT),
                         rs.getLong("hit"),
                         rs.getLong("miss"),
-                        rs.getLong("error"),
-                        rs.getLong("function")),
+                        rs.getLong(COL_ERROR),
+                        rs.getLong(COL_FUNCTION)),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 

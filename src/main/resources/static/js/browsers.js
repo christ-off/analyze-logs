@@ -14,7 +14,7 @@ export const BROWSERS = {
 
 // Extract the major version from a raw user_agent string, e.g. ("chrome", "...Chrome/120.0.0.0...") -> 120.
 export function majorVersion(browser, rawUa) {
-    const m = rawUa.match(new RegExp(`${BROWSERS[browser].token}/(\\d+)`));
+    const m = rawUa.match(new RegExp(String.raw`${BROWSERS[browser].token}/(\d+)`));
     return m ? Number(m[1]) : null;
 }
 

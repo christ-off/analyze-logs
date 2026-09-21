@@ -55,7 +55,8 @@ export function createVersionTable(browserLabel) {
         document.querySelectorAll('#tableVersions [data-sort-key]').forEach(th => {
             const active = th.dataset.sortKey === sortKey;
             th.classList.toggle('cf-sort-active', active);
-            th.querySelector('.cf-sort-indicator').textContent = active ? (sortDir === 'asc' ? '▲' : '▼') : '';
+            const arrow = sortDir === 'asc' ? '▲' : '▼';
+            th.querySelector('.cf-sort-indicator').textContent = active ? arrow : '';
         });
     }
 
@@ -89,7 +90,8 @@ export function createVersionTable(browserLabel) {
     document.querySelectorAll('#tableVersions [data-sort-key]').forEach(th => {
         th.addEventListener('click', () => {
             const key = th.dataset.sortKey;
-            sortDir = key === sortKey ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc';
+            const flipped = sortDir === 'asc' ? 'desc' : 'asc';
+            sortDir = key === sortKey ? flipped : 'desc';
             sortKey = key;
             render();
         });

@@ -96,7 +96,7 @@ export function stackedBar(row, maxTotal) {
 // skips versions that are expected to linger below the rest (e.g. Firefox ESR), which
 // would otherwise pull the minimum down without indicating spoofing.
 export function minVersionWithHumanTraffic(humanStats, browser, uaToken = browser, excludedVersions = []) {
-    const versionPattern = new RegExp(`${uaToken}/(\\d+)`);
+    const versionPattern = new RegExp(String.raw`${uaToken}/(\d+)`);
     const excluded = new Set(excludedVersions);
     const totalsByVersion = new Map();
     for (const h of humanStats) {

@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("java:S2077") // dynamic SQL parts are static constants or parameterized — no user input is concatenated
@@ -47,6 +48,10 @@ public class DashboardService {
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
     private static final String UA_NAME_FILTER = "ua_name = ?";
+    private static final String COL_TIMESTAMP = "timestamp";
+    private static final String COL_CLIENT_IP = "client_ip";
+    private static final String COL_URI_STEM = "uri_stem";
+    private static final String COL_USER_AGENT = "user_agent";
     // Every ua_name variant of a browser (desktop and mobile) is "<Browser> / <OS>" — the browser
     // dashboards aggregate across all of them regardless of OS.
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
@@ -64,9 +69,9 @@ public class DashboardService {
         String countryName = resolveCountryDisplayOrNull(iso);
         if (countryName == null) countryName = "-";
         return new BotUaRequest(
-                Instant.parse(rs.getString("timestamp")),
-                rs.getString("client_ip"),
-                rs.getString("uri_stem"),
+                Instant.parse(rs.getString(COL_TIMESTAMP)),
+                rs.getString(COL_CLIENT_IP),
+                rs.getString(COL_URI_STEM),
                 rs.getString("result_type"),
                 countryName,
                 rs.getInt("status"));
@@ -116,9 +121,11 @@ public class DashboardService {
     // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
     // The legitimate archives the site serves (DeDRM plugin, sitemap) — excluded from zipUriCounts so only
     // scanner probes for archive dumps remain.
+    @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
     private static final String LEGITIMATE_ZIP_PATH = "/assets/posts_other/DeDRM_plugin.zip";
     private static final String SITEMAP_GZ_PATH = "/sitemap.xml.gz";
     private static final String HUMAN_EVIDENCE_CSS_PATH = "/css/main.css";
+    @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
     private static final String HUMAN_EVIDENCE_SVG_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
     // A "page" request (uri_stem ending in '/') from a non-bot ua_group, corroborated by requests from
     // the same (client_ip, user_agent) for both evidence assets above, each within +/-1h — the Human
@@ -675,7 +682,7 @@ public class DashboardService {
     }
 
     private List<DailyResultTypeCount> requestsPerDayByFilter(String filterClause, Object filterArg, Instant from, Instant to) {
-        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND " + filterClause + "\n" + SQL_DAILY_GROUP_ORDER,
+        return queryDailyByResultType(SQL_DAILY_SELECT + SQL_AND_INDENT + filterClause + "\n" + SQL_DAILY_GROUP_ORDER,
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), filterArg);
     }
 
@@ -867,7 +874,7 @@ public class DashboardService {
 
     private String buildSecurityUnionSql(List<String> names, Instant from, Instant to,
                                           List<Object> args,
-                                          java.util.function.Function<String, String> selectFmt) {
+                                          UnaryOperator<String> selectFmt) {
         return names.stream()
                 .map(name -> {
                     var entry = uriStemPredicate(name);
@@ -1014,7 +1021,7 @@ public class DashboardService {
                 ORDER BY client_ip, count DESC
                 """.formatted(inClause),
                 (RowCallbackHandler) (rs ->
-                        userAgentsByIp.computeIfAbsent(rs.getString("client_ip"), _ -> new ArrayList<>())
+                        userAgentsByIp.computeIfAbsent(rs.getString(COL_CLIENT_IP), _ -> new ArrayList<>())
                                 .add(new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD)))),
                 uaArgs.toArray());
 
@@ -1041,7 +1048,7 @@ public class DashboardService {
                 ORDER BY client_ip, (hit + miss + function + error) DESC
                 """.formatted(RESULT_TYPE_SUMS, inClause),
                 (RowCallbackHandler) (rs ->
-                        urlAggs.add(new UrlAgg(rs.getString("client_ip"), rs.getString("name"),
+                        urlAggs.add(new UrlAgg(rs.getString(COL_CLIENT_IP), rs.getString("name"),
                                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR)))),
                 urlArgs.toArray());
         if (urlAggs.isEmpty()) {
@@ -1069,9 +1076,9 @@ public class DashboardService {
                   AND (client_ip, uri_stem) IN (VALUES %s)
                 """.formatted(pairPlaceholders),
                 (RowCallbackHandler) (rs ->
-                        userAgentsByIpUrl.computeIfAbsent(rs.getString("client_ip"), _ -> new LinkedHashMap<>())
-                                .computeIfAbsent(rs.getString("uri_stem"), _ -> new ArrayList<>())
-                                .add(rs.getString("user_agent"))),
+                        userAgentsByIpUrl.computeIfAbsent(rs.getString(COL_CLIENT_IP), _ -> new LinkedHashMap<>())
+                                .computeIfAbsent(rs.getString(COL_URI_STEM), _ -> new ArrayList<>())
+                                .add(rs.getString(COL_USER_AGENT))),
                 pairArgs.toArray());
 
         Map<String, List<IdentityShift.IdentityShiftUrl>> urlsByIp = new LinkedHashMap<>();
@@ -1121,19 +1128,11 @@ public class DashboardService {
                 params.add(uaPattern);
             }
             for (String uaName : rule.uaNames()) {
-                conditions.add("ua_name = ?");
+                conditions.add(UA_NAME_FILTER);
                 params.add(uaName);
             }
             for (String domain : rule.refererDomains()) {
-                for (String scheme : List.of("http://", "https://")) {
-                    for (String prefix : List.of("", "www.")) {
-                        String host = scheme + prefix + domain;
-                        conditions.add("(referer = ? OR referer LIKE ? OR referer LIKE ?)");
-                        params.add(host);
-                        params.add(host + "/%");
-                        params.add(host + ":%");
-                    }
-                }
+                addRefererConditions(domain, conditions, params);
             }
             String match = String.join(" OR ", conditions);
             if (rule.excludeRootUri()) match = "(" + match + ") AND uri_stem <> '/'";
@@ -1142,14 +1141,26 @@ public class DashboardService {
         return sql.append("END").toString();
     }
 
+    private static void addRefererConditions(String domain, List<String> conditions, List<Object> params) {
+        for (String scheme : List.of("http://", "https://")) {
+            for (String prefix : List.of("", "www.")) {
+                String host = scheme + prefix + domain;
+                conditions.add("(referer = ? OR referer LIKE ? OR referer LIKE ?)");
+                params.add(host);
+                params.add(host + "/%");
+                params.add(host + ":%");
+            }
+        }
+    }
+
     private static final RowMapper<UnknownUaRequest> UNKNOWN_UA_REQUEST_MAPPER = (rs, _) ->
-            new UnknownUaRequest(Instant.parse(rs.getString("timestamp")), rs.getString("user_agent"), rs.getString("uri_stem"),
+            new UnknownUaRequest(Instant.parse(rs.getString(COL_TIMESTAMP)), rs.getString(COL_USER_AGENT), rs.getString(COL_URI_STEM),
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
 
     private static SocialNetworkRequest socialNetworkRequest(ResultSet rs) throws SQLException {
         String countryName = resolveCountryDisplayOrNull(rs.getString("country"));
-        return new SocialNetworkRequest(Instant.parse(rs.getString("timestamp")), rs.getString("user_agent"),
-                rs.getString("ua_name"), rs.getString("uri_stem"), countryName == null ? "-" : countryName);
+        return new SocialNetworkRequest(Instant.parse(rs.getString(COL_TIMESTAMP)), rs.getString(COL_USER_AGENT),
+                rs.getString("ua_name"), rs.getString(COL_URI_STEM), countryName == null ? "-" : countryName);
     }
 
     // Most recent requests attributed to each known social/messaging network within the range,
