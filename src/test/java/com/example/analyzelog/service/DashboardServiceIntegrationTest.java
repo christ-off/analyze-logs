@@ -194,17 +194,20 @@ class DashboardServiceIntegrationTest {
         repository.saveEntries("logs/country-stats-test.gz", List.of(
                 entryWithCountryAndResultType("IE", "Hit"),
                 entryWithCountryAndResultType("IE", "Error"),
-                entryWithCountryAndResultType("NZ", "Miss")
+                entryWithCountryAndResultType("NZ", "Miss"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/feed.xml", null,
+                        "http.rb/5.1.1 (Mastodon/4.2.0; +https://example.social/)", "IE", "Hit")
         ));
 
         var result = dashboardService.countryStats(from, Instant.now().plusSeconds(5));
 
         var ie = result.stream().filter(r -> "IE".equals(r.code())).findFirst().orElseThrow();
         assertEquals("Ireland", ie.name());
-        assertEquals(2, ie.total());
-        assertEquals(1, ie.hit());
+        assertEquals(3, ie.total());
+        assertEquals(1, ie.mastodon());
+        assertEquals(2, ie.hit());
         assertEquals(1, ie.error());
-        assertEquals(2, ie.nonWebpRequests());
+        assertEquals(3, ie.nonWebpRequests());
         assertTrue(ie.humanPercentage() >= 0 && ie.humanPercentage() <= 100);
     }
 

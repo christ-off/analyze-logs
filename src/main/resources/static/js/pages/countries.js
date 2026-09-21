@@ -4,7 +4,7 @@ import { buildBaseParams, detailUrl, escapeHtml, stackedBar } from '../utils.js'
 import { initRefresh } from '../refresh.js';
 
 const tbody = document.getElementById('countriesTable');
-const COLS = 5;
+const COLS = 6;
 let rows = [];
 let sort = { key: 'total', dir: -1 };
 
@@ -18,6 +18,7 @@ function render() {
         <td><a href="${detailUrl('/country-detail', { country: c.code })}">${escapeHtml(c.name)}</a></td>
         <td class="text-end">${c.total.toLocaleString()}</td>
         <td class="text-end">${c.humanRequests.toLocaleString()}</td>
+        <td class="text-end">${c.mastodon.toLocaleString()}</td>
         <td class="text-end">${c.humanPercentage.toFixed(1)}%</td>
         <td class="align-middle px-2">${stackedBar(c, maxTotal)}</td>
     </tr>`).join('');

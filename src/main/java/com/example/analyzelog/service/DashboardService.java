@@ -381,7 +381,8 @@ public class DashboardService {
                 SELECT c.country AS code,
                        %s,
                        SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS human,
-                       SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp
+                       SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp,
+                       SUM(CASE WHEN c.ua_name = 'Mastodon' THEN 1 ELSE 0 END) AS mastodon
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
@@ -395,7 +396,7 @@ public class DashboardService {
             String iso = rs.getString("code");
             return new CountryStats(iso, resolveCountryLabel(iso),
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                    rs.getLong("human"), rs.getLong("non_webp"));
+                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"));
         }, fromSql, toSql, fromSql, toSql);
     }
 
