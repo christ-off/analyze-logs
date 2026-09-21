@@ -41,9 +41,11 @@ function load() {
         });
 }
 
-document.querySelectorAll('th.cf-sort').forEach(th => th.addEventListener('click', () => {
-    const key = th.dataset.key;
-    sort = { key, dir: sort.key === key ? -sort.dir : (key === 'name' ? 1 : -1) };
+document.querySelectorAll('button.cf-sort').forEach(btn => btn.addEventListener('click', () => {
+    const key = btn.dataset.key;
+    let dir = key === 'name' ? 1 : -1;
+    if (sort.key === key) dir = -sort.dir;
+    sort = { key, dir };
     if (rows.length) render();
 }));
 

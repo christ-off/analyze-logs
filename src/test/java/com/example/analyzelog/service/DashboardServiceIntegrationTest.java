@@ -294,10 +294,6 @@ class DashboardServiceIntegrationTest {
     private static final String UA_GOOGLEBOT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
-    private static final String UA_FEDIVERSE =
-            "http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)";
-    private static final String UA_FEEDLY =
-            "Feedly/1.0 (+http://www.feedly.com/fetcher.html)";
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private static final String UA_CHROME_MACOS =
