@@ -156,7 +156,7 @@ Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date pic
 
 ### Countries page
 
-One sortable table of all countries for the selected date range: requests, human requests, Mastodon requests, % human (same "Probable human" classification as the country detail page) and a Hit / Miss / Filtered / Error bar. Use it to spot countries with many requests but almost no human traffic — candidates for blocking upstream.
+One sortable table of all countries for the selected date range: requests, human requests, Mastodon requests, search-bot requests, % human (same "Probable human" classification as the country detail page) and a Hit / Miss / Filtered / Error bar. Use it to spot countries with many requests but almost no human traffic — candidates for blocking upstream.
 
 ### Security page
 

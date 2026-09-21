@@ -4,9 +4,20 @@ import { buildBaseParams, detailUrl, escapeHtml, stackedBar } from '../utils.js'
 import { initRefresh } from '../refresh.js';
 
 const tbody = document.getElementById('countriesTable');
-const COLS = 6;
+const COLS = 7;
 let rows = [];
 let sort = { key: 'total', dir: -1 };
+
+function marker(title, icon) {
+    return ` <span title="${title}" aria-label="${title}">${icon}</span>`;
+}
+
+// Stop sign: every request errored. Warning: no human and no Mastodon requests.
+function blockCandidate(c) {
+    if (c.error > 0 && c.error === c.total) return marker('All requests are errors', '🛑');
+    if (c.humanRequests === 0 && c.mastodon === 0) return marker('No human or Mastodon requests', '⚠️');
+    return '';
+}
 
 function render() {
     const sorted = [...rows].sort((a, b) => {
@@ -15,10 +26,11 @@ function render() {
     });
     const maxTotal = Math.max(...rows.map(r => r.total));
     tbody.innerHTML = sorted.map(c => `<tr>
-        <td><a href="${detailUrl('/country-detail', { country: c.code })}">${escapeHtml(c.name)}</a></td>
+        <td><a href="${detailUrl('/country-detail', { country: c.code })}">${escapeHtml(c.name)}</a>${blockCandidate(c)}</td>
         <td class="text-end">${c.total.toLocaleString()}</td>
         <td class="text-end">${c.humanRequests.toLocaleString()}</td>
         <td class="text-end">${c.mastodon.toLocaleString()}</td>
+        <td class="text-end">${c.searchBots.toLocaleString()}</td>
         <td class="text-end">${c.humanPercentage.toFixed(1)}%</td>
         <td class="align-middle px-2">${stackedBar(c, maxTotal)}</td>
     </tr>`).join('');

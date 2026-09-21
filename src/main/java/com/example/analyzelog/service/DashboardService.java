@@ -109,7 +109,8 @@ public class DashboardService {
             "'/.well-known/security.txt','/browserconfig.xml','/opensearch.xml'";
     // Every ua_group considered a known bot — reused wherever "not a bot" or "known-bot identity" matters
     // (identityShiftingIps, the Human page's bot exclusion).
-    static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','Search Bots','Other Bots'";
+    private static final String SEARCH_BOTS_GROUP = "Search Bots";
+    static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','" + SEARCH_BOTS_GROUP + "','Other Bots'";
     // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
     // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
     // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
@@ -382,21 +383,22 @@ public class DashboardService {
                        %s,
                        SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS human,
                        SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp,
-                       SUM(CASE WHEN c.ua_name = 'Mastodon' THEN 1 ELSE 0 END) AS mastodon
+                       SUM(CASE WHEN c.ua_name = 'Mastodon' THEN 1 ELSE 0 END) AS mastodon,
+                       SUM(CASE WHEN c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = '%s') THEN 1 ELSE 0 END) AS search_bots
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
                   AND c.country IS NOT NULL
                 GROUP BY c.country
                 ORDER BY (hit + miss + function + error) DESC
-                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"));
+                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), SEARCH_BOTS_GROUP);
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql, (rs, _) -> {
             String iso = rs.getString("code");
             return new CountryStats(iso, resolveCountryLabel(iso),
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"));
+                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"), rs.getLong("search_bots"));
         }, fromSql, toSql, fromSql, toSql);
     }
 

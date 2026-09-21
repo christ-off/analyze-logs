@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 // humanRequests/nonWebpRequests use the same basis as the country detail page's human proportion
 // (.webp requests excluded), so both pages show the same percentage.
 public record CountryStats(String code, String name, long hit, long miss, long function, long error,
-                           long humanRequests, long nonWebpRequests, long mastodon) {
+                           long humanRequests, long nonWebpRequests, long mastodon, long searchBots) {
     @JsonProperty
     public long total() {
         return hit + miss + function + error;
