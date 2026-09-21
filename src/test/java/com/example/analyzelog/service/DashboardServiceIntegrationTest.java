@@ -1183,35 +1183,6 @@ class DashboardServiceIntegrationTest {
 
     // Future time bases keep these datasets out of other tests' [now, now+5s] query windows.
     @Test
-    void fakeBrowserUas_flagsRoundTheClockBrowserUas() {
-        Instant base = Instant.now().plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
-        List<CloudFrontLogEntry> entries = new ArrayList<>();
-        for (int h = 0; h < 24; h++) {
-            for (int i = 0; i < 5; i++) {
-                // Chrome: 120 requests spread over all 24 hours — must be flagged
-                entries.add(entryAt(base.plus(h, ChronoUnit.HOURS).plus(i, ChronoUnit.MINUTES),
-                        "1.2.3.4", UA_CHROME_WINDOWS, "/index.html"));
-                // Firefox: 120 requests but all in a single hour — must not be flagged
-                entries.add(entryAt(base.plusSeconds(h * 60L + i),
-                        "1.2.3.5", UA_FIREFOX_LINUX, "/index.html"));
-                // ClaudeBot: 24/7 but not a browser — must not be flagged
-                entries.add(entryAt(base.plus(h, ChronoUnit.HOURS).plus(i, ChronoUnit.MINUTES),
-                        "1.2.3.6", UA_CLAUDEBOT, "/index.html"));
-            }
-        }
-        repository.saveEntries("logs/fake-browsers-test.gz", entries);
-
-        var result = dashboardService.fakeBrowserUas(base.minusSeconds(1), base.plus(2, ChronoUnit.DAYS), 10);
-
-        assertEquals(1, result.size());
-        var fake = result.getFirst();
-        assertEquals(UA_CHROME_WINDOWS, fake.userAgent());
-        assertEquals(120, fake.count());
-        assertEquals(24, fake.activeHours());
-        assertEquals(1, fake.days());
-    }
-
-    @Test
     void browserConfigFetches_flagsOnlyBrowserGroupOnConfigFiles() {
         Instant base = Instant.now().plus(400, ChronoUnit.DAYS);
         repository.saveEntries("logs/browser-config-test.gz", List.of(

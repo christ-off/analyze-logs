@@ -5,7 +5,6 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
-import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -148,12 +147,6 @@ public class ApiController {
     public List<NameResultTypeCount> probableBots(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.probableBots(range.from(), range.to(), appProperties.topLimit());
-    }
-
-    @GetMapping("/fake-browsers")
-    public List<FakeBrowserUa> fakeBrowsers(@RequestParam String from, @RequestParam String to) {
-        var range = DateRange.fromParams(from, to);
-        return dashboardService.fakeBrowserUas(range.from(), range.to(), appProperties.topLimit());
     }
 
     @GetMapping("/browser-config")

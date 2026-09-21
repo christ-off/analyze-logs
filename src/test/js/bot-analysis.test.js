@@ -19,7 +19,7 @@ vi.mock('../../main/resources/static/js/utils.js', async (importOriginal) => ({
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
-import { loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadFakeBrowsers, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
+import { loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
 import { flushPromises } from './test-helpers.js';
 
 const BOTS_HTML = `
@@ -168,24 +168,9 @@ describe('loadRobotsSkippedBots', () => {
 describe('bot signal tables', () => {
     beforeEach(() => {
         document.body.innerHTML = `
-            <table><tbody id="fakeBrowsersTable"></tbody></table>
             <table><tbody id="browserConfigTable"></tbody></table>
         `;
         vi.clearAllMocks();
-    });
-
-    it('loadFakeBrowsers renders UA, count, hours and days', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ userAgent: 'FakeChrome/70', count: 17983, activeHours: 24, days: 67 }]),
-        }));
-        loadFakeBrowsers();
-        await flushPromises();
-
-        const row = document.querySelector('#fakeBrowsersTable tr');
-        expect(fetch.mock.calls[0][0]).toContain('/api/fake-browsers?');
-        expect(row.textContent).toContain('FakeChrome/70');
-        expect(row.textContent).toContain('24 / 24');
-        expect(row.textContent).toContain('67');
     });
 
     it('loadBrowserConfigFetches renders UA and other-requests count', async () => {
@@ -205,19 +190,19 @@ describe('bot signal tables', () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
             json: () => Promise.resolve([]),
         }));
-        loadFakeBrowsers();
+        loadBrowserConfigFetches();
         await flushPromises();
 
-        expect(document.getElementById('fakeBrowsersTable').textContent)
-            .toContain('No round-the-clock browser UAs');
+        expect(document.getElementById('browserConfigTable').textContent)
+            .toContain('No browser UAs fetched site config files');
     });
 
     it('shows error state on fetch failure', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
-        loadFakeBrowsers();
+        loadBrowserConfigFetches();
         await flushPromises();
 
-        expect(document.getElementById('fakeBrowsersTable').textContent)
+        expect(document.getElementById('browserConfigTable').textContent)
             .toContain('Failed to load');
     });
 });

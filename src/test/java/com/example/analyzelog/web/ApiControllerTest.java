@@ -2,7 +2,6 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
-import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
@@ -388,20 +387,6 @@ class ApiControllerTest {
         assertThat(mvc.get().uri("/api/robots-refresh").exchange())
                 .hasStatusOk()
                 .bodyText().contains("Error: robots refresh failed, see server logs for details");
-    }
-
-    @Test
-    void fakeBrowsersReturnsJson() {
-        when(dashboardService.fakeBrowserUas(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new FakeBrowserUa("Mozilla/5.0 Chrome/70", 17983, 24, 67)));
-
-        assertThat(mvc.get().uri("/api/fake-browsers")
-                .param("from", "2026-01-01").param("to", "2026-01-31")
-                .exchange())
-                .hasStatusOk()
-                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                .bodyJson()
-                .extractingPath("$[0].activeHours").isEqualTo(24);
     }
 
     @Test

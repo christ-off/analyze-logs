@@ -7,7 +7,6 @@ import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.FakeBrowserUa;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.NameCount;
@@ -906,30 +905,6 @@ public class DashboardService {
     public List<DailyResultTypeCount> requestsPerDayByUserAgent(String ua, Instant from, Instant to) {
         return queryDailyByResultType(SQL_DAILY_SELECT + "  AND user_agent = ?\n" + SQL_DAILY_GROUP_ORDER,
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), ua);
-    }
-
-    // Browser-classified UAs active in nearly every hour of the day — humans show a
-    // diurnal pattern, so round-the-clock activity means the browser UA is fake.
-    public List<FakeBrowserUa> fakeBrowserUas(Instant from, Instant to, int limit) {
-        return jdbc.query("""
-                SELECT c.user_agent AS name, COUNT(*) AS count,
-                       COUNT(DISTINCT strftime('%H', c.timestamp)) AS active_hours,
-                       COUNT(DISTINCT date(c.timestamp)) AS days
-                FROM cloudfront_logs c
-                INNER JOIN static_ua s ON c.ua_name = s.ua_name
-                WHERE s.ua_group = 'Browsers'
-                  AND c.timestamp BETWEEN ? AND ?
-                GROUP BY c.user_agent
-                HAVING count >= 100 AND active_hours >= 22
-                ORDER BY count DESC
-                LIMIT ?
-                """,
-                (rs, _) -> new FakeBrowserUa(
-                        rs.getString("name"),
-                        rs.getLong(COUNT_FIELD),
-                        rs.getLong("active_hours"),
-                        rs.getLong("days")),
-                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml

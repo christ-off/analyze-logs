@@ -36,16 +36,6 @@ function loadProbableBots() {
     loadBotTable('/api/probable-bots?' + p, 'probableBotsTable', 'No extless-only bots found for the selected date range.');
 }
 
-export function loadFakeBrowsers() {
-    const p = buildBaseParams({});
-    loadSimpleTable('/api/fake-browsers?' + p, 'fakeBrowsersTable', 4, b => `<tr>
-        <td><a href="${uaRequestsUrl(b.userAgent)}">${escapeHtml(b.userAgent)}</a></td>
-        <td class="text-end">${b.count.toLocaleString()}</td>
-        <td class="text-end">${b.activeHours} / 24</td>
-        <td class="text-end">${b.days}</td>
-    </tr>`, 'No round-the-clock browser UAs found for the selected date range.');
-}
-
 export function loadBrowserConfigFetches() {
     const p = buildBaseParams({});
     loadSimpleTable('/api/browser-config?' + p, 'browserConfigTable', 3, b => `<tr>
@@ -129,7 +119,6 @@ export function loadAllCharts() {
     Charts.loadChart(`countries-filtered-ratio?${p}`, data => Charts.horizontalStackedBar('chartCountriesFiltered', data, countryDetailUrl));
     Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
     loadProbableBots();
-    loadFakeBrowsers();
     loadBrowserConfigFetches();
     loadDisobedientSection();
     loadObedientSection();
