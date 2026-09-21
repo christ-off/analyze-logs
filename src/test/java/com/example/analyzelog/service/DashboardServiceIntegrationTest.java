@@ -1779,17 +1779,22 @@ class DashboardServiceIntegrationTest {
                 entryAt(Instant.now().plusSeconds(2), "1.1.1.3", "scanner/3.0", "/old.zip"),
                 // Legitimate asset must be excluded
                 entryAt(Instant.now().plusSeconds(3), "1.1.1.4", "Mozilla/5.0", "/assets/posts_other/DeDRM_plugin.zip"),
-                // Non-zip must be excluded
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.6", "scanner/4.0", "/db.sql.gz"),
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.7", "scanner/4.0", "/www.tgz"),
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.8", "scanner/4.0", "/www.rar"),
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.9", "scanner/4.0", "/www.7z"),
+                entryAt(Instant.now().plusSeconds(4), "1.1.1.10", "Googlebot", "/sitemap.xml.gz"),
+                // Non-archive must be excluded
                 entryAt(Instant.now().plusSeconds(4), "1.1.1.5", "Mozilla/5.0", "/index.html")
         ));
 
         var result = dashboardService.zipUriCounts(from, Instant.now().plusSeconds(5), 10);
 
-        assertEquals(2, result.size());
+        assertEquals(6, result.size());
         assertEquals("/backup.zip", result.get(0).name());
         assertEquals(2, result.get(0).count());
-        assertEquals("/old.zip", result.get(1).name());
         assertEquals(1, result.get(1).count());
-        assertTrue(result.stream().noneMatch(r -> "/assets/posts_other/DeDRM_plugin.zip".equals(r.name())));
+        assertTrue(result.stream().noneMatch(r -> "/assets/posts_other/DeDRM_plugin.zip".equals(r.name())
+                || "/sitemap.xml.gz".equals(r.name())));
     }
 }

@@ -232,7 +232,7 @@ describe('renderMinVersionBanner', () => {
 // ---------------------------------------------------------------------------
 
 describe('loadUriCountTable', () => {
-    const EMPTY_MSG = 'No zip requests found for the selected date range.';
+    const EMPTY_MSG = 'No archive requests found for the selected date range.';
     const load = () => loadUriCountTable('/api/zip-requests/uris', 'uriTable', 'uriCount', EMPTY_MSG);
 
     beforeEach(() => {

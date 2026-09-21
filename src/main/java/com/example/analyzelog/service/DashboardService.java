@@ -113,9 +113,10 @@ public class DashboardService {
     // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
     // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
     // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
-    // The one .zip the site legitimately serves — excluded from zipUriCounts so only
+    // The legitimate archives the site serves (DeDRM plugin, sitemap) — excluded from zipUriCounts so only
     // scanner probes for archive dumps remain.
     private static final String LEGITIMATE_ZIP_PATH = "/assets/posts_other/DeDRM_plugin.zip";
+    private static final String SITEMAP_GZ_PATH = "/sitemap.xml.gz";
     private static final String HUMAN_EVIDENCE_CSS_PATH = "/css/main.css";
     private static final String HUMAN_EVIDENCE_SVG_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
     // A "page" request (uri_stem ending in '/') from a non-bot ua_group, corroborated by requests from
@@ -1193,20 +1194,22 @@ public class DashboardService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
-    // .zip uri_stems requested, excluding the one legitimate asset, most frequent first.
+    // Archive (.zip/.gz/.tgz/.rar/.7z) uri_stems requested, excluding the one legitimate asset, most frequent first.
     public List<NameCount> zipUriCounts(Instant from, Instant to, int limit) {
         String sql = """
                 SELECT uri_stem as name, COUNT(*) as count
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
-                  AND uri_stem LIKE '%.zip'
-                  AND uri_stem != ?
+                  AND (uri_stem LIKE '%.zip' OR uri_stem LIKE '%.gz' OR uri_stem LIKE '%.tgz'
+                       OR uri_stem LIKE '%.rar' OR uri_stem LIKE '%.7z')
+                  AND uri_stem NOT IN (?, ?)
                 GROUP BY uri_stem
                 ORDER BY count DESC
                 LIMIT ?
                 """;
         return jdbc.query(sql, NAME_COUNT_MAPPER,
-                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), LEGITIMATE_ZIP_PATH, limit);
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to),
+                LEGITIMATE_ZIP_PATH, SITEMAP_GZ_PATH, limit);
     }
 
 }
