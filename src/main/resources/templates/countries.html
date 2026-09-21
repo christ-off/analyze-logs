@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Countries', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Countries</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/countries')}"></th:block>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>Countries</span>
+            <span id="countriesCount" class="text-muted fw-normal small">(click a header to sort — low % human with many requests are block candidates)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="cf-sort" data-key="name" role="button">Country</th>
+                        <th class="cf-sort text-end" data-key="total" role="button">Requests</th>
+                        <th class="cf-sort text-end" data-key="humanRequests" role="button">Human requests</th>
+                        <th class="cf-sort text-end" data-key="humanPercentage" role="button">% human</th>
+                        <th style="width:35%">Hit / Miss / Filtered / Error</th>
+                    </tr>
+                </thead>
+                <tbody id="countriesTable">
+                    <tr><td colspan="5" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/result-legend :: legend('countriesLegend')}"></div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/countries.js}"></script>
+</th:block>
+</html>

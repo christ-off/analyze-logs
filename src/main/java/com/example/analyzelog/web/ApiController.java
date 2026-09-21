@@ -3,6 +3,7 @@ package com.example.analyzelog.web;
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DateRange;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.IdentityShift;
@@ -63,6 +64,12 @@ public class ApiController {
     public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.topCountriesByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
+    }
+
+    @GetMapping("/country-stats")
+    public List<CountryStats> countryStats(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.countryStats(range.from(), range.to());
     }
 
     @GetMapping("/countries-filtered-ratio")

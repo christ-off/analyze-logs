@@ -154,6 +154,10 @@ Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date pic
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 
+### Countries page
+
+One sortable table of all countries for the selected date range: requests, human requests, % human (same "Probable human" classification as the country detail page) and a Hit / Miss / Filtered / Error bar. Use it to spot countries with many requests but almost no human traffic — candidates for blocking upstream.
+
 ### Security page
 
 Focuses on the traffic flagged by `uri-stem-groups` entries with `security: true` (scanner/exploit probing), scoped to the selected date range:

@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
@@ -124,6 +125,19 @@ class ApiControllerTest {
                 .hasStatusOk()
                 .bodyJson()
                 .extractingPath("$[0].hit").isEqualTo(80);
+    }
+
+    @Test
+    void countryStatsReturnsJson() {
+        when(dashboardService.countryStats(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new CountryStats("CN", "China", 80, 15, 0, 5, 10, 100)));
+
+        assertThat(mvc.get().uri("/api/country-stats")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].humanPercentage").isEqualTo(10.0);
     }
 
     @Test

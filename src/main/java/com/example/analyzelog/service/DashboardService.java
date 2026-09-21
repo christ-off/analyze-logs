@@ -5,6 +5,7 @@ import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
@@ -365,6 +366,37 @@ public class DashboardService {
         args.addAll(extraArgs);
         args.add(limit);
         return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
+    }
+
+    // All countries with result-type counts and the "Probable human" request share (see trafficCategories()).
+    public List<CountryStats> countryStats(Instant from, Instant to) {
+        String sql = """
+                WITH pair_class AS (
+                    SELECT client_ip, user_agent,
+                        %s AS category
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, user_agent
+                )
+                SELECT c.country AS code,
+                       %s,
+                       SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS human,
+                       SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp
+                FROM cloudfront_logs c
+                JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
+                WHERE c.timestamp BETWEEN ? AND ?
+                  AND c.country IS NOT NULL
+                GROUP BY c.country
+                ORDER BY (hit + miss + function + error) DESC
+                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"));
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return jdbc.query(sql, (rs, _) -> {
+            String iso = rs.getString("code");
+            return new CountryStats(iso, resolveCountryLabel(iso),
+                    rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
+                    rs.getLong("human"), rs.getLong("non_webp"));
+        }, fromSql, toSql, fromSql, toSql);
     }
 
     public List<CountryResultTypeCount> topCountriesByResultType(Instant from, Instant to, int limit) {

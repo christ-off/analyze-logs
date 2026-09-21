@@ -189,6 +189,26 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void countryStats_countsResultTypesAndHumanShare() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-stats-test.gz", List.of(
+                entryWithCountryAndResultType("IE", "Hit"),
+                entryWithCountryAndResultType("IE", "Error"),
+                entryWithCountryAndResultType("NZ", "Miss")
+        ));
+
+        var result = dashboardService.countryStats(from, Instant.now().plusSeconds(5));
+
+        var ie = result.stream().filter(r -> "IE".equals(r.code())).findFirst().orElseThrow();
+        assertEquals("Ireland", ie.name());
+        assertEquals(2, ie.total());
+        assertEquals(1, ie.hit());
+        assertEquals(1, ie.error());
+        assertEquals(2, ie.nonWebpRequests());
+        assertTrue(ie.humanPercentage() >= 0 && ie.humanPercentage() <= 100);
+    }
+
+    @Test
     void topCountriesByResultType_countsPerResultTypeAndResolvesDisplayName() {
         Instant from = Instant.now();
         repository.saveEntries("logs/countries-split-test.gz", List.of(
