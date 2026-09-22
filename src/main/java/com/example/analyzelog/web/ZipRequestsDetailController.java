@@ -1,7 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +19,7 @@ class ZipRequestsDetailController extends DetailControllerBase {
     }
 
     @GetMapping("/uris")
-    public List<NameCount> uris(@RequestParam String from, @RequestParam String to) {
+    public List<NameResultTypeCount> uris(@RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
         return dashboardService.zipUriCounts(range.from(), range.to(), appProperties.topUrlsLimit());
     }

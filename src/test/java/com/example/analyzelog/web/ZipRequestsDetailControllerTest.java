@@ -1,7 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.NameCount;
+import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ class ZipRequestsDetailControllerTest {
     @Test
     void urisReturnsJson() {
         when(dashboardService.zipUriCounts(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameCount("/backup.zip", 9)));
+                .thenReturn(List.of(new NameResultTypeCount("/backup.zip", 3, 2, 1, 3)));
 
         assertThat(mvc.get().uri("/api/zip-requests/uris")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

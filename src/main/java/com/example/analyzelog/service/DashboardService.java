@@ -1215,20 +1215,19 @@ public class DashboardService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
-    // Archive (.zip/.gz/.tgz/.rar/.7z) uri_stems requested, excluding the one legitimate asset, most frequent first.
-    public List<NameCount> zipUriCounts(Instant from, Instant to, int limit) {
-        String sql = """
-                SELECT uri_stem as name, COUNT(*) as count
+    // Archive (.zip/.gz/.tgz/.rar/.7z) uri_stems requested, excluding the one legitimate asset, most
+    // frequent first, with the Hit/Miss/Filtered/Error split per URI for the result-type bar.
+    public List<NameResultTypeCount> zipUriCounts(Instant from, Instant to, int limit) {
+        String sql = "SELECT uri_stem as name, " + RESULT_TYPE_SUMS + "\n" +
+                """
                 FROM cloudfront_logs
                 WHERE timestamp BETWEEN ? AND ?
                   AND (uri_stem LIKE '%.zip' OR uri_stem LIKE '%.gz' OR uri_stem LIKE '%.tgz'
                        OR uri_stem LIKE '%.rar' OR uri_stem LIKE '%.7z')
                   AND uri_stem NOT IN (?, ?)
-                GROUP BY uri_stem
-                ORDER BY count DESC
-                LIMIT ?
-                """;
-        return jdbc.query(sql, NAME_COUNT_MAPPER,
+                """ +
+                SQL_URI_RESULT_TYPE_GROUP_ORDER;
+        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to),
                 LEGITIMATE_ZIP_PATH, SITEMAP_GZ_PATH, limit);
     }

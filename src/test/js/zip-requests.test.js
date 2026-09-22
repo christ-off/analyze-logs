@@ -15,10 +15,10 @@ describe('zip-requests page', () => {
         `;
         document.body.innerHTML = `
             <span id="zipRequestsCount"></span>
-            <table><tbody id="zipRequestsTable"><tr><td colspan="2">Loading...</td></tr></tbody></table>
+            <table><tbody id="zipRequestsTable"><tr><td colspan="3">Loading...</td></tr></tbody></table>
         `;
         const fetchMock = vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: '/backup.zip', count: 44 }]),
+            json: () => Promise.resolve([{ name: '/backup.zip', hit: 10, miss: 20, function: 4, error: 10 }]),
         });
         vi.stubGlobal('fetch', fetchMock);
 
@@ -27,6 +27,7 @@ describe('zip-requests page', () => {
 
         expect(fetchMock.mock.calls[0][0]).toContain('/api/zip-requests/uris?from=');
         expect(document.querySelector('#zipRequestsTable tr').textContent).toContain('/backup.zip');
+        expect(document.querySelector('#zipRequestsTable tr').textContent).toContain('44');
         expect(document.getElementById('zipRequestsCount').textContent).toContain('1');
     });
 });

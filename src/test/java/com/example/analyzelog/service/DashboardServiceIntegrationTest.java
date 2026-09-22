@@ -1785,8 +1785,8 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(6, result.size());
         assertEquals("/backup.zip", result.get(0).name());
-        assertEquals(2, result.get(0).count());
-        assertEquals(1, result.get(1).count());
+        assertEquals(2, result.get(0).total());
+        assertEquals(1, result.get(1).total());
         assertTrue(result.stream().noneMatch(r -> "/assets/posts_other/DeDRM_plugin.zip".equals(r.name())
                 || "/sitemap.xml.gz".equals(r.name())));
     }
