@@ -129,7 +129,7 @@ class ApiControllerTest {
     @Test
     void countryStatsReturnsJson() {
         when(dashboardService.countryStats(any(Instant.class), any(Instant.class)))
-                .thenReturn(List.of(new CountryStats("CN", "China", 80, 15, 0, 5, 10, 100, 7, 3)));
+                .thenReturn(List.of(new CountryStats("CN", "China", 80, 15, 0, 5, 10, 100, 7, 3, 2)));
 
         assertThat(mvc.get().uri("/api/country-stats")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

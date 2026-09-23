@@ -16,6 +16,16 @@
         <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
             <span>Countries</span>
             <span id="countriesCount" class="text-muted fw-normal small">(click a header to sort — low % human with many requests are block candidates)</span>
+            <span class="ms-auto d-flex align-items-center gap-3 fw-normal small">
+                <span class="form-check form-check-inline m-0">
+                    <input type="checkbox" id="filterWarning" class="form-check-input" checked/>
+                    <label for="filterWarning" class="form-check-label">⚠️ Warning</label>
+                </span>
+                <span class="form-check form-check-inline m-0">
+                    <input type="checkbox" id="filterBlocked" class="form-check-input" checked/>
+                    <label for="filterBlocked" class="form-check-label">🛑 Blocked</label>
+                </span>
+            </span>
         </div>
         <div class="card-body p-0">
             <table class="table table-sm table-hover table-striped mb-0">
@@ -26,12 +36,13 @@
                         <th class="text-end"><button type="button" class="cf-sort btn btn-link p-0 text-reset fw-semibold text-decoration-none" data-key="humanRequests">Human requests</button></th>
                         <th class="text-end"><button type="button" class="cf-sort btn btn-link p-0 text-reset fw-semibold text-decoration-none" data-key="mastodon">Mastodon</button></th>
                         <th class="text-end"><button type="button" class="cf-sort btn btn-link p-0 text-reset fw-semibold text-decoration-none" data-key="searchBots">Search bots</button></th>
+                        <th class="text-end"><button type="button" class="cf-sort btn btn-link p-0 text-reset fw-semibold text-decoration-none" data-key="feeds">Feeds</button></th>
                         <th class="text-end"><button type="button" class="cf-sort btn btn-link p-0 text-reset fw-semibold text-decoration-none" data-key="humanPercentage">% human</button></th>
                         <th style="width:35%">Hit / Miss / Filtered / Error</th>
                     </tr>
                 </thead>
                 <tbody id="countriesTable">
-                    <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-3">Loading...</td></tr>
                 </tbody>
             </table>
         </div>

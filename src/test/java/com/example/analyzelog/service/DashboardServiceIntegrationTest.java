@@ -198,19 +198,26 @@ class DashboardServiceIntegrationTest {
                 makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/feed.xml", null,
                         "http.rb/5.1.1 (Mastodon/4.2.0; +https://example.social/)", "IE", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/", null,
-                        UA_GOOGLEBOT, "IE", "Hit")
+                        UA_GOOGLEBOT, "IE", "Hit"),
+                // Search bot hitting an error must not count towards searchBots (Hit/Miss only, like feeds).
+                makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/", null,
+                        UA_GOOGLEBOT, "IE", "Error"),
+                // Mastodon hitting an error must not count towards mastodon either (Hit/Miss only).
+                makeEntry(Instant.now(), "SFO53-P7", "1.2.3.4", "/feed.xml", null,
+                        "http.rb/5.1.1 (Mastodon/4.2.0; +https://example.social/)", "IE", "Error")
         ));
 
         var result = dashboardService.countryStats(from, Instant.now().plusSeconds(5));
 
         var ie = result.stream().filter(r -> "IE".equals(r.code())).findFirst().orElseThrow();
         assertEquals("Ireland", ie.name());
-        assertEquals(4, ie.total());
+        assertEquals(6, ie.total());
         assertEquals(1, ie.mastodon());
         assertEquals(3, ie.hit());
-        assertEquals(1, ie.error());
-        assertEquals(4, ie.nonWebpRequests());
+        assertEquals(3, ie.error());
+        assertEquals(6, ie.nonWebpRequests());
         assertEquals(1, ie.searchBots());
+        assertEquals(1, ie.feeds());
         assertTrue(ie.humanPercentage() >= 0 && ie.humanPercentage() <= 100);
     }
 

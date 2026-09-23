@@ -116,6 +116,9 @@ public class DashboardService {
     // (identityShiftingIps, the Human page's bot exclusion).
     private static final String SEARCH_BOTS_GROUP = "Search Bots";
     static final String BOT_UA_GROUPS_SQL_LIST = "'AI Bots','" + SEARCH_BOTS_GROUP + "','Other Bots'";
+    // Countries page's Mastodon, search-bots and feeds columns count only served requests
+    // (Hit/RefreshHit/Miss), excluding function/error responses.
+    private static final String HIT_OR_MISS_TYPE_LIST = ResultTypeSql.HIT_TYPE_LIST + ",'Miss'";
     // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
     // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
     // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
@@ -390,22 +393,25 @@ public class DashboardService {
                        %s,
                        SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS human,
                        SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp,
-                       SUM(CASE WHEN c.ua_name = 'Mastodon' THEN 1 ELSE 0 END) AS mastodon,
-                       SUM(CASE WHEN c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = '%s') THEN 1 ELSE 0 END) AS search_bots
+                       SUM(CASE WHEN c.ua_name = 'Mastodon' AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS mastodon,
+                       SUM(CASE WHEN c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = '%s') AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS search_bots,
+                       SUM(CASE WHEN c.uri_stem IN ('/feed.xml', '/rss.xml') AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS feeds
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
                 WHERE c.timestamp BETWEEN ? AND ?
                   AND c.country IS NOT NULL
                 GROUP BY c.country
                 ORDER BY (hit + miss + function + error) DESC
-                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), SEARCH_BOTS_GROUP);
+                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), HIT_OR_MISS_TYPE_LIST,
+                        SEARCH_BOTS_GROUP, HIT_OR_MISS_TYPE_LIST, HIT_OR_MISS_TYPE_LIST);
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql, (rs, _) -> {
             String iso = rs.getString("code");
             return new CountryStats(iso, resolveCountryLabel(iso),
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"), rs.getLong("search_bots"));
+                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"), rs.getLong("search_bots"),
+                    rs.getLong("feeds"));
         }, fromSql, toSql, fromSql, toSql);
     }
 
