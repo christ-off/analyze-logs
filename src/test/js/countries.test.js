@@ -3,9 +3,9 @@ import { flushPromises } from './test-helpers.js';
 
 globalThis.Chart = vi.fn();
 
-const row = (code, name, humanRequests, mastodon, { hit = 5, error = 0, feeds = 0 } = {}) => ({
+const row = (code, name, humanRequests, mastodon, { hit = 5, error = 0, feeds = 0, searchBots = 0 } = {}) => ({
     code, name, hit, miss: 0, function: 0, error,
-    total: hit + error, humanRequests, mastodon, searchBots: 0, feeds, humanPercentage: 0,
+    total: hit + error, humanRequests, mastodon, searchBots, feeds, humanPercentage: 0,
 });
 
 describe('countries page', () => {
@@ -26,6 +26,7 @@ describe('countries page', () => {
                 row('DE', 'Germany', 0, 2),
                 row('RU', 'Russia', 0, 0, { hit: 0, error: 4 }),
                 row('JP', 'Japan', 0, 0, { feeds: 1 }),
+                row('US', 'United States', 0, 0, { searchBots: 2 }),
             ]),
         }));
 
@@ -54,6 +55,6 @@ describe('countries page', () => {
         document.getElementById('filterBlocked').checked = false;
         document.getElementById('filterBlocked').dispatchEvent(new Event('change'));
         expect(countryNames()).not.toContain('Russia');
-        expect(countryNames()).toEqual(expect.arrayContaining(['France', 'Germany', 'Japan']));
+        expect(countryNames()).toEqual(expect.arrayContaining(['France', 'Germany', 'Japan', 'United States']));
     });
 });

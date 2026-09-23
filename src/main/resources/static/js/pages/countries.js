@@ -14,16 +14,16 @@ function marker(title, icon) {
     return ` <span title="${title}" aria-label="${title}">${icon}</span>`;
 }
 
-// Blocked: every request errored. Warning: no human, no Mastodon, and no feed requests.
+// Blocked: every request errored. Warning: no human, Mastodon, feed, or search-bot requests.
 function status(c) {
     if (c.error > 0 && c.error === c.total) return 'blocked';
-    if (c.humanRequests === 0 && c.mastodon === 0 && c.feeds === 0) return 'warning';
+    if (c.humanRequests === 0 && c.mastodon === 0 && c.feeds === 0 && c.searchBots === 0) return 'warning';
     return null;
 }
 
 function blockCandidate(s) {
     if (s === 'blocked') return marker('All requests are errors', '🛑');
-    if (s === 'warning') return marker('No human, Mastodon, or feed requests', '⚠️');
+    if (s === 'warning') return marker('No human, Mastodon, feed, or search-bot requests', '⚠️');
     return '';
 }
 
