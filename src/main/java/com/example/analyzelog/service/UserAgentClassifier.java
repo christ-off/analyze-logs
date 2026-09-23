@@ -36,6 +36,12 @@ public class UserAgentClassifier {
         if (isFirefox) return "Firefox / " + os;
         if (isSafari)  return "Safari / " + os;
 
+        // Embedded WebKit view (WKWebView): AppleWebKit without the "Version/x Safari/x" tokens
+        if (ua.contains("AppleWebKit/") && !ua.contains("Safari/")
+                && (os.equals("macOS") || os.equals("iPhone") || os.equals("iPad"))) {
+            return "WebView / " + os;
+        }
+
         return "Unknown";
     }
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Apple WebKit embedded views (WKWebView) send a UA without "Version/x Safari/x": human traffic
+         from an in-app browser, grouped with the browsers. A bare "... (KHTML, like Gecko) Safari" UA only
+         fetches favicons / apple-touch-icons. Reclassify log rows ingested before these existed. -->
+    <changeSet id="016-static-ua-webview-favicon-fetcher" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('WebView / macOS',  'Browsers', 'WebView / macOS',  NULL,                 NULL),
+            ('WebView / iPhone', 'Browsers', 'WebView / iPhone', NULL,                 NULL),
+            ('WebView / iPad',   'Browsers', 'WebView / iPad',   NULL,                 NULL),
+            ('Favicon Fetcher',  'Apps',     'Favicon Fetcher',  'like Gecko) Safari', 80);
+            UPDATE cloudfront_logs SET ua_name = 'Favicon Fetcher'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%like Gecko) Safari%';
+            UPDATE cloudfront_logs SET ua_name = 'WebView / macOS'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%Macintosh%' AND user_agent LIKE '%AppleWebKit/%'
+              AND user_agent NOT LIKE '%Safari/%' AND user_agent NOT LIKE '%Chrome/%';
+            UPDATE cloudfront_logs SET ua_name = 'WebView / iPhone'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%iPhone%' AND user_agent LIKE '%AppleWebKit/%'
+              AND user_agent NOT LIKE '%Safari/%' AND user_agent NOT LIKE '%Chrome/%';
+            UPDATE cloudfront_logs SET ua_name = 'WebView / iPad'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%iPad%' AND user_agent LIKE '%AppleWebKit/%'
+              AND user_agent NOT LIKE '%Safari/%' AND user_agent NOT LIKE '%Chrome/%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
