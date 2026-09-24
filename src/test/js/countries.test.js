@@ -17,6 +17,7 @@ describe('countries page', () => {
         document.body.innerHTML = `
             <input type="checkbox" id="filterWarning" checked>
             <input type="checkbox" id="filterBlocked" checked>
+            <input type="checkbox" id="filterPerson" checked>
             <table><tbody id="countriesTable"></tbody></table>
         `;
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -44,6 +45,8 @@ describe('countries page', () => {
 
         expect(rowsByCountry('France').querySelector('td span[title="Has human requests"]').textContent).toBe('🧑');
         expect(rowsByCountry('China').querySelector('td span[title="Has human requests"]')).toBeNull();
+        expect(rowsByCountry('Germany').querySelector('td span[title="Has Mastodon requests"]').textContent).toBe('🧑');
+        expect(rowsByCountry('China').querySelector('td span[title="Has Mastodon requests"]')).toBeNull();
 
         const countryNames = () => [...document.querySelectorAll('#countriesTable tr a')].map(a => a.textContent);
 
@@ -56,5 +59,11 @@ describe('countries page', () => {
         document.getElementById('filterBlocked').dispatchEvent(new Event('change'));
         expect(countryNames()).not.toContain('Russia');
         expect(countryNames()).toEqual(expect.arrayContaining(['France', 'Germany', 'Japan', 'United States']));
+
+        document.getElementById('filterPerson').checked = false;
+        document.getElementById('filterPerson').dispatchEvent(new Event('change'));
+        expect(countryNames()).not.toContain('France');
+        expect(countryNames()).not.toContain('Germany');
+        expect(countryNames()).toEqual(expect.arrayContaining(['Japan', 'United States']));
     });
 });

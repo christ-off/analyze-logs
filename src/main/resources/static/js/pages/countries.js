@@ -7,6 +7,7 @@ const tbody = document.getElementById('countriesTable');
 const COLS = 8;
 const filterWarning = document.getElementById('filterWarning');
 const filterBlocked = document.getElementById('filterBlocked');
+const filterPerson = document.getElementById('filterPerson');
 let rows = [];
 let sort = { key: 'total', dir: -1 };
 
@@ -27,14 +28,20 @@ function blockCandidate(s) {
     return '';
 }
 
+function hasPerson(c) {
+    return c.humanRequests > 0 || c.mastodon > 0;
+}
+
 function humanMarker(c) {
-    return c.humanRequests > 0 ? marker('Has human requests', '🧑') : '';
+    if (c.humanRequests > 0) return marker('Has human requests', '🧑');
+    return c.mastodon > 0 ? marker('Has Mastodon requests', '🧑') : '';
 }
 
 function render() {
     const filtered = rows
         .map(c => [c, status(c)])
-        .filter(([, s]) => (s !== 'warning' || filterWarning.checked) && (s !== 'blocked' || filterBlocked.checked));
+        .filter(([c, s]) => (s !== 'warning' || filterWarning.checked) && (s !== 'blocked' || filterBlocked.checked)
+            && (!hasPerson(c) || filterPerson.checked));
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${COLS}" class="text-center text-muted py-3">No countries match the selected filters.</td></tr>`;
         return;
@@ -81,7 +88,7 @@ document.querySelectorAll('button.cf-sort').forEach(btn => btn.addEventListener(
     if (rows.length) render();
 }));
 
-[filterWarning, filterBlocked].forEach(cb => cb.addEventListener('change', () => {
+[filterWarning, filterBlocked, filterPerson].forEach(cb => cb.addEventListener('change', () => {
     if (rows.length) render();
 }));
 
