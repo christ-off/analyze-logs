@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ExaSearchBot (https://crawler.exa.ai): crawler of Exa, an AI search engine / web API for LLMs.
+         Reclassify log rows ingested before this existed. -->
+    <changeSet id="021-static-ua-add-exasearchbot" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('ExaSearchBot', 'AI Bots', 'ExaSearchBot', 'ExaSearchBot', 83);
+            UPDATE cloudfront_logs SET ua_name = 'ExaSearchBot'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%ExaSearchBot%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
