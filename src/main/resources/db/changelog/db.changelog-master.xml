@@ -21,5 +21,6 @@
     <include file="db/changelog/changes/014-robots-rules.xml"/>
     <include file="db/changelog/changes/015-static-ua-add-spiderling-sketchengine.xml"/>
     <include file="db/changelog/changes/016-static-ua-webview-favicon-fetcher.xml"/>
+    <include file="db/changelog/changes/017-static-ua-add-img2dataset.xml"/>
 
 </databaseChangeLog>

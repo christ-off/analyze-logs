@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- img2dataset (https://github.com/rom1504/img2dataset) downloads images in bulk to build AI training
+         datasets; its UA is a generic "ImageBot/1.0 (...; img2dataset; ...)", so match on "img2dataset".
+         Reclassify log rows ingested before this existed. -->
+    <changeSet id="017-static-ua-add-img2dataset" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('img2dataset', 'AI Bots', 'img2dataset', 'img2dataset', 81);
+            UPDATE cloudfront_logs SET ua_name = 'img2dataset'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%img2dataset%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
