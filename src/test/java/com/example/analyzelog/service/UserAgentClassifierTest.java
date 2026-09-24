@@ -37,6 +37,8 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; OAI-SearchBot/1.3)', OAI-SearchBot",
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0)', PerplexityBot",
         "'ImageBot/1.0 (compatible; research crawler; https://github.com/rom1504/img2dataset; opt-out: abuse@example.com;', img2dataset",
+        // Other bots
+        "'webapp-mapper/0.1 (public technical analysis)', webapp-mapper",
         // SEO crawlers
         "'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)', AhrefsBot",
         "'Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)', SemrushBot",

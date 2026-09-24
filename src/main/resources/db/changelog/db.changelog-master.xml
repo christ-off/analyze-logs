@@ -22,5 +22,6 @@
     <include file="db/changelog/changes/015-static-ua-add-spiderling-sketchengine.xml"/>
     <include file="db/changelog/changes/016-static-ua-webview-favicon-fetcher.xml"/>
     <include file="db/changelog/changes/017-static-ua-add-img2dataset.xml"/>
+    <include file="db/changelog/changes/018-static-ua-add-webapp-mapper.xml"/>
 
 </databaseChangeLog>
