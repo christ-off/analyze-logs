@@ -5,6 +5,7 @@ import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
+import com.example.analyzelog.model.CountryClientCounts;
 import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -923,6 +924,22 @@ public class DashboardService {
         List<NameResultTypeCount> categories =
                 trafficCategories(COUNTRY_FILTER, List.of(country), from, to, true);
         return toHumanTrafficStats(categories);
+    }
+
+    // Same Mastodon / search-bots / feeds definitions as countryStats() (served requests only), for one country.
+    public CountryClientCounts countryClientCounts(String country, Instant from, Instant to) {
+        String sql = """
+                SELECT COALESCE(SUM(CASE WHEN ua_name = 'Mastodon' THEN 1 ELSE 0 END), 0) AS mastodon,
+                       COALESCE(SUM(CASE WHEN ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = '%s') THEN 1 ELSE 0 END), 0) AS search_bots,
+                       COALESCE(SUM(CASE WHEN uri_stem IN ('/feed.xml', '/rss.xml') THEN 1 ELSE 0 END), 0) AS feeds
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND %s
+                  AND edge_response_result_type IN (%s)
+                """.formatted(SEARCH_BOTS_GROUP, COUNTRY_FILTER, HIT_OR_MISS_TYPE_LIST);
+        return jdbc.queryForObject(sql, (rs, _) -> new CountryClientCounts(
+                rs.getLong("mastodon"), rs.getLong("search_bots"), rs.getLong("feeds")),
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), country);
     }
 
     private static HumanTrafficStats toHumanTrafficStats(List<NameResultTypeCount> categories) {

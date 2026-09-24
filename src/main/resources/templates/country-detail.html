@@ -11,13 +11,19 @@
 
     <th:block th:replace="~{fragments/toolbar :: detailToolbar('/country-detail', 'country', ${countryCode}, ${countryName})}"></th:block>
 
-    <!-- Human traffic indicator -->
+    <!-- Information -->
     <div class="card mb-4">
-        <div class="card-body d-flex align-items-center gap-2">
-            <span class="fw-semibold">Proportion of requests from human IPs:</span>
-            <span th:text="${#numbers.formatDecimal(humanTrafficStats.percentage(), 1, 1)} + '%'"></span>
-            <span class="text-muted small"
-                  th:text="'(' + ${humanTrafficStats.humanRequests()} + ' / ' + ${humanTrafficStats.totalRequests()} + ' requests)'"></span>
+        <div class="card-header fw-semibold">Information</div>
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold">Proportion of requests from human IPs:</span>
+                <span th:text="${#numbers.formatDecimal(humanTrafficStats.percentage(), 1, 1)} + '%'"></span>
+                <span class="text-muted small"
+                      th:text="'(' + ${humanTrafficStats.humanRequests()} + ' / ' + ${humanTrafficStats.totalRequests()} + ' requests)'"></span>
+            </div>
+            <div><span class="fw-semibold">Mastodon requests:</span> <span th:text="${clientCounts.mastodon()}"></span></div>
+            <div><span class="fw-semibold">Search bot requests:</span> <span th:text="${clientCounts.searchBots()}"></span></div>
+            <div><span class="fw-semibold">Feed requests:</span> <span th:text="${clientCounts.feeds()}"></span></div>
         </div>
     </div>
 

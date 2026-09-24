@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.CountryClientCounts;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,8 @@ class DashboardControllerTest {
     void stubHumanTrafficStats() {
         when(dashboardService.countryHumanTrafficStats(any(), any(Instant.class), any(Instant.class)))
                 .thenReturn(new HumanTrafficStats(0, 0));
+        when(dashboardService.countryClientCounts(any(), any(Instant.class), any(Instant.class)))
+                .thenReturn(new CountryClientCounts(0, 0, 0));
     }
 
     @Test

@@ -55,6 +55,7 @@ public class DashboardController extends DateRangeController {
         var dateRange = resolveRange(range, from, to);
         addDateAttributes(model, dateRange, resolveActiveRange(range, from, to));
         model.addAttribute("humanTrafficStats", dashboardService.countryHumanTrafficStats(country, dateRange.from(), dateRange.to()));
+        model.addAttribute("clientCounts", dashboardService.countryClientCounts(country, dateRange.from(), dateRange.to()));
         return "country-detail";
     }
 

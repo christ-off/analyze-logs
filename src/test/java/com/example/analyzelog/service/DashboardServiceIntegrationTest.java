@@ -500,6 +500,24 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void countryClientCounts_countsFeedsAndSearchBotsForServedRequestsInCountry() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/country-client-counts-test.gz", List.of(
+                entryWithCountryAndUriAndResultType("FR", "/feed.xml", "Hit"),
+                entryWithCountryAndUriAndResultType("FR", "/rss.xml", "Miss"),
+                entryWithCountryAndUriAndResultType("FR", "/feed.xml", "Error"),   // not served
+                entryWithCountryAndUriAndResultType("US", "/feed.xml", "Hit"),     // other country
+                entryWithUaAndCountryAndResultType(UA_GOOGLEBOT, "FR", "Hit")
+        ));
+
+        var counts = dashboardService.countryClientCounts("FR", from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, counts.feeds());
+        assertEquals(1, counts.searchBots());
+        assertEquals(0, counts.mastodon());
+    }
+
+    @Test
     void humanTrafficStats_excludesWebpDownloadsFromCounts() {
         Instant from = Instant.now();
         repository.saveEntries("logs/human-traffic-webp-test.gz", List.of(
