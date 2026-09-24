@@ -567,12 +567,12 @@ class DashboardServiceIntegrationTest {
 
     private CloudFrontLogEntry makeEntry(Instant ts, String edgeLocation, String ip, String uriStem, String referer, String ua, String country, int status, String resultType) {
         return new CloudFrontLogEntry(
-                ts, edgeLocation, 1068L, ip, "GET",
+                ts, edgeLocation, ip, "GET",
                 uriStem, status,
                 referer, ua,
-                resultType, 336L, 0.001,
-                resultType, 0.001, resultType,
-                null, null, country
+                resultType,
+                resultType, resultType,
+                null, country
         );
     }
 
@@ -790,12 +790,12 @@ class DashboardServiceIntegrationTest {
 
     private CloudFrontLogEntry entryWithUaAndResultType(String ua, String resultType) {
         return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                Instant.now(), "SFO53-P7", "1.2.3.4", "GET",
                 "/index.html", 200,
                 null, ua,
-                resultType, 336L, 0.001,
-                resultType, 0.001, resultType,
-                null, null, "US"
+                resultType,
+                resultType, resultType,
+                null, "US"
         );
     }
 

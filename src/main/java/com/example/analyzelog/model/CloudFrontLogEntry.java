@@ -5,7 +5,6 @@ import java.time.Instant;
 public record CloudFrontLogEntry(
     Instant timestamp,
     String edgeLocation,
-    long scBytes,
     String clientIp,
     String method,
     String uriStem,
@@ -13,12 +12,8 @@ public record CloudFrontLogEntry(
     String referer,
     String userAgent,
     String edgeResultType,
-    long csBytes,
-    double timeTaken,
     String edgeResponseResultType,
-    double timeToFirstByte,
     String edgeDetailedResultType,
     String contentType,
-    Long contentLength,
     String country
 ) {}

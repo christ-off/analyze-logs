@@ -45,7 +45,6 @@ class CloudFrontLogParserTest {
         assertEquals(57, e.timestamp().atZone(java.time.ZoneOffset.UTC).getMinute());
 
         assertEquals("SFO53-P7", e.edgeLocation());
-        assertEquals(1068L, e.scBytes());
         assertEquals("8.29.198.27", e.clientIp());
         assertEquals("GET", e.method());
         assertEquals("/feed.xml", e.uriStem());
@@ -53,13 +52,9 @@ class CloudFrontLogParserTest {
         assertNull(e.referer());
         assertEquals("Feedly/1.0", e.userAgent());
         assertEquals("Hit", e.edgeResultType());
-        assertEquals(336L, e.csBytes());
-        assertEquals(0.001, e.timeTaken(), 1e-6);
         assertEquals("Hit", e.edgeResponseResultType());
-        assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
-        assertNull(e.contentLength());
         assertEquals("US", e.country());
     }
 
@@ -70,11 +65,9 @@ class CloudFrontLogParserTest {
         assertTrue(result.isPresent());
         CloudFrontLogEntry e = result.get();
 
-        assertEquals(5_368_709_120L, e.scBytes());
         assertEquals("https://example.com", e.referer());
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
-        assertEquals(1_048_576L, e.contentLength());
         assertEquals("FR", e.country());
     }
 
@@ -107,40 +100,14 @@ class CloudFrontLogParserTest {
     }
 
     @Test
-    void dashValuesProduceZeroOrNull() {
-        String line = SAMPLE_LINE
-                .replace("\"sc-bytes\":\"1068\"",       "\"sc-bytes\":\"-\"")
-                .replace("\"cs-bytes\":\"336\"",         "\"cs-bytes\":\"-\"")
-                .replace("\"time-taken\":\"0.001\"",     "\"time-taken\":\"-\"")
-                .replace("\"time-to-first-byte\":\"0.001\"", "\"time-to-first-byte\":\"-\"");
-
-        Optional<CloudFrontLogEntry> result = parser.parseLine(line);
-        assertTrue(result.isPresent());
-        CloudFrontLogEntry e = result.get();
-        assertEquals(0L,  e.scBytes());
-        assertEquals(0L,  e.csBytes());
-        assertEquals(0.0, e.timeTaken(),       1e-9);
-        assertEquals(0.0, e.timeToFirstByte(), 1e-9);
-        assertNull(e.contentLength());
-    }
-
-    @Test
     void invalidNumericValuesProduceZeroOrNull() {
         String line = SAMPLE_LINE
-                .replace("\"sc-status\":\"304\"",        "\"sc-status\":\"INVALID\"")
-                .replace("\"sc-bytes\":\"1068\"",        "\"sc-bytes\":\"INVALID\"")
-                .replace("\"cs-bytes\":\"336\"",         "\"cs-bytes\":\"INVALID\"")
-                .replace("\"time-taken\":\"0.001\"",     "\"time-taken\":\"INVALID\"")
-                .replace("\"time-to-first-byte\":\"0.001\"", "\"time-to-first-byte\":\"INVALID\"");
+                .replace("\"sc-status\":\"304\"",        "\"sc-status\":\"INVALID\"");
 
         Optional<CloudFrontLogEntry> result = parser.parseLine(line);
         assertTrue(result.isPresent());
         CloudFrontLogEntry e = result.get();
         assertEquals(0,   e.status());
-        assertEquals(0L,  e.scBytes());
-        assertEquals(0L,  e.csBytes());
-        assertEquals(0.0, e.timeTaken(),       1e-9);
-        assertEquals(0.0, e.timeToFirstByte(), 1e-9);
     }
 
     @Test
@@ -174,7 +141,6 @@ class CloudFrontLogParserTest {
         assertEquals(57, e.timestamp().atZone(java.time.ZoneOffset.UTC).getMinute());
 
         assertEquals("SFO53-P7", e.edgeLocation());
-        assertEquals(1068L, e.scBytes());
         assertEquals("8.29.198.27", e.clientIp());
         assertEquals("GET", e.method());
         assertEquals("/feed.xml", e.uriStem());
@@ -182,13 +148,9 @@ class CloudFrontLogParserTest {
         assertNull(e.referer());
         assertEquals("Feedly/1.0", e.userAgent());
         assertEquals("Hit", e.edgeResultType());
-        assertEquals(336L, e.csBytes());
-        assertEquals(0.001, e.timeTaken(), 1e-6);
         assertEquals("Hit", e.edgeResponseResultType());
-        assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
-        assertNull(e.contentLength());
         assertEquals("US", e.country());
     }
 
@@ -200,11 +162,9 @@ class CloudFrontLogParserTest {
         assertEquals(1, entries.size());
         CloudFrontLogEntry e = entries.getFirst();
 
-        assertEquals(5_368_709_120L, e.scBytes());
         assertEquals("https://example.com", e.referer());
         assertEquals(206, e.status());
         assertEquals("video/mp4", e.contentType());
-        assertEquals(1_048_576L, e.contentLength());
         assertEquals("FR", e.country());
     }
 

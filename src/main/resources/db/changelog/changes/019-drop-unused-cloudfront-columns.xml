@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="019-drop-unused-cloudfront-columns" author="analyze-logs">
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN sc_bytes</sql>
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN cs_bytes</sql>
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN time_taken</sql>
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN protocol_version</sql>
+        <sql>ALTER TABLE cloudfront_logs DROP COLUMN content_length</sql>
+    </changeSet>
+
+</databaseChangeLog>

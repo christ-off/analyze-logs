@@ -320,12 +320,12 @@ class RobotsServiceTest {
 
     private CloudFrontLogEntry entryWithUaAndUri(String ua, String uri, String resultType) {
         return new CloudFrontLogEntry(
-                Instant.now(), "SFO53-P7", 1068L, "1.2.3.4", "GET",
+                Instant.now(), "SFO53-P7", "1.2.3.4", "GET",
                 uri, 200,
                 null, ua,
-                resultType, 336L, 0.001,
-                resultType, 0.001, resultType,
-                null, null, "US"
+                resultType,
+                resultType, resultType,
+                null, "US"
         );
     }
 }

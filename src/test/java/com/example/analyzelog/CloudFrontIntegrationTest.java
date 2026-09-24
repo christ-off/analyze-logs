@@ -65,19 +65,14 @@ class CloudFrontIntegrationTest {
 
         assertEquals(Instant.parse("2026-04-04T12:57:53Z"), e.timestamp());
         assertEquals("SFO53-P7", e.edgeLocation());
-        assertEquals(1068L, e.scBytes());
         assertEquals("8.29.198.27", e.clientIp());
         assertEquals("GET", e.method());
         assertEquals("/feed.xml", e.uriStem());
         assertEquals(304, e.status());
         assertNull(e.referer());
         assertEquals("Hit", e.edgeResultType());
-        assertEquals(336L, e.csBytes());
-        assertEquals(0.001, e.timeTaken(), 1e-6);
-        assertEquals(0.001, e.timeToFirstByte(), 1e-6);
         assertEquals("Hit", e.edgeDetailedResultType());
         assertNull(e.contentType());
-        assertNull(e.contentLength());
         assertEquals("US", e.country());
     }
 
@@ -86,7 +81,6 @@ class CloudFrontIntegrationTest {
         CloudFrontLogEntry e = parser.parse(decompress(LOG_FILE)).get(2);
 
         assertEquals("text/html", e.contentType());
-        assertEquals(32510L, e.contentLength());
         assertEquals("Miss", e.edgeResultType());
         assertEquals("HEAD", e.method());
     }

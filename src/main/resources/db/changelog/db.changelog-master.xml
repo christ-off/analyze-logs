@@ -23,5 +23,8 @@
     <include file="db/changelog/changes/016-static-ua-webview-favicon-fetcher.xml"/>
     <include file="db/changelog/changes/017-static-ua-add-img2dataset.xml"/>
     <include file="db/changelog/changes/018-static-ua-add-webapp-mapper.xml"/>
+    <include file="db/changelog/changes/019-drop-unused-cloudfront-columns.xml"/>
+    <include file="db/changelog/changes/020-drop-time-to-first-byte.xml"/>
+    <include file="db/changelog/changes/021-static-ua-add-exasearchbot.xml"/>
 
 </databaseChangeLog>

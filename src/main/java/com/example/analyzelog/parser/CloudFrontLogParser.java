@@ -85,7 +85,6 @@ public class CloudFrontLogParser {
             return Optional.of(new CloudFrontLogEntry(
                 timestamp,
                 text(row, "x-edge-location"),
-                longVal(row, "sc-bytes"),
                 text(row, "c-ip"),
                 text(row, "cs-method"),
                 text(row, "cs-uri-stem"),
@@ -93,13 +92,9 @@ public class CloudFrontLogParser {
                 nullIfDash(row, "cs(Referer)"),
                 decodeUA(nullIfDash(row, "cs(User-Agent)")),
                 text(row, "x-edge-result-type"),
-                longVal(row, "cs-bytes"),
-                doubleVal(row, "time-taken"),
                 text(row, "x-edge-response-result-type"),
-                doubleVal(row, "time-to-first-byte"),
                 text(row, "x-edge-detailed-result-type"),
                 nullIfDash(row, "sc-content-type"),
-                nullableLong(row, "sc-content-len"),
                 text(row, "c-country")
             ));
         } catch (Exception e) {
@@ -131,26 +126,5 @@ public class CloudFrontLogParser {
         if (v == null || "-".equals(v)) return 0;
         try { return Integer.parseInt(v); }
         catch (NumberFormatException _) { return 0; }
-    }
-
-    private static long longVal(Map<String, String> row, String field) {
-        String v = row.get(field);
-        if (v == null || "-".equals(v)) return 0L;
-        try { return Long.parseLong(v); }
-        catch (NumberFormatException _) { return 0L; }
-    }
-
-    private static Long nullableLong(Map<String, String> row, String field) {
-        String v = row.get(field);
-        if (v == null || "-".equals(v)) return null;
-        try { return Long.parseLong(v); }
-        catch (NumberFormatException _) { return null; }
-    }
-
-    private static double doubleVal(Map<String, String> row, String field) {
-        String v = row.get(field);
-        if (v == null || "-".equals(v)) return 0.0;
-        try { return Double.parseDouble(v); }
-        catch (NumberFormatException _) { return 0.0; }
     }
 }

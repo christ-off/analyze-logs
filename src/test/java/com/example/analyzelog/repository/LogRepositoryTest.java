@@ -77,12 +77,12 @@ class LogRepositoryTest {
     @Test
     void handlesNullableFields() {
         var entry = new CloudFrontLogEntry(
-            Instant.now(), "IAD89", 512L, "1.2.3.4", "GET",
+            Instant.now(), "IAD89", "1.2.3.4", "GET",
             "/index.html", 200,
             null, null,
-            "Hit", 128L, 0.01,
-            "Hit", 0.01, "Hit",
-            null, null, "US"
+            "Hit",
+            "Hit", "Hit",
+            null, "US"
         );
 
         assertDoesNotThrow(() -> repo.saveEntries("logs/nullable-test.gz", List.of(entry)));
@@ -91,18 +91,18 @@ class LogRepositoryTest {
     @Test
     void deletesOldLogs() {
         var oldEntry = new CloudFrontLogEntry(
-            Instant.from(ZonedDateTime.now().minus(4, ChronoUnit.MONTHS)), "SFO53", 100L, "1.1.1.1", "GET",
+            Instant.from(ZonedDateTime.now().minus(4, ChronoUnit.MONTHS)), "SFO53", "1.1.1.1", "GET",
             "/old", 200, null, "Bot",
-            "Hit", 50L, 0.01, "Hit", 0.01, "Hit",
-            null, null, "US"
+            "Hit", "Hit", "Hit",
+            null, "US"
         );
         repo.saveEntries("old.gz", List.of(oldEntry));
 
         var recentEntry = new CloudFrontLogEntry(
-            Instant.from(ZonedDateTime.now().minus(1, ChronoUnit.MONTHS)), "SFO53", 100L, "1.1.1.1", "GET",
+            Instant.from(ZonedDateTime.now().minus(1, ChronoUnit.MONTHS)), "SFO53", "1.1.1.1", "GET",
             "/recent", 200, null, "Bot",
-            "Hit", 50L, 0.01, "Hit", 0.01, "Hit",
-            null, null, "US"
+            "Hit", "Hit", "Hit",
+            null, "US"
         );
         repo.saveEntries("recent.gz", List.of(recentEntry));
 
@@ -118,12 +118,12 @@ class LogRepositoryTest {
 
     private CloudFrontLogEntry entry(int status) {
         return new CloudFrontLogEntry(
-            Instant.now(), "SFO53-P7", 1068L, "8.29.198.27", "GET",
+            Instant.now(), "SFO53-P7", "8.29.198.27", "GET",
             "/index.html", status,
             null, "TestAgent/1.0",
-            "Hit", 336L, 0.001,
-            "Hit", 0.001, "Hit",
-            null, null, "US"
+            "Hit",
+            "Hit", "Hit",
+            null, "US"
         );
     }
 
