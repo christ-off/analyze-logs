@@ -57,18 +57,6 @@ export function loadSimpleTable(url, tbodyId, cols, rowFn, emptyMsg, onRendered)
         });
 }
 
-// One-column-plus-count table of {name, count} URI rows (404 & Errors, Zip Requests),
-// with the row total surfaced in the card header element `countId`.
-export function loadUriCountTable(url, tbodyId, countId, emptyMsg) {
-    loadSimpleTable(`${url}?${buildBaseParams({})}`, tbodyId, 2, u => `<tr>
-        <td><code>${escapeHtml(u.name)}</code></td>
-        <td class="text-end">${u.count.toLocaleString()}</td>
-    </tr>`, emptyMsg, (_, data) => {
-        const countEl = document.getElementById(countId);
-        if (countEl) countEl.textContent = `(${data.length.toLocaleString()} URIs, sorted by count)`;
-    });
-}
-
 const SEGMENTS = [
     { key: 'hit',      label: 'Hit',      color: Charts.COLORS.green  },
     { key: 'miss',     label: 'Miss',     color: Charts.COLORS.blue   },

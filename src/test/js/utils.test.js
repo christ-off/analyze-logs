@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { readMeta, escapeHtml, buildBaseParams, loadUriCountTable, minVersionWithHumanTraffic, renderMinVersionBanner } from '../../main/resources/static/js/utils.js';
+import { readMeta, escapeHtml, buildBaseParams, minVersionWithHumanTraffic, renderMinVersionBanner } from '../../main/resources/static/js/utils.js';
 import { flushPromises } from './test-helpers.js';
 
 // charts.js (imported transitively) references Chart via globalThis
@@ -224,82 +224,5 @@ describe('renderMinVersionBanner', () => {
         const banner = document.getElementById('banner');
         expect(banner.classList.contains('d-none')).toBe(false);
         expect(banner.textContent).toBe('Min Firefox version with requests from human IPs: 130');
-    });
-});
-
-// ---------------------------------------------------------------------------
-// loadUriCountTable
-// ---------------------------------------------------------------------------
-
-describe('loadUriCountTable', () => {
-    const EMPTY_MSG = 'No archive requests found for the selected date range.';
-    const load = () => loadUriCountTable('/api/zip-requests/uris', 'uriTable', 'uriCount', EMPTY_MSG);
-
-    beforeEach(() => {
-        document.head.innerHTML = `
-            <meta name="cf-from" content="2026-01-01T00:00:00Z">
-            <meta name="cf-to"   content="2026-01-31T00:00:00Z">
-        `;
-        document.body.innerHTML = `
-            <span id="uriCount"></span>
-            <table><tbody id="uriTable"><tr><td colspan="2">Loading...</td></tr></tbody></table>
-        `;
-    });
-
-    it('appends the date-range params to the endpoint', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) }));
-        load();
-        await flushPromises();
-
-        expect(fetch.mock.calls[0][0]).toBe('/api/zip-requests/uris?from=2026-01-01&to=2026-01-31');
-    });
-
-    it('renders one row per uri: uri and count only', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: '/backup.zip', count: 44 }]),
-        }));
-        load();
-        await flushPromises();
-
-        const row = document.querySelector('#uriTable tr');
-        expect(row.textContent).toContain('/backup.zip');
-        expect(row.textContent).toContain('44');
-        expect(row.querySelectorAll('td')).toHaveLength(2);
-    });
-
-    it('escapes the uri', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: '/<script>.zip', count: 1 }]),
-        }));
-        load();
-        await flushPromises();
-
-        expect(document.getElementById('uriTable').innerHTML).toContain('&lt;script&gt;');
-    });
-
-    it('updates the row-count label', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            json: () => Promise.resolve([{ name: '/backup.zip', count: 44 }]),
-        }));
-        load();
-        await flushPromises();
-
-        expect(document.getElementById('uriCount').textContent).toContain('1');
-    });
-
-    it('shows the empty state when no rows come back', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) }));
-        load();
-        await flushPromises();
-
-        expect(document.getElementById('uriTable').textContent).toContain(EMPTY_MSG);
-    });
-
-    it('shows the error state on fetch failure', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
-        load();
-        await flushPromises();
-
-        expect(document.getElementById('uriTable').textContent).toContain('Failed to load');
     });
 });

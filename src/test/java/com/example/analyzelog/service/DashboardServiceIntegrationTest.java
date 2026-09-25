@@ -1744,50 +1744,6 @@ class DashboardServiceIntegrationTest {
         assertEquals("/p4/", result.get("Facebook").getFirst().uriStem());
     }
 
-    private CloudFrontLogEntry entryWithStatusAndResultType(Instant ts, String ip, String uriStem, String ua, String country, int status, String resultType) {
-        return makeEntry(ts, "SFO53-P7", ip, uriStem, null, ua, country, status, resultType);
-    }
-
-    @Test
-    void errors404UriCounts_groupsByUriSortedByCountDesc() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/errors-404-test.gz", List.of(
-                entryWithStatusAndResultType(Instant.now(), "1.1.1.1", "/big-offender", "scanner/1.0", "US", 404, "Error"),
-                entryWithStatusAndResultType(Instant.now().plusSeconds(1), "1.1.1.2", "/big-offender", "scanner/2.0", "FR", 404, "Error"),
-                entryWithStatusAndResultType(Instant.now().plusSeconds(2), "1.1.1.3", "/big-offender", "scanner/3.0", "DE", 404, "Error"),
-                entryWithStatusAndResultType(Instant.now().plusSeconds(3), "1.1.1.4", "/lonely-404-page", "Mozilla/5.0", "US", 404, "Error"),
-                // Hit must be excluded
-                entryWithStatusAndResultType(Instant.now().plusSeconds(4), "1.1.1.5", "/index.html", "Mozilla/5.0", "US", 200, "Hit")
-        ));
-
-        var result = dashboardService.errors404UriCounts(from, Instant.now().plusSeconds(5), 10);
-
-        assertEquals(2, result.size());
-        assertEquals("/big-offender", result.get(0).name());
-        assertEquals(3, result.get(0).count());
-        assertEquals("/lonely-404-page", result.get(1).name());
-        assertEquals(1, result.get(1).count());
-        assertTrue(result.stream().noneMatch(r -> "/index.html".equals(r.name())));
-    }
-
-    @Test
-    void errors404UriCounts_requiresBothStatus404AndResultTypeError() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/errors-404-and-test.gz", List.of(
-                // status 404 but not an edge-level Error — must be excluded
-                entryWithStatusAndResultType(Instant.now(), "1.2.3.4", "/missing-but-miss.html", "Mozilla/5.0", "US", 404, "Miss"),
-                // edge-level Error but not a 404 — must be excluded
-                entryWithStatusAndResultType(Instant.now(), "1.2.3.5", "/error-but-500.html", "Mozilla/5.0", "US", 500, "Error"),
-                // both 404 and Error — must be included
-                entryWithStatusAndResultType(Instant.now(), "1.2.3.6", "/both.html", "Mozilla/5.0", "US", 404, "Error")
-        ));
-
-        var result = dashboardService.errors404UriCounts(from, Instant.now().plusSeconds(5), 10);
-
-        assertEquals(1, result.size());
-        assertEquals("/both.html", result.getFirst().name());
-    }
-
     @Test
     void zipUriCounts_excludesLegitimateAssetAndSortsByCountDesc() {
         Instant from = Instant.now();

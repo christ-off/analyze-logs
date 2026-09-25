@@ -4,7 +4,6 @@ import { flushPromises } from './test-helpers.js';
 // charts.js (imported transitively via utils.js) references Chart via globalThis
 globalThis.Chart = vi.fn();
 
-// Rendering behaviour itself is covered by the loadUriCountTable tests in utils.test.js.
 describe('zip-requests page', () => {
     it('loads the zip uris into the page table', async () => {
         // The page module loads its table as soon as it is imported, so the meta tags and
