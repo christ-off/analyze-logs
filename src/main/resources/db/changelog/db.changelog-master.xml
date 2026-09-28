@@ -26,5 +26,6 @@
     <include file="db/changelog/changes/019-drop-unused-cloudfront-columns.xml"/>
     <include file="db/changelog/changes/020-drop-time-to-first-byte.xml"/>
     <include file="db/changelog/changes/021-static-ua-add-exasearchbot.xml"/>
+    <include file="db/changelog/changes/022-static-ua-add-miniflux.xml"/>
 
 </databaseChangeLog>

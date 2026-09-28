@@ -87,6 +87,7 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 (feeder.co; Macintosh) AppleWebKit/537.36', Feeder",
         "'flus/2.3.1 (https://app.flus.fr/about)', Flus",
         "'wp.com feedbot/1.0', WP.com FeedBot",
+        "'Mozilla/5.0 (compatible; Miniflux/2.3.3; https://miniflux.app)', Miniflux",
         // Fediverse
         "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
