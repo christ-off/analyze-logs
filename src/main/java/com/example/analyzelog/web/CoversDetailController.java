@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -24,6 +25,12 @@ class CoversDetailController extends DetailControllerBase {
     public List<NameResultTypeCount> userAgents(@RequestParam String from, @RequestParam String to) {
         var range = range(from, to);
         return dashboardService.coverUserAgents(range.from(), range.to(), appProperties.topDetailLimit());
+    }
+
+    @GetMapping("/user-agent-table")
+    public List<CoverUserAgent> userAgentTable(@RequestParam String from, @RequestParam String to) {
+        var range = range(from, to);
+        return dashboardService.coverUserAgentTable(range.from(), range.to(), appProperties.topDetailLimit());
     }
 
     @GetMapping("/referer-split")

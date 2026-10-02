@@ -7,6 +7,7 @@ import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryClientCounts;
 import com.example.analyzelog.model.CountryStats;
+import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
@@ -1246,6 +1247,34 @@ public class DashboardService {
 
     public List<NameResultTypeCount> coverUserAgents(Instant from, Instant to, int limit) {
         return uaResultTypesByFilter(COVER_FILTER, List.of(), from, to, limit);
+    }
+
+    // Per raw user agent string: requests, plus how many come from "Probable human" (ip, ua) pairs.
+    public List<CoverUserAgent> coverUserAgentTable(Instant from, Instant to, int limit) {
+        String sql = """
+                WITH pair_class AS (
+                    SELECT client_ip, user_agent,
+                        %s AS category
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, user_agent
+                )
+                SELECT c.user_agent AS name,
+                       SUM(CASE WHEN pc.category = 'Probable human' THEN 1 ELSE 0 END) AS human,
+                       %s
+                FROM cloudfront_logs c
+                JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
+                WHERE c.timestamp BETWEEN ? AND ?
+                  AND %s
+                GROUP BY c.user_agent
+                ORDER BY (hit + miss + function + error) DESC
+                LIMIT ?
+                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), COVER_FILTER);
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return jdbc.query(sql, (rs, _) -> new CoverUserAgent(rs.getString("name"), rs.getLong("human"),
+                rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR)),
+                fromSql, toSql, fromSql, toSql, limit);
     }
 
     public List<DailyResultTypeCount> coverRequestsPerDay(Instant from, Instant to) {

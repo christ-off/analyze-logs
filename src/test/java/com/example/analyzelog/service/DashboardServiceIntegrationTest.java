@@ -6,6 +6,7 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
+import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -1789,6 +1790,10 @@ class DashboardServiceIntegrationTest {
                 .collect(Collectors.toMap(NameCount::name, NameCount::count));
         assertEquals(2L, split.get("From the blog"));
         assertEquals(2L, split.get("Other"));
+
+        var table = dashboardService.coverUserAgentTable(from, to, 10).stream()
+                .collect(Collectors.toMap(CoverUserAgent::name, c -> c));
+        assertEquals(4, table.values().stream().mapToLong(CoverUserAgent::total).sum());
 
         var uas = dashboardService.coverUserAgents(from, to, 10);
         assertEquals(4, uas.stream().mapToLong(NameResultTypeCount::total).sum());

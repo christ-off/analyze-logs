@@ -5,6 +5,7 @@
 <th:block class="extra-head">
     <meta name="cf-from" th:content="${from}"/>
     <meta name="cf-to"   th:content="${to}"/>
+    <meta name="cf-to-date" th:content="${toDate}"/>
 </th:block>
 <th:block class="page-content">
 
@@ -26,6 +27,26 @@
                 <div class="card-body" style="position:relative;height:420px"><canvas id="chartCoverReferer"></canvas></div>
             </div>
         </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">User Agents hitting covers (raw)</div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User agent</th>
+                        <th class="text-end">Images</th>
+                        <th class="text-end">Human</th>
+                        <th style="width:35%">Hit / Miss / Filtered / Error</th>
+                    </tr>
+                </thead>
+                <tbody id="coverUaTable">
+                    <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/result-legend :: legend('coverUaLegend')}"></div>
     </div>
 
     <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
