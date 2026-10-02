@@ -1773,7 +1773,7 @@ class DashboardServiceIntegrationTest {
                 || "/sitemap.xml.gz".equals(r.name())));
     }
     @Test
-    void coverQueries_onlyCountWebpUnderAssetsPosts_andSplitByBlogReferer() {
+    void coverQueries_onlyCountWebpOrJpgUnderAssetsPosts_andSplitByBlogReferer() {
         Instant from = Instant.now();
         String blog = "https://post-tenebras-lire.net/some-post/";
         repository.saveEntries("logs/covers-test.gz", List.of(
@@ -1781,24 +1781,25 @@ class DashboardServiceIntegrationTest {
                 makeEntry(Instant.now(), "SFO53-P7", "1.1.1.2", "/assets/posts_2024/b.webp", blog, "CoverUa/1.0", "US", "Miss"),
                 makeEntry(Instant.now(), "SFO53-P7", "1.1.1.3", "/assets/posts/c.webp", "https://example.com/", "CoverUa/2.0", "US", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "1.1.1.4", "/assets/posts/d.webp", null, "CoverUa/2.0", "US", "Hit"),
-                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.5", "/assets/posts/e.jpg", blog, "CoverUa/1.0", "US", "Hit"),   // not webp
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.5", "/assets/posts/e.jpg", blog, "CoverUa/1.0", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.7", "/assets/posts/g.png", blog, "CoverUa/1.0", "US", "Hit"),   // not webp/jpg
                 makeEntry(Instant.now(), "SFO53-P7", "1.1.1.6", "/img/f.webp", blog, "CoverUa/1.0", "US", "Hit")           // not under /assets/posts
         ));
         Instant to = Instant.now().plusSeconds(5);
 
         var split = dashboardService.coverRefererSplit(from, to).stream()
                 .collect(Collectors.toMap(NameCount::name, NameCount::count));
-        assertEquals(2L, split.get("From the blog"));
+        assertEquals(3L, split.get("From the blog"));
         assertEquals(2L, split.get("Other"));
 
         var table = dashboardService.coverUserAgentTable(from, to, 10).stream()
                 .collect(Collectors.toMap(CoverUserAgent::name, c -> c));
-        assertEquals(4, table.values().stream().mapToLong(CoverUserAgent::total).sum());
+        assertEquals(5, table.values().stream().mapToLong(CoverUserAgent::total).sum());
 
         var uas = dashboardService.coverUserAgents(from, to, 10);
-        assertEquals(4, uas.stream().mapToLong(NameResultTypeCount::total).sum());
+        assertEquals(5, uas.stream().mapToLong(NameResultTypeCount::total).sum());
 
-        assertEquals(4, dashboardService.coverRequestsPerDay(from, to).stream()
+        assertEquals(5, dashboardService.coverRequestsPerDay(from, to).stream()
                 .mapToLong(d -> d.hit() + d.miss() + d.function() + d.error()).sum());
     }
 }

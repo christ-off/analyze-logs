@@ -1241,8 +1241,8 @@ public class DashboardService {
                 LEGITIMATE_ZIP_PATH, SITEMAP_GZ_PATH, limit);
     }
 
-    // Blog book covers: webp files under /assets/posts*.
-    private static final String COVER_FILTER = "uri_stem LIKE '/assets/posts%' AND uri_stem LIKE '%.webp'";
+    // Blog book covers: webp or jpg files under /assets/posts*.
+    private static final String COVER_FILTER = "uri_stem LIKE '/assets/posts%' AND (uri_stem LIKE '%.webp' OR uri_stem LIKE '%.jpg')";
     private static final String COVER_BLOG_REFERER_PREFIX = "https://post-tenebras-lire.net";
 
     public List<NameResultTypeCount> coverUserAgents(Instant from, Instant to, int limit) {
