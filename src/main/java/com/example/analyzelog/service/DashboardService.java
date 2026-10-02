@@ -1261,6 +1261,8 @@ public class DashboardService {
                 )
                 SELECT c.user_agent AS name,
                        SUM(CASE WHEN pc.category = 'Probable human' THEN 1 ELSE 0 END) AS human,
+                       SUM(CASE WHEN c.referer LIKE ? THEN 1 ELSE 0 END) AS blog,
+                       SUM(CASE WHEN c.referer LIKE ? THEN 0 ELSE 1 END) AS other,
                        %s
                 FROM cloudfront_logs c
                 JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent
@@ -1272,9 +1274,11 @@ public class DashboardService {
                 """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), COVER_FILTER);
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
+        String blogLike = COVER_BLOG_REFERER_PREFIX + "%";
         return jdbc.query(sql, (rs, _) -> new CoverUserAgent(rs.getString("name"), rs.getLong("human"),
+                rs.getLong("blog"), rs.getLong("other"),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR)),
-                fromSql, toSql, fromSql, toSql, limit);
+                fromSql, toSql, blogLike, blogLike, fromSql, toSql, limit);
     }
 
     public List<DailyResultTypeCount> coverRequestsPerDay(Instant from, Instant to) {
