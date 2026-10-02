@@ -1240,4 +1240,31 @@ public class DashboardService {
                 LEGITIMATE_ZIP_PATH, SITEMAP_GZ_PATH, limit);
     }
 
+    // Blog book covers: webp files under /assets/posts*.
+    private static final String COVER_FILTER = "uri_stem LIKE '/assets/posts%' AND uri_stem LIKE '%.webp'";
+    private static final String COVER_BLOG_REFERER_PREFIX = "https://post-tenebras-lire.net";
+
+    public List<NameResultTypeCount> coverUserAgents(Instant from, Instant to, int limit) {
+        return uaResultTypesByFilter(COVER_FILTER, List.of(), from, to, limit);
+    }
+
+    public List<DailyResultTypeCount> coverRequestsPerDay(Instant from, Instant to) {
+        String sql = SQL_DAILY_SELECT + andClause(COVER_FILTER) + SQL_DAILY_GROUP_ORDER;
+        return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+    }
+
+    // Cover hits split by whether the referer starts with the blog URL ("From the blog") or not ("Other").
+    public List<NameCount> coverRefererSplit(Instant from, Instant to) {
+        String sql = """
+                SELECT CASE WHEN referer LIKE ? THEN 'From the blog' ELSE 'Other' END as name, COUNT(*) as count
+                FROM cloudfront_logs
+                WHERE timestamp BETWEEN ? AND ?
+                  AND %s
+                GROUP BY name
+                ORDER BY count DESC
+                """.formatted(COVER_FILTER);
+        return jdbc.query(sql, NAME_COUNT_MAPPER, COVER_BLOG_REFERER_PREFIX + "%",
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+    }
+
 }

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Covers', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Covers</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <!-- Flash messages -->
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/covers')}"></th:block>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">User Agents</div>
+                <div class="card-body" style="position:relative;height:420px"><canvas id="chartCoverUas"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">Referer</div>
+                <div class="card-body" style="position:relative;height:420px"><canvas id="chartCoverReferer"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/covers.js}"></script>
+</th:block>
+</html>
