@@ -1,6 +1,6 @@
 'use strict';
 
-import { escapeHtml } from './utils.js';
+import { escapeHtml, detailUrl } from './utils.js';
 
 let cache = new Map();
 
@@ -28,7 +28,7 @@ export function initIpLookup(root = document) {
                 .then(info => {
                     cell.querySelector('.spinner-border')?.remove();
                     cell.insertAdjacentHTML('beforeend',
-                        `<div class="ip-info-block text-muted small font-monospace mt-1">${escapeHtml(info.org)} · ${escapeHtml(info.city)}, ${escapeHtml(info.country)}<br>${escapeHtml(info.hostname)}</div>`
+                        `<div class="ip-info-block text-muted small font-monospace mt-1">${escapeHtml(info.org)} · ${escapeHtml(info.city)}, ${escapeHtml(info.country)}<br>${escapeHtml(info.hostname)}<br><a href="${escapeHtml(detailUrl('/ip-requests', { ip }))}">All requests from this IP</a></div>`
                     );
                     cell.dispatchEvent(new CustomEvent('ip-info:loaded', { bubbles: true, detail: { cell, ip, info } }));
                 })

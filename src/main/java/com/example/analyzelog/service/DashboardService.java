@@ -12,6 +12,7 @@ import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
+import com.example.analyzelog.model.IpRequest;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -67,17 +68,24 @@ public class DashboardService {
             "WHEN edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ") THEN 'Hit' " +
             "ELSE edge_response_result_type END";
     private static final RowMapper<BotUaRequest> BOT_UA_REQUEST_MAPPER = (rs, i) -> {
-        String iso = rs.getString("country");
-        String countryName = resolveCountryDisplayOrNull(iso);
-        if (countryName == null) countryName = "-";
         return new BotUaRequest(
                 Instant.parse(rs.getString(COL_TIMESTAMP)),
                 rs.getString(COL_CLIENT_IP),
                 rs.getString(COL_URI_STEM),
+                rs.getString("referer"),
                 rs.getString("result_type"),
-                countryName,
+                countryOrDash(rs.getString("country")),
                 rs.getInt("status"));
     };
+    private static final RowMapper<IpRequest> IP_REQUEST_MAPPER = (rs, _) -> new IpRequest(
+            Instant.parse(rs.getString(COL_TIMESTAMP)),
+            rs.getString(COL_CLIENT_IP),
+            rs.getString("ua_name"),
+            countryOrDash(rs.getString("country")),
+            rs.getString(COL_USER_AGENT),
+            rs.getString(COL_URI_STEM),
+            rs.getString("result_type"),
+            rs.getInt("status"));
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -958,7 +966,7 @@ public class DashboardService {
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {
         String sql = """
-                SELECT timestamp, client_ip, uri_stem, country, status,
+                SELECT timestamp, client_ip, uri_stem, referer, country, status,
                        %s as result_type
                 FROM cloudfront_logs
                 WHERE user_agent = ?
@@ -966,6 +974,23 @@ public class DashboardService {
                 ORDER BY timestamp DESC, id DESC
                 """.formatted(RESULT_TYPE_GROUP_EXPR);
         return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+    }
+
+    private static String countryOrDash(String iso) {
+        String name = resolveCountryDisplayOrNull(iso);
+        return name != null ? name : "-";
+    }
+
+    public List<IpRequest> requestsByIp(String ip, Instant from, Instant to) {
+        String sql = """
+                SELECT timestamp, client_ip, ua_name, user_agent, uri_stem, country, status,
+                       %s as result_type
+                FROM cloudfront_logs
+                WHERE client_ip = ?
+                  AND timestamp >= ? AND timestamp < ?
+                ORDER BY timestamp DESC, id DESC
+                """.formatted(RESULT_TYPE_GROUP_EXPR);
+        return jdbc.query(sql, IP_REQUEST_MAPPER, ip, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<DailyResultTypeCount> requestsPerDayByUserAgent(String ua, Instant from, Instant to) {

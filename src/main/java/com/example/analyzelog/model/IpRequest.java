@@ -2,12 +2,13 @@ package com.example.analyzelog.model;
 
 import java.time.Instant;
 
-public record BotUaRequest(
+public record IpRequest(
     Instant timestamp,
     String clientIp,
-    String uriStem,
-    String referer,
-    String resultType,
+    String name,
     String country,
+    String userAgent,
+    String uriStem,
+    String resultType,
     int scStatus
 ) {}

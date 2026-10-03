@@ -4,6 +4,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     escapeHtml:      (s) => s,
     readMeta:        vi.fn(() => 'TestAgent/1.0'),
     buildBaseParams: vi.fn(() => 'ua=TestAgent%2F1.0&from=2026-01-01&to=2026-01-31'),
+    detailUrl:       (path, params) => path + '?ip=' + params.ip + '&from=2026-01-01&to=2026-01-31',
 }));
 
 vi.mock('../../main/resources/static/js/charts.js', () => ({
@@ -68,6 +69,7 @@ describe('ua-requests IP lookup', () => {
         expect(info).not.toBeNull();
         expect(info.textContent).toContain('AS1 Acme');
         expect(info.textContent).toContain('host.example.com');
+        expect(info.querySelector('a').getAttribute('href')).toBe('/ip-requests?ip=1.2.3.4&from=2026-01-01&to=2026-01-31');
     });
 
     it('does not call fetch again on second click', async () => {
