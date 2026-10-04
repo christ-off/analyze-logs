@@ -286,6 +286,17 @@ class ApiControllerTest {
     }
 
     @Test
+    void humanCountReturnsNumber() {
+        when(dashboardService.humanCount(any(Instant.class), any(Instant.class))).thenReturn(42L);
+
+        assertThat(mvc.get().uri("/api/human-count")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyText().isEqualTo("42");
+    }
+
+    @Test
     void humanRequestsPerDayReturnsJson() {
         when(dashboardService.humanRequestsPerDay(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 9, 1, 0, 0)));

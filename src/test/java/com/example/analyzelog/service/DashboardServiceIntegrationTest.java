@@ -1570,6 +1570,25 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, totalHits);
     }
 
+    @Test
+    void humanCount_countsDistinctIpUserAgentPairs() {
+        Instant base = Instant.now().plus(300, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-count-test.gz", List.of(
+                entryAt(base, "15.15.15.15", UA_CHROME_WINDOWS, "/"),
+                entryAt(base.plus(10, ChronoUnit.SECONDS), "15.15.15.15", UA_CHROME_WINDOWS, "/page/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "15.15.15.15", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "15.15.15.15", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                entryAt(base, "16.16.16.16", UA_CHROME_WINDOWS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "16.16.16.16", UA_CHROME_WINDOWS, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "16.16.16.16", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),
+                entryAt(base, "17.17.17.17", UA_CLAUDEBOT, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "17.17.17.17", UA_CLAUDEBOT, "/css/main.css"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "17.17.17.17", UA_CLAUDEBOT, SVG_HUMAN_BADGE)
+        ));
+
+        assertEquals(2, dashboardService.humanCount(base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS)));
+    }
+
     // UA string matching no static_ua pattern and none of Chrome/Firefox/Edge/Safari — classified "Unknown".
     private static final String UA_UNCLASSIFIED = "SomeUnknownClient/9.9";
 

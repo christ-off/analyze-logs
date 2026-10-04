@@ -13,6 +13,13 @@
 
     <th:block th:replace="~{fragments/toolbar :: toolbar('/human')}"></th:block>
 
+    <div class="card mb-4">
+        <div class="card-body d-flex align-items-baseline gap-3">
+            <span class="fs-2 fw-bold" id="humanCount">…</span>
+            <span class="text-muted">humans (distinct IP + user agent)</span>
+        </div>
+    </div>
+
     <th:block th:replace="~{fragments/dashboard-rows :: topRows}"></th:block>
 
     <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>

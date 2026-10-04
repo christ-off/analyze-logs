@@ -120,6 +120,12 @@ public class ApiController {
         return dashboardService.humanRequestsPerDay(range.from(), range.to());
     }
 
+    @GetMapping("/human-count")
+    public long humanCount(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.humanCount(range.from(), range.to());
+    }
+
     @GetMapping("/human-unknown-uas")
     public List<UnknownUaRequest> humanUnknownUas(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

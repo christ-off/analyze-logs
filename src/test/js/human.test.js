@@ -19,6 +19,7 @@ import { loadAllCharts } from '../../main/resources/static/js/human.js';
 import { flushPromises } from './test-helpers.js';
 
 const HTML = `
+    <span id="humanCount"></span>
     <span id="humanUnknownUasCount"></span>
     <table><tbody id="humanUnknownUas"><tr><td colspan="4">Loading...</td></tr></tbody></table>
 `;
@@ -63,5 +64,16 @@ describe('human page unknown user agents', () => {
         await flushPromises();
 
         expect(document.getElementById('humanUnknownUas').textContent).toContain('Failed to load data.');
+    });
+});
+
+describe('human page count', () => {
+    it('renders the number of humans', async () => {
+        document.body.innerHTML = HTML;
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(1234) }));
+        loadAllCharts();
+        await flushPromises();
+
+        expect(document.getElementById('humanCount').textContent).toBe((1234).toLocaleString());
     });
 });

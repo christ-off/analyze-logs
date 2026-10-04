@@ -721,6 +721,15 @@ public class DashboardService {
         return queryDailyByResultType(sql, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
+    // Distinct humans = distinct (client_ip, user_agent) pairs among qualifying "Human" page requests.
+    public long humanCount(Instant from, Instant to) {
+        String sql = "SELECT COUNT(*) FROM (SELECT DISTINCT client_ip, user_agent FROM cloudfront_logs\n" +
+                "WHERE timestamp BETWEEN ? AND ?\n" +
+                andClause(HUMAN_PAGE_FILTER) + ")";
+        Long count = jdbc.queryForObject(sql, Long.class, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+        return count == null ? 0 : count;
+    }
+
     // Individual qualifying "Human" page requests (see HUMAN_PAGE_FILTER) whose user agent
     // UserAgentClassifier fell through to "Unknown" — surfaced on the Human page so an operator
     // can see which raw UA strings are behind that bucket.

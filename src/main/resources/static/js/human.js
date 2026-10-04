@@ -29,7 +29,17 @@ function loadUnknownUas() {
         });
 }
 
+function loadHumanCount() {
+    const el = document.getElementById('humanCount');
+    if (!el) return;
+    fetch('/api/human-count?' + buildBaseParams({}))
+        .then(r => r.json())
+        .then(n => { el.textContent = Number(n).toLocaleString(); })
+        .catch(() => { el.textContent = 'n/a'; });
+}
+
 export function loadAllCharts() {
+    loadHumanCount();
     loadCoreCharts('human-');
     loadUnknownUas();
 }
