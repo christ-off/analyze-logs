@@ -1,6 +1,6 @@
 'use strict';
 
-import { buildBaseParams, detailUrl, escapeHtml, formatTimestamp } from './utils.js';
+import { buildBaseParams, detailUrl, escapeHtml, formatTimestamp, stackedBar, resultTotal } from './utils.js';
 import { initRefresh } from './refresh.js';
 
 // The template owns which networks are shown and in what order; each section tags its tbody.
@@ -28,8 +28,23 @@ function renderNetwork(tbody, requests) {
         : requests.map(renderRow).join('');
 }
 
+function renderResultTypes(data) {
+    document.querySelectorAll('#socialReferralsSections [data-result-network]').forEach(el => {
+        const row = data[el.dataset.resultNetwork];
+        el.innerHTML = row && resultTotal(row) > 0
+            ? stackedBar(row, null) + '<div class="small text-muted mt-1">'
+                + `Hit ${row.hit.toLocaleString()} · Miss ${row.miss.toLocaleString()} · `
+                + `Filtered ${row['function'].toLocaleString()} · Error ${row.error.toLocaleString()}</div>`
+            : '';
+    });
+}
+
 export function loadSocialReferrals() {
     const p = buildBaseParams({});
+    fetch('/api/social-networks/result-types?' + p)
+        .then(r => r.json())
+        .then(renderResultTypes)
+        .catch(() => {});
     fetch('/api/social-networks?' + p)
         .then(r => r.json())
         .then(data => {

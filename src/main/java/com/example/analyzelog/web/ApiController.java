@@ -199,6 +199,12 @@ public class ApiController {
         return dashboardService.socialNetworkRequests(range.from(), range.to(), appProperties.topUrlsLimit());
     }
 
+    @GetMapping("/social-networks/result-types")
+    public Map<String, NameResultTypeCount> socialNetworkResultTypes(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.socialNetworkResultTypes(range.from(), range.to());
+    }
+
     @GetMapping("/ip-info/{ip}")
     public IpInfoService.IpInfo ipInfo(@PathVariable String ip) {
         return ipInfoService.lookup(ip);

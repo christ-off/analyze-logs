@@ -1258,6 +1258,33 @@ public class DashboardService {
         return byNetwork;
     }
 
+    // Hit/Miss/Filtered/Error split per network over the same requests as socialNetworkRequests, but
+    // keeping every result type so the Filtered and Error share is visible.
+    public Map<String, NameResultTypeCount> socialNetworkResultTypes(Instant from, Instant to) {
+        List<Object> params = new ArrayList<>();
+        String caseSql = socialNetworkCaseSql(params);
+        params.add(TimestampFormat.sqlValue(from));
+        params.add(TimestampFormat.sqlValue(to));
+
+        Map<String, NameResultTypeCount> byNetwork = new LinkedHashMap<>();
+        for (SocialNetworkRule rule : SOCIAL_NETWORK_RULES) {
+            byNetwork.put(rule.label(), new NameResultTypeCount(rule.label(), 0, 0, 0, 0));
+        }
+        jdbc.query("SELECT network AS name, " + RESULT_TYPE_SUMS + "\n" + """
+                FROM (
+                    SELECT edge_response_result_type, %s AS network
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                      AND uri_stem LIKE '%%/'
+                )
+                WHERE network IS NOT NULL
+                GROUP BY network
+                """.formatted(caseSql),
+                NAME_RESULT_TYPE_COUNT_MAPPER,
+                params.toArray()).forEach(row -> byNetwork.put(row.name(), row));
+        return byNetwork;
+    }
+
     // Archive (.zip/.gz/.tgz/.rar/.7z) uri_stems requested, excluding the one legitimate asset, most
     // frequent first, with the Hit/Miss/Filtered/Error split per URI for the result-type bar.
     public List<NameResultTypeCount> zipUriCounts(Instant from, Instant to, int limit) {

@@ -4,6 +4,8 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     buildBaseParams:  vi.fn(() => 'from=2026-01-01&to=2026-01-31'),
     escapeHtml:       vi.fn((s) => s),
     formatTimestamp:  vi.fn((iso) => iso),
+    stackedBar:       vi.fn(() => '<bar/>'),
+    resultTotal:      vi.fn((r) => r.hit + r.miss + r['function'] + r.error),
     detailUrl:        vi.fn((path, params) => `${path}?ua=${params.ua}`),
 }));
 

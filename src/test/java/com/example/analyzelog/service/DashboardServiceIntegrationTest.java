@@ -1733,6 +1733,26 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void socialNetworkResultTypes_countsEveryResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/social-networks-result-types-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.1", "/a/", null, "facebookexternalhit/1.1", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.2", "/b/", null, "facebookexternalhit/1.1", "US", "Miss"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.3", "/c/", null, "facebookexternalhit/1.1", "US", "FunctionGeneratedResponse"),
+                makeEntry(Instant.now(), "SFO53-P7", "1.1.1.4", "/d/", null, "facebookexternalhit/1.1", "US", "Error")
+        ));
+
+        var result = dashboardService.socialNetworkResultTypes(from, Instant.now().plusSeconds(5));
+
+        var facebook = result.get("Facebook");
+        assertEquals(1, facebook.hit());
+        assertEquals(1, facebook.miss());
+        assertEquals(1, facebook.function());
+        assertEquals(1, facebook.error());
+        assertEquals(0, result.get("WhatsApp").total());
+    }
+
+    @Test
     void socialNetworkRequests_excludesUrisNotEndingInSlash() {
         Instant from = Instant.now();
         repository.saveEntries("logs/social-networks-static-asset-test.gz", List.of(
