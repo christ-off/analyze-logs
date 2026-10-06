@@ -130,33 +130,33 @@ public class DashboardService {
     // Countries page's Mastodon (excluding '/' pings), search-bots and feeds columns count only served requests
     // (Hit/RefreshHit/Miss), excluding function/error responses.
     private static final String HIT_OR_MISS_TYPE_LIST = ResultTypeSql.HIT_TYPE_LIST + ",'Miss'";
-    // Assets a real browser fetches only when actually rendering the page — the site stylesheet and the
-    // "written by a human" badge svg. Neither is ever fetched by a bot/scanner; requiring BOTH (rather
-    // than either alone) narrows out a bot/scraper that happens to hotlink just one of the two.
+    // Asset a real browser fetches only when actually rendering the page — any of the site's icon svgs
+    // (the "written by a human" badge, tag, user...). A single one is enough since browsers may cache
+    // some of them. The stylesheet is deliberately not required: browsers serve it from cache on return
+    // visits, while scrapers do fetch it (without ever fetching the svgs).
     // The legitimate archives the site serves (DeDRM plugin, sitemap) — excluded from zipUriCounts so only
     // scanner probes for archive dumps remain.
     @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
     private static final String LEGITIMATE_ZIP_PATH = "/assets/posts_other/DeDRM_plugin.zip";
     private static final String SITEMAP_GZ_PATH = "/sitemap.xml.gz";
-    private static final String HUMAN_EVIDENCE_CSS_PATH = "/css/main.css";
     @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
-    private static final String HUMAN_EVIDENCE_SVG_PATH = "/assets/svgs/ecrit-par-un-humain.svg";
-    // A "page" request (uri_stem ending in '/') from a non-bot ua_group, corroborated by requests from
-    // the same (client_ip, user_agent) for both evidence assets above, each within +/-1h — the Human
-    // page's definition of a genuine human page-view. Restricting to a 1h window (rather than "ever", as
-    // trafficCategories()/categoryCaseExpr do) rules out a bot that later replays a human IP/UA pair long
-    // after the human visit ended.
-    private static final String HUMAN_PAGE_FILTER =
-            "uri_stem LIKE '%/'\n" +
-            "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
-            "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_CSS_PATH) + "\n" +
-            "  " + withinOneHourExistsClause("m2", HUMAN_EVIDENCE_SVG_PATH);
+    private static final String HUMAN_EVIDENCE_SVG_PATTERN = "/assets/svgs/%.svg";
     // Only Hit/Miss responses count as real traffic — Error and FunctionGeneratedResponse rows
     // (scanners, filtered requests) are excluded from these predicates. RefreshHit counts as a Hit.
     private static final String RESULT_TYPE_HIT_OR_MISS =
             "edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ", 'Miss')";
-    private static final String HUMAN_EVIDENCE_CSS_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_CSS_PATH + "'";
-    private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem = '" + HUMAN_EVIDENCE_SVG_PATH + "'";
+    // A "page" request (uri_stem ending in '/') from a non-bot ua_group, corroborated by requests from
+    // the same (client_ip, user_agent) for any evidence svg above, within +/-1h — the Human
+    // page's definition of a genuine human page-view. Restricting to a 1h window (rather than "ever", as
+    // trafficCategories()/categoryCaseExpr do) rules out a bot that later replays a human IP/UA pair long
+    // after the human visit ended. Both the page and the evidence svg must be served (Hit/Miss), same as
+    // the pair classification in categoryCaseExpr.
+    private static final String HUMAN_PAGE_FILTER =
+            "uri_stem LIKE '%/'\n" +
+            "  AND " + RESULT_TYPE_HIT_OR_MISS + "\n" +
+            "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
+            "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_SVG_PATTERN);
+    private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem LIKE '" + HUMAN_EVIDENCE_SVG_PATTERN + "'";
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
     // Pair classification used to label rows (trafficCategories) and to scope human-traffic
@@ -171,7 +171,6 @@ public class DashboardService {
                     THEN 'Security'
                 WHEN MAX(CASE WHEN uri_stem LIKE '%%/' AND %s THEN 1 ELSE 0 END) = 1
                  AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
-                 AND MAX(CASE WHEN %s AND %s THEN 1 ELSE 0 END) = 1
                     THEN 'Probable human'
                 WHEN MAX(CASE WHEN uri_stem = '/robots.txt' THEN 1 ELSE 0 END) = 1
                     THEN 'Declared bots'
@@ -181,12 +180,13 @@ public class DashboardService {
     // strftime (not datetime()) keeps the 'T'/'Z' ISO-8601 shape of the stored timestamp column —
     // datetime() reformats to a space-separated string that would sort before/after it inconsistently in
     // the BETWEEN comparison below, since cloudfront_logs.timestamp is TEXT compared lexicographically.
-    private static String withinOneHourExistsClause(String alias, String uriStem) {
+    private static String withinOneHourExistsClause(String alias, String uriStemPattern) {
         return "AND EXISTS (\n" +
                 "    SELECT 1 FROM cloudfront_logs " + alias + "\n" +
                 "    WHERE " + alias + ".client_ip = cloudfront_logs.client_ip\n" +
                 "      AND " + alias + ".user_agent = cloudfront_logs.user_agent\n" +
-                "      AND " + alias + ".uri_stem = '" + uriStem + "'\n" +
+                "      AND " + alias + ".uri_stem LIKE '" + uriStemPattern + "'\n" +
+                "      AND " + alias + ".edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ", 'Miss')\n" +
                 "      AND " + alias + ".timestamp BETWEEN strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '-1 hour')\n" +
                 "                                       AND strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '+1 hour')\n" +
                 "  )";
@@ -238,7 +238,6 @@ public class DashboardService {
                 .toList();
         this.categoryCaseExpr = CATEGORY_CASE_EXPR_TEMPLATE.formatted(FEED_URI_LIST, securityUriStemWhenClause(),
                 RESULT_TYPE_HIT_OR_MISS,
-                HUMAN_EVIDENCE_CSS_PREDICATE, RESULT_TYPE_HIT_OR_MISS,
                 HUMAN_EVIDENCE_SVG_PREDICATE, RESULT_TYPE_HIT_OR_MISS);
         this.sqlUriByResultType = "SELECT \n" +
                 buildUriStemNameCase(uriStemGroupProperties.groups()) +

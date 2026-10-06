@@ -238,13 +238,11 @@ Agents hitting `.php` or `/wp*` URLs 10+ times per day, with no legitimate traff
 ### "Probable human" traffic category can include bots
 
 The **Traffic Categories** chart classifies each `(client_ip, user_agent)` pair as
-**Probable human** if it ever requests a trailing-slash path (e.g. `/`) *and* ever
-requests a static asset (image extension or `/js/*`) — regardless of the HTTP
-result type. A scanner that pads its probe sequence with a fake `/` request and a
-spoofed browser user agent can still qualify, even if every single request
-(including `/`) comes back as `Error`. This lets burst scanners (dozens of
-favicon/logo/admin-panel probes within a few seconds, all erroring) slip into the
-human bucket. Known limitation, not currently fixed.
+**Probable human** if it ever requests a trailing-slash path (e.g. `/`) *and* the
+any icon svg (`/assets/svgs/*.svg`), each as a Hit or Miss. The stylesheet is deliberately not required: browsers serve it from cache on
+return visits, while scrapers do fetch it. The Human page applies the same rule, but
+requires the svg within ±1h of the page request. A bot that fetches an svg
+can still qualify. Known limitation, not currently fixed.
 
 ---
 

@@ -317,8 +317,8 @@ class DashboardServiceIntegrationTest {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
     private static final String UA_EDGE_MACOS =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0";
-    // Matches DashboardService.HUMAN_EVIDENCE_SVG_PATH — the "written by a human" badge, required
-    // alongside /css/main.css as human evidence.
+    // One of the /assets/svgs/*.svg files (see DashboardService.HUMAN_EVIDENCE_SVG_PATTERN), any of which
+    // counts as human evidence.
     private static final String SVG_HUMAN_BADGE = "/assets/svgs/ecrit-par-un-humain.svg";
 
     @Test
@@ -1311,17 +1311,17 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void trafficCategories_requiresBothCssAndSvgBadgeAsHumanEvidence() {
+    void trafficCategories_requiresSvgBadgeAsHumanEvidence() {
         Instant base = Instant.now().plus(100, ChronoUnit.DAYS);
         repository.saveEntries("logs/traffic-categories-images-test.gz", List.of(
-                // Pair A: requests "/" + /css/main.css + the svg badge → both evidence files present → Probable human
+                // Pair A: requests "/" + /css/main.css + the svg badge → svg badge present → Probable human
                 makeEntry(base.plusSeconds(1), "SFO53-P7", "1.1.1.1", "/", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(2), "SFO53-P7", "1.1.1.1", "/css/main.css", null, UA_CHROME_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(3), "SFO53-P7", "1.1.1.1", SVG_HUMAN_BADGE, null, UA_CHROME_WINDOWS, "US", "Hit"),
-                // Pair B: requests "/" + /css/main.css only, no svg badge → no longer enough on its own → Other
+                // Pair B: requests "/" + /css/main.css only, no svg badge → not enough (scrapers fetch css) → Other
                 makeEntry(base.plusSeconds(4), "SFO53-P7", "2.2.2.2", "/", null, UA_FIREFOX_LINUX, "US", "Hit"),
                 makeEntry(base.plusSeconds(5), "SFO53-P7", "2.2.2.2", "/css/main.css", null, UA_FIREFOX_LINUX, "US", "Hit"),
-                // Pair C: requests "/" + the svg badge only, no css → also not enough on its own → Other
+                // Pair C: requests "/" + the svg badge only, no css (cached stylesheet) → Probable human
                 makeEntry(base.plusSeconds(6), "SFO53-P7", "3.3.3.3", "/", null, UA_EDGE_WINDOWS, "US", "Hit"),
                 makeEntry(base.plusSeconds(7), "SFO53-P7", "3.3.3.3", SVG_HUMAN_BADGE, null, UA_EDGE_WINDOWS, "US", "Hit"),
                 // Pair D: requests "/" + an arbitrary image, neither evidence file → Other
@@ -1340,13 +1340,13 @@ class DashboardServiceIntegrationTest {
         assertTrue(names.contains("Other"));
 
         var probableHuman = result.stream().filter(r -> "Probable human".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(3, probableHuman.hit());
+        assertEquals(5, probableHuman.hit()); // Pair A (3) + Pair C (2)
 
         var declaredBots = result.stream().filter(r -> "Declared bots".equals(r.name())).findFirst().orElseThrow();
         assertEquals(2, declaredBots.hit());
 
         var other = result.stream().filter(r -> "Other".equals(r.name())).findFirst().orElseThrow();
-        assertEquals(6, other.hit()); // Pair B (2) + Pair C (2) + Pair D (2)
+        assertEquals(4, other.hit()); // Pair B (2) + Pair D (2)
     }
 
     @Test
@@ -1433,7 +1433,7 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void humanTopUserAgentsByResultType_countsPageRequestCorroboratedByCssAndSvgWithinOneHour() {
+    void humanTopUserAgentsByResultType_countsPageRequestCorroboratedBySvgWithinOneHour() {
         Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
         repository.saveEntries("logs/human-window-test.gz", List.of(
                 entryAt(base, "1.1.1.1", UA_CHROME_WINDOWS, "/"),
@@ -1451,12 +1451,12 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void humanTopUserAgentsByResultType_excludesPageWhenCssOutsideOneHourWindow() {
+    void humanTopUserAgentsByResultType_excludesPageWhenSvgOutsideOneHourWindow() {
         Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
         repository.saveEntries("logs/human-window-miss-test.gz", List.of(
                 entryAt(base, "2.2.2.2", UA_FIREFOX_LINUX, "/"),
-                entryAt(base.plus(61, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, "/css/main.css"),
-                entryAt(base.plus(1, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, SVG_HUMAN_BADGE)
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, "/css/main.css"),
+                entryAt(base.plus(61, ChronoUnit.MINUTES), "2.2.2.2", UA_FIREFOX_LINUX, SVG_HUMAN_BADGE)
         ));
 
         var result = dashboardService.humanTopUserAgentsByResultType(
@@ -1466,11 +1466,44 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void humanTopUserAgentsByResultType_excludesNonServedPageOrSvg() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-not-served-test.gz", List.of(
+                // page served, svg only an Error → no evidence
+                entryAt(base, "19.19.19.19", UA_CHROME_MACOS, "/"),
+                makeEntry(base.plusSeconds(5), "SFO53-P7", "19.19.19.19", SVG_HUMAN_BADGE, null, UA_CHROME_MACOS, "US", "Error"),
+                // svg served, page only an Error → page not counted
+                makeEntry(base, "SFO53-P7", "20.20.20.20", "/", null, UA_FIREFOX_LINUX, "US", "Error"),
+                entryAt(base.plusSeconds(5), "20.20.20.20", UA_FIREFOX_LINUX, SVG_HUMAN_BADGE)
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertFalse(result.stream().anyMatch(r -> "Chrome / macOS".equals(r.name())));
+        assertFalse(result.stream().anyMatch(r -> "Firefox / Linux".equals(r.name())));
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_countsPageWhenAnyAssetsSvgIsRequested() {
+        Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-other-svg-test.gz", List.of(
+                entryAt(base, "18.18.18.18", UA_CHROME_MACOS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "18.18.18.18", UA_CHROME_MACOS, "/assets/svgs/tag.svg")
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertTrue(result.stream().anyMatch(r -> "Chrome / macOS".equals(r.name())));
+    }
+
+    @Test
     void humanTopUserAgentsByResultType_excludesPageWhenSvgBadgeMissing() {
         Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
         repository.saveEntries("logs/human-svg-missing-test.gz", List.of(
                 // css is present within the window, but the svg badge is never requested at all —
-                // both are now required, so this must not count as human evidence.
+                // the svg badge is the only required evidence, so css alone (scrapers fetch it) must not count.
                 entryAt(base, "13.13.13.13", UA_CHROME_MACOS, "/"),
                 entryAt(base.plus(1, ChronoUnit.MINUTES), "13.13.13.13", UA_CHROME_MACOS, "/css/main.css")
         ));
