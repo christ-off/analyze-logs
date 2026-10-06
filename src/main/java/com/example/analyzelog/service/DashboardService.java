@@ -121,7 +121,8 @@ public class DashboardService {
     // even publish some of these, so a hit is still a strong non-browser signal.
     private static final String SITE_CONFIG_PATHS_SQL_LIST =
             "'/robots.txt','/ads.txt','/sitemap.xml','/humans.txt','/security.txt'," +
-            "'/.well-known/security.txt','/browserconfig.xml','/opensearch.xml'";
+            "'/.well-known/security.txt'," +
+            "'/human.json','/llms.txt','/ai.txt'";
     // Every ua_group considered a known bot — reused wherever "not a bot" or "known-bot identity" matters
     // (identityShiftingIps, the Human page's bot exclusion).
     private static final String SEARCH_BOTS_GROUP = "Search Bots";
@@ -1007,8 +1008,8 @@ public class DashboardService {
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), ua);
     }
 
-    // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml
-    // and other files real browsers never fetch on their own. Also reports how many other
+    // Browser-classified UAs requesting site config files — robots.txt, ads.txt, sitemap.xml,
+    // llms.txt, ai.txt, human.json and other files real browsers never fetch on their own. Also reports how many other
     // (non-config) requests the same UA made, since a real browser that stumbles into one of
     // these paths still browses the rest of the site, while a bot mostly won't.
     public List<SiteConfigFetcher> browserConfigFetches(Instant from, Instant to, int limit) {

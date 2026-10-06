@@ -1242,8 +1242,9 @@ class DashboardServiceIntegrationTest {
                 entryAt(base.plusSeconds(5), "1.1.1.1", UA_CHROME_WINDOWS, "/humans.txt"),
                 entryAt(base.plusSeconds(6), "1.1.1.1", UA_CHROME_WINDOWS, "/security.txt"),
                 entryAt(base.plusSeconds(7), "1.1.1.1", UA_CHROME_WINDOWS, "/.well-known/security.txt"),
-                entryAt(base.plusSeconds(8), "1.1.1.1", UA_CHROME_WINDOWS, "/browserconfig.xml"),
-                entryAt(base.plusSeconds(9), "1.1.1.1", UA_CHROME_WINDOWS, "/opensearch.xml"),
+                entryAt(base.plusSeconds(13), "1.1.1.1", UA_CHROME_WINDOWS, "/human.json"),
+                entryAt(base.plusSeconds(14), "1.1.1.1", UA_CHROME_WINDOWS, "/llms.txt"),
+                entryAt(base.plusSeconds(15), "1.1.1.1", UA_CHROME_WINDOWS, "/ai.txt"),
                 entryAt(base.plusSeconds(10), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
                 entryAt(base.plusSeconds(11), "1.1.1.1", UA_CHROME_WINDOWS, "/index.html"),  // other content request
                 entryAt(base.plusSeconds(12), "3.3.3.3", UA_FIREFOX_LINUX,  "/index.html")   // never fetched config — excluded
@@ -1253,7 +1254,7 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(10, result.getFirst().total());
+        assertEquals(11, result.getFirst().total());
         assertEquals(1, result.getFirst().otherRequests());
     }
 
