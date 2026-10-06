@@ -13,5 +13,3 @@ logs.db
 # Playwright
 /test-results/
 /playwright-report/
-/.playwright-mcp/
-/local_claude.sh
