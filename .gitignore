@@ -18,3 +18,4 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 /.playwright-mcp/
+/local_claude.sh
