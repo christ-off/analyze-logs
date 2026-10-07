@@ -31,7 +31,7 @@ A security review found no exploitable vulnerabilities. The following controls a
 
 ## Build & run
 
-Requires Java 25 and Maven.
+Requires Java 27 and Maven.
 
 ```bash
 mvn package

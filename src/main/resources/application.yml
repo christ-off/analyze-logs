@@ -5,8 +5,9 @@ spring:
     url: jdbc:sqlite:${app.db-path:logs.db}
     driver-class-name: org.sqlite.JDBC
     hikari:
-      maximum-pool-size: 1
+      maximum-pool-size: 10
       connection-init-sql: "PRAGMA journal_mode=WAL"
+    connection-fetch: lazy
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   thymeleaf:

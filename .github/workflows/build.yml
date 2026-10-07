@@ -25,10 +25,10 @@ jobs:
       - name: JavaScript tests with coverage
         run: npm ci && npm run coverage
 
-      - name: Set up Java 25
+      - name: Set up Java 27
         uses: actions/setup-java@v6
         with:
-          java-version: '25'
+          java-version: '27'
           distribution: 'temurin'
           cache: maven
 
