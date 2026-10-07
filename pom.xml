@@ -17,7 +17,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>27</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <aws.sdk.version>2.55.11</aws.sdk.version>
         <sqlite.version>3.53.4.0</sqlite.version>
