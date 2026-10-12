@@ -1,0 +1,52 @@
+{
+  "scanners": [
+    {
+      "id": "java",
+      "source": "@groma/scanner-java@0.2.1",
+      "include": [
+        "**/*.java",
+        "**/pom.xml",
+        "**/build.gradle",
+        "**/build.gradle.kts",
+        "**/settings.gradle",
+        "**/settings.gradle.kts"
+      ],
+      "exclude": [
+        "target/",
+        "build/",
+        ".gradle/"
+      ]
+    },
+    {
+      "id": "javascript",
+      "source": "@groma/scanner-javascript@0.2.1",
+      "include": [
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.jsx",
+        "**/package.json",
+        "**/*.html",
+        "**/project.json",
+        "**/nx.json"
+      ],
+      "exclude": [
+        "*.min.js",
+        "*.min.mjs",
+        "*.min.cjs",
+        "*.min.jsx",
+        "node_modules/",
+        "dist/",
+        "build/",
+        "coverage/"
+      ]
+    }
+  ],
+  "exclude": [
+    "/src/test/",
+    "/e2e/",
+    "/playwright.config.js",
+    "/vitest.config.js",
+    "/.mvn/"
+  ]
+}
