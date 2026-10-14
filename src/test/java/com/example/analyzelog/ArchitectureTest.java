@@ -1,5 +1,6 @@
 package com.example.analyzelog;
 
+import com.enofex.taikai.ClassCriteria;
 import com.enofex.taikai.Taikai;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import java.util.List;
@@ -23,7 +24,7 @@ class ArchitectureTest {
                         .serialVersionUIDFieldsShouldBeStaticFinalLong()
                         .classesShouldImplementHashCodeAndEquals()
                         .imports(imports -> imports
-                                .shouldNotImport("..internal.."))
+                                .shouldNotImport(ClassCriteria.inPackage("..internal..")))
                         .naming(naming -> naming
                                 .packagesShouldMatchDefault()
                                 .classesShouldNotMatch(".*Impl")
@@ -34,7 +35,7 @@ class ArchitectureTest {
                 .test(test -> test
                         .junit(junit -> junit
                                 .classesShouldEndWithTest()
-                                .classesShouldBePackagePrivate(".*Test")
+                                .classesShouldBePackagePrivate(ClassCriteria.nameMatching(".*Test"))
                                 .classesShouldNotBeAnnotatedWithDisabled()
                                 .methodsShouldBePackagePrivate()
                                 .methodsShouldNotBeAnnotatedWithDisabled()
