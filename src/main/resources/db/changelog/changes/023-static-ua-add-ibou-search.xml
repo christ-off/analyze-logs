@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ibou-search (https://ibou.com/crawlers.html): crawler of the ibou search engine.
+         Reclassify log rows ingested before this existed. -->
+    <changeSet id="023-static-ua-add-ibou-search" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('ibou-search', 'Search Bots', 'ibou-search', 'ibou-search', 85);
+            UPDATE cloudfront_logs SET ua_name = 'ibou-search'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%ibou-search%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

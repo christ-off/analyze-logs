@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Microsoft Office ("Mozilla/4.0 (compatible; ms-office; MSOffice 16)"): fetches feeds (e.g. Outlook RSS).
+         Reclassify log rows ingested before this existed. -->
+    <changeSet id="024-static-ua-add-ms-office" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('Microsoft Office', 'Feed Readers', 'Microsoft Office', 'ms-office', 86);
+            UPDATE cloudfront_logs SET ua_name = 'Microsoft Office'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%ms-office%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

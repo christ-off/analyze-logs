@@ -55,6 +55,7 @@ class UserAgentClassifierTest {
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.3; https://openai.com/gptbot)', GPTBot",
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ChatGPT-User/1.0; https://openai.com/bot)', ChatGPT-User",
         // Search bots
+        "'Mozilla/5.0 (compatible; ibou-search/2.0; https://ibou.com/crawlers.html)', ibou-search",
         "'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Amazonbot/0.1; https://developer.amazon.com/support/amazonbot) Chrome/119.0.6045.214 Safari/537.36', Amazonbot",
         "'Mozilla/5.0 (compatible; Applebot/0.1; http://www.apple.com/go/applebot)', Applebot",
         "'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', Googlebot",
@@ -88,6 +89,7 @@ class UserAgentClassifierTest {
         "'flus/2.3.1 (https://app.flus.fr/about)', Flus",
         "'wp.com feedbot/1.0', WP.com FeedBot",
         "'Mozilla/5.0 (compatible; Miniflux/2.3.3; https://miniflux.app)', Miniflux",
+        "'Mozilla/4.0 (compatible; ms-office; MSOffice 16)', Microsoft Office",
         // Fediverse
         "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",
         "'Misskey/2025.4.6 (https://example.com)', Misskey",
