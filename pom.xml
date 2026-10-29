@@ -19,8 +19,8 @@
     <properties>
         <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <aws.sdk.version>2.57.5</aws.sdk.version>
-        <sqlite.version>3.53.4.0</sqlite.version>
+        <aws.sdk.version>2.57.6</aws.sdk.version>
+        <sqlite.version>3.54.1.0</sqlite.version>
         <taikai.version>2.7.0</taikai.version>
         <jacoco.version>0.8.16</jacoco.version>
         <sonar.maven.plugin.version>5.8.0.7211</sonar.maven.plugin.version>
