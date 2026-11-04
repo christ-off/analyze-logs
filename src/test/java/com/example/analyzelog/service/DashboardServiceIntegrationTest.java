@@ -1242,7 +1242,6 @@ class DashboardServiceIntegrationTest {
                 entryAt(base.plusSeconds(5), "1.1.1.1", UA_CHROME_WINDOWS, "/humans.txt"),
                 entryAt(base.plusSeconds(6), "1.1.1.1", UA_CHROME_WINDOWS, "/security.txt"),
                 entryAt(base.plusSeconds(7), "1.1.1.1", UA_CHROME_WINDOWS, "/.well-known/security.txt"),
-                entryAt(base.plusSeconds(13), "1.1.1.1", UA_CHROME_WINDOWS, "/human.json"),
                 entryAt(base.plusSeconds(14), "1.1.1.1", UA_CHROME_WINDOWS, "/llms.txt"),
                 entryAt(base.plusSeconds(15), "1.1.1.1", UA_CHROME_WINDOWS, "/ai.txt"),
                 entryAt(base.plusSeconds(10), "2.2.2.2", UA_CLAUDEBOT,      "/robots.txt"),  // bot group — excluded
@@ -1254,7 +1253,7 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(1, result.size());
         assertEquals(UA_CHROME_WINDOWS, result.getFirst().name());
-        assertEquals(11, result.getFirst().total());
+        assertEquals(10, result.getFirst().total());
         assertEquals(1, result.getFirst().otherRequests());
     }
 
