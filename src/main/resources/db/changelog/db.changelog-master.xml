@@ -29,5 +29,6 @@
     <include file="db/changelog/changes/022-static-ua-add-miniflux.xml"/>
     <include file="db/changelog/changes/023-static-ua-add-ibou-search.xml"/>
     <include file="db/changelog/changes/024-static-ua-add-ms-office.xml"/>
+    <include file="db/changelog/changes/025-add-asn.xml"/>
 
 </databaseChangeLog>

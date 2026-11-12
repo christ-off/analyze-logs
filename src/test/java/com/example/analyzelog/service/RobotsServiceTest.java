@@ -325,7 +325,7 @@ class RobotsServiceTest {
                 null, ua,
                 resultType,
                 resultType, resultType,
-                null, "US"
+                null, "US", null
         );
     }
 }

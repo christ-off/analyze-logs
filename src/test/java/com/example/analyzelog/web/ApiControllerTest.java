@@ -107,6 +107,19 @@ class ApiControllerTest {
     }
 
     @Test
+    void asnsReturnsJson() {
+        when(dashboardService.topAsnsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new NameResultTypeCount("AS24940", 40, 5, 10, 2)));
+
+        assertThat(mvc.get().uri("/api/asns")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].name").isEqualTo("AS24940");
+    }
+
+    @Test
     void countriesReturnsJson() {
         when(dashboardService.topCountriesByResultType(any(Instant.class), any(Instant.class), anyInt()))
                 .thenReturn(List.of(new CountryResultTypeCount("CN", "China", 80, 15, 0, 3)));

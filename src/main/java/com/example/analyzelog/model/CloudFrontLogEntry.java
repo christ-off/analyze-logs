@@ -15,5 +15,6 @@ public record CloudFrontLogEntry(
     String edgeResponseResultType,
     String edgeDetailedResultType,
     String contentType,
-    String country
+    String country,
+    String asn
 ) {}

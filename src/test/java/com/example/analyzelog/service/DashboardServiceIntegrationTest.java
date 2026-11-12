@@ -223,6 +223,27 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void topAsnsByResultType_countsPerResultTypeAndIgnoresRowsWithoutAsn() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/asn-split-test.gz", List.of(
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("24940", "Error"),
+                entryWithAsnAndResultType("16276", "Miss"),
+                entryWithAsnAndResultType(null, "Hit")
+        ));
+
+        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        assertEquals("AS24940", result.get(0).name());
+        assertEquals(2, result.get(0).hit());
+        assertEquals(1, result.get(0).error());
+        assertEquals("AS16276", result.get(1).name());
+        assertEquals(1, result.get(1).miss());
+    }
+
+    @Test
     void topCountriesByResultType_countsPerResultTypeAndResolvesDisplayName() {
         Instant from = Instant.now();
         repository.saveEntries("logs/countries-split-test.gz", List.of(
@@ -573,7 +594,7 @@ class DashboardServiceIntegrationTest {
                 referer, ua,
                 resultType,
                 resultType, resultType,
-                null, country
+                null, country, null
         );
     }
 
@@ -789,6 +810,17 @@ class DashboardServiceIntegrationTest {
                 "PHP/WordPress hits on both days");
     }
 
+    private CloudFrontLogEntry entryWithAsnAndResultType(String asn, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", "1.2.3.4", "GET",
+                "/index.html", 200,
+                null, "TestAgent/1.0",
+                resultType,
+                resultType, resultType,
+                null, "US", asn
+        );
+    }
+
     private CloudFrontLogEntry entryWithUaAndResultType(String ua, String resultType) {
         return new CloudFrontLogEntry(
                 Instant.now(), "SFO53-P7", "1.2.3.4", "GET",
@@ -796,7 +828,7 @@ class DashboardServiceIntegrationTest {
                 null, ua,
                 resultType,
                 resultType, resultType,
-                null, "US"
+                null, "US", null
         );
     }
 

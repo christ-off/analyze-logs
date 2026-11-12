@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('ASN', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>ASN</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+</th:block>
+<th:block class="page-content">
+
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/asn')}"></th:block>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Top ASN
+            <span class="text-muted fw-normal small">(only logs delivered with the asn field, since 2026-11-11)</span>
+        </div>
+        <div class="card-body"><canvas id="chartAsns"></canvas></div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/asn.js}"></script>
+</th:block>
+</html>

@@ -60,6 +60,12 @@ public class ApiController {
         return dashboardService.topUserAgentsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
     }
 
+    @GetMapping("/asns")
+    public List<NameResultTypeCount> asns(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.topAsnsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
+    }
+
     @GetMapping("/countries")
     public List<CountryResultTypeCount> countries(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);

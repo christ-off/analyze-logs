@@ -59,6 +59,27 @@ class CloudFrontLogParserTest {
     }
 
     @Test
+    void parsesAsnFromTsv() {
+        String tsv = "#Version: 1.0\n#Fields: date\ttime\tc-ip\tasn\n"
+                + "2026-11-12\t10:00:00\t1.2.3.4\t24940\n"
+                + "2026-11-12\t10:00:01\t1.2.3.5\t-\n";
+
+        var entries = parser.parse(tsv);
+
+        assertEquals(2, entries.size());
+        assertEquals("24940", entries.get(0).asn());
+        assertNull(entries.get(1).asn());
+    }
+
+    @Test
+    void asnIsNullWhenFieldIsAbsent() {
+        var entries = parser.parse("#Fields: date\ttime\tc-ip\n2026-11-12\t10:00:00\t1.2.3.4\n");
+
+        assertEquals(1, entries.size());
+        assertNull(entries.get(0).asn());
+    }
+
+    @Test
     void parsesFullLine() {
         Optional<CloudFrontLogEntry> result = parser.parseLine(FULL_LINE);
 

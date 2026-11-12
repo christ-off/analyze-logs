@@ -95,7 +95,8 @@ public class CloudFrontLogParser {
                 text(row, "x-edge-response-result-type"),
                 text(row, "x-edge-detailed-result-type"),
                 nullIfDash(row, "sc-content-type"),
-                text(row, "c-country")
+                text(row, "c-country"),
+                nullIfDash(row, "asn")
             ));
         } catch (Exception e) {
             log.warn("Failed to parse row: {}", e.getMessage());

@@ -82,7 +82,7 @@ class LogRepositoryTest {
             null, null,
             "Hit",
             "Hit", "Hit",
-            null, "US"
+            null, "US", null
         );
 
         assertDoesNotThrow(() -> repo.saveEntries("logs/nullable-test.gz", List.of(entry)));
@@ -94,7 +94,7 @@ class LogRepositoryTest {
             Instant.from(ZonedDateTime.now().minus(4, ChronoUnit.MONTHS)), "SFO53", "1.1.1.1", "GET",
             "/old", 200, null, "Bot",
             "Hit", "Hit", "Hit",
-            null, "US"
+            null, "US", null
         );
         repo.saveEntries("old.gz", List.of(oldEntry));
 
@@ -102,7 +102,7 @@ class LogRepositoryTest {
             Instant.from(ZonedDateTime.now().minus(1, ChronoUnit.MONTHS)), "SFO53", "1.1.1.1", "GET",
             "/recent", 200, null, "Bot",
             "Hit", "Hit", "Hit",
-            null, "US"
+            null, "US", null
         );
         repo.saveEntries("recent.gz", List.of(recentEntry));
 
@@ -123,7 +123,7 @@ class LogRepositoryTest {
             null, "TestAgent/1.0",
             "Hit",
             "Hit", "Hit",
-            null, "US"
+            null, "US", null
         );
     }
 

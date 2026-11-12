@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Autonomous system number from the `asn` standard-logging field (logs delivered since 2026-11-11);
+         NULL for older rows and for requests CloudFront could not map to an ASN. -->
+    <changeSet id="025-add-asn" author="analyze-logs">
+        <sql>ALTER TABLE cloudfront_logs ADD COLUMN asn TEXT</sql>
+    </changeSet>
+
+</databaseChangeLog>

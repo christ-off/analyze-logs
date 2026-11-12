@@ -43,8 +43,8 @@ public class LogRepository {
                         uri_stem, status, referer, user_agent,
                         edge_result_type, edge_response_result_type,
                         edge_detailed_result_type, content_type, country,
-                        ua_name, edge_location_iata
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        ua_name, edge_location_iata, asn
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     entries,
                     entries.size(),
@@ -64,6 +64,7 @@ public class LogRepository {
                         stmt.setString(13, e.country());
                         stmt.setString(14, classifier.classify(e.userAgent()));
                         stmt.setString(15, edgeLocationResolver.extractIata(e.edgeLocation()));
+                        stmt.setString(16, e.asn());
                     });
         }
 
