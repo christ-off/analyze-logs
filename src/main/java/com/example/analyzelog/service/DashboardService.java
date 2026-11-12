@@ -60,7 +60,9 @@ public class DashboardService {
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
-    private static final String SQL_SELECT_ASN = "SELECT 'AS' || asn as name,\n";
+    // "AS24940 · Hetzner Online GmbH"; the bare "AS24940" when no name has been downloaded (asn_info).
+    private static final String SQL_SELECT_ASN =
+            "SELECT 'AS' || c.asn || COALESCE(' · ' || i.name, '') as name,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
@@ -365,11 +367,12 @@ public class DashboardService {
 
     // ASNs only exist on rows fetched from logs that carry the `asn` field (NULL before) — see 025-add-asn.
     public List<NameResultTypeCount> topAsnsByResultType(Instant from, Instant to, int limit) {
-        String sql = SQL_SELECT_ASN + RESULT_TYPE_SUMS + "\n" +
-                "FROM cloudfront_logs\n" +
-                "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND asn IS NOT NULL\n" +
-                "GROUP BY asn\n" +
+        String sql = SQL_SELECT_ASN + ResultTypeSql.resultTypeSums("c") + "\n" +
+                "FROM cloudfront_logs c\n" +
+                "LEFT JOIN asn_info i ON i.asn = c.asn\n" +
+                "WHERE c.timestamp BETWEEN ? AND ?\n" +
+                "  AND c.asn IS NOT NULL\n" +
+                "GROUP BY c.asn\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,

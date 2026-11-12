@@ -1,5 +1,6 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.model.AsnInfo;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.CountryResultTypeCount;
@@ -11,6 +12,7 @@ import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.model.SocialNetworkRequest;
+import com.example.analyzelog.repository.AsnInfoRepository;
 import com.example.analyzelog.repository.LogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,9 @@ class DashboardServiceIntegrationTest {
 
     @Autowired
     LogRepository repository;
+
+    @Autowired
+    AsnInfoRepository asnInfoRepository;
 
     @Autowired
     DashboardService dashboardService;
@@ -241,6 +246,32 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, result.get(0).error());
         assertEquals("AS16276", result.get(1).name());
         assertEquals(1, result.get(1).miss());
+    }
+
+    @Test
+    void topAsnsByResultType_labelsWithDownloadedNamesAndFallsBackToTheNumber() {
+        Instant from = Instant.now();
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", null)));
+        repository.saveEntries("logs/asn-names-test.gz", List.of(
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("16276", "Miss")
+        ));
+
+        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        assertEquals("AS24940 · Hetzner Online GmbH", result.get(0).name());
+        assertEquals(2, result.get(0).hit());
+        assertEquals("AS16276", result.get(1).name());
+    }
+
+    @Test
+    void asnInfoRepository_replaceAllReplacesPreviousNames() {
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("1", "A", "First", "US", null)));
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("2", "B", "Second", "FR", "hosting")));
+
+        assertEquals(1, asnInfoRepository.count());
     }
 
     @Test

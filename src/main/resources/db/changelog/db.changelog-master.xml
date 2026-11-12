@@ -30,5 +30,6 @@
     <include file="db/changelog/changes/023-static-ua-add-ibou-search.xml"/>
     <include file="db/changelog/changes/024-static-ua-add-ms-office.xml"/>
     <include file="db/changelog/changes/025-add-asn.xml"/>
+    <include file="db/changelog/changes/026-asn-info.xml"/>
 
 </databaseChangeLog>

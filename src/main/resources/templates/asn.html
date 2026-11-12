@@ -13,8 +13,13 @@
     <th:block th:replace="~{fragments/toolbar :: toolbar('/asn')}"></th:block>
 
     <div class="card mb-4">
-        <div class="card-header fw-semibold">Top ASN
+        <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
+            <span>Top ASN</span>
             <span class="text-muted fw-normal small">(only logs delivered with the asn field, since 2026-11-11)</span>
+            <span class="ms-auto d-flex align-items-center gap-2 fw-normal small">
+                <span id="asnNamesStatus" class="text-muted">Names not loaded? Download them once.</span>
+                <button type="button" id="asnNamesBtn" class="btn btn-sm btn-outline-secondary">Download ASN names</button>
+            </span>
         </div>
         <div class="card-body"><canvas id="chartAsns"></canvas></div>
     </div>
