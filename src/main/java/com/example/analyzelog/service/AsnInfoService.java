@@ -4,16 +4,24 @@ import com.example.analyzelog.model.AsnInfo;
 import com.example.analyzelog.repository.AsnInfoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class AsnInfoService {
 
-    // quantcdn/as-metadata (CC0), updated daily. CSV columns: asn, handle, description, country-code.
-    static final String CSV_URL = "https://raw.githubusercontent.com/quantcdn/asn-info/master/as.csv";
+    // quantcdn/as-metadata (CC0), updated daily. JSON array (~55 MB) of
+    // {"asn": 1, "metadata": {"handle", "description", "countryCode", "category", …}, …}.
+    // The CSV has no category, hence the JSON.
+    static final String JSON_URL = "https://raw.githubusercontent.com/quantcdn/asn-info/master/as.json";
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final RestClient restClient;
     private final AsnInfoRepository repository;
@@ -25,13 +33,10 @@ public class AsnInfoService {
 
     // Downloads and parses first, so a failed download never touches the stored names.
     public int refresh() {
-        byte[] body = restClient.get().uri(CSV_URL).retrieve().body(byte[].class);
-        if (body == null) {
-            throw new IllegalStateException("Empty response from " + CSV_URL);
-        }
-        List<AsnInfo> entries = parseCsv(new String(body, StandardCharsets.UTF_8));
-        if (entries.isEmpty()) {
-            throw new IllegalStateException("No ASN found in " + CSV_URL);
+        List<AsnInfo> entries = restClient.get().uri(JSON_URL)
+                .exchange((request, response) -> parseJson(response.getBody()));
+        if (entries == null || entries.isEmpty()) {
+            throw new IllegalStateException("No ASN found in " + JSON_URL);
         }
         repository.replaceAll(entries);
         return entries.size();
@@ -41,52 +46,30 @@ public class AsnInfoService {
         return repository.count();
     }
 
-    // RFC 4180: quoted fields may hold commas, doubled quotes and line breaks. The header row is skipped.
-    static List<AsnInfo> parseCsv(String csv) {
-        var rows = new ArrayList<List<String>>();
-        var row = new ArrayList<String>();
-        var field = new StringBuilder();
-        boolean quoted = false;
-        for (int i = 0; i < csv.length(); i++) {
-            char c = csv.charAt(i);
-            if (quoted) {
-                if (c != '"') {
-                    field.append(c);
-                } else if (i + 1 < csv.length() && csv.charAt(i + 1) == '"') {
-                    field.append('"');
-                    i++;
-                } else {
-                    quoted = false;
-                }
-            } else if (c == '"') {
-                quoted = true;
-            } else if (c == ',') {
-                row.add(field.toString());
-                field.setLength(0);
-            } else if (c == '\n' || c == '\r') {
-                if (c == '\r' && i + 1 < csv.length() && csv.charAt(i + 1) == '\n') i++;
-                row.add(field.toString());
-                field.setLength(0);
-                rows.add(row);
-                row = new ArrayList<>();
-            } else {
-                field.append(c);
-            }
-        }
-        if (!field.isEmpty() || !row.isEmpty()) {
-            row.add(field.toString());
-            rows.add(row);
-        }
-
+    // Streams the array one element at a time: the whole file never sits in memory as a tree.
+    static List<AsnInfo> parseJson(InputStream json) {
         var entries = new ArrayList<AsnInfo>();
-        for (var r : rows.stream().skip(1).toList()) {
-            if (r.size() < 4 || !r.get(0).chars().allMatch(Character::isDigit) || r.get(0).isEmpty()) continue;
-            entries.add(new AsnInfo(r.get(0), blankToNull(r.get(1)), blankToNull(r.get(2)), blankToNull(r.get(3)), null));
+        try (JsonParser parser = mapper.createParser(json)) {
+            if (parser.nextToken() != JsonToken.START_ARRAY) {
+                throw new IllegalStateException("Expected a JSON array of ASNs");
+            }
+            while (parser.nextToken() == JsonToken.START_OBJECT) {
+                JsonNode node = parser.readValueAsTree();
+                JsonNode meta = node.path("metadata");
+                if (!node.path("asn").canConvertToLong()) continue;
+                entries.add(new AsnInfo(
+                        node.path("asn").asString(),
+                        text(meta, "handle"),
+                        text(meta, "description"),
+                        text(meta, "countryCode"),
+                        text(meta, "category")));
+            }
         }
         return entries;
     }
 
-    private static String blankToNull(String s) {
+    private static String text(JsonNode node, String field) {
+        String s = node.path(field).asString("");
         return s.isBlank() ? null : s;
     }
 }

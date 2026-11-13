@@ -6,8 +6,7 @@
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <!-- ASN names, filled by the "Download ASN names" button on the ASN page from the quantcdn
-         as-metadata CSV (asn, handle, description, country-code). `category` (isp, hosting, business…)
-         is not in the CSV: it stays NULL until a source that provides it is imported. -->
+         as-metadata JSON (handle, description, countryCode, category: isp, hosting, business…). -->
     <changeSet id="026-asn-info" author="analyze-logs">
         <createTable tableName="asn_info">
             <column name="asn"          type="TEXT"><constraints primaryKey="true" nullable="false"/></column>
