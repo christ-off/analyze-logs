@@ -1,7 +1,7 @@
 'use strict';
 
 import { Charts } from '../charts.js';
-import { buildBaseParams } from '../utils.js';
+import { buildBaseParams, detailUrl } from '../utils.js';
 import { initRefresh } from '../refresh.js';
 
 const MAX_LABEL = 40;
@@ -13,7 +13,8 @@ function shorten(name) {
 export function loadAsnCharts() {
     const p = buildBaseParams({});
     Charts.loadChart(`asns?${p}`, data => Charts.horizontalStackedBar('chartAsns',
-        data.map(d => ({ ...d, name: shorten(d.name) })), null));
+        data.map(d => ({ ...d, name: shorten(d.name) })),
+        d => detailUrl('/asn-detail', { asn: d.name.match(/^AS(\d+)/)[1] })));
 }
 
 function initNamesDownload() {

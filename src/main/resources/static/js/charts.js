@@ -179,6 +179,14 @@ Charts.resultTypeDatasets = function (data) {
     ];
 };
 
+// Row under the pointer: a bar segment, or the row's name label on the y axis.
+function rowIndexAt(event, elements, chart) {
+    if (elements.length) return elements[0].index;
+    const y = chart?.scales?.y;
+    if (!y || event.x < y.left || event.x > y.right || event.y < y.top || event.y > y.bottom) return null;
+    return Math.round(y.getValueForPixel(event.y));
+}
+
 Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
@@ -197,12 +205,12 @@ Charts.horizontalStackedBar = function (canvasId, data, urlFn) {
             responsive: true,
             maintainAspectRatio: false,
             ...(urlFn ? {
-                onClick: (event, elements) => {
-                    if (!elements.length) return;
-                    globalThis.location.href = urlFn(data[elements[0].index]);
+                onClick: (event, elements, chart) => {
+                    const index = rowIndexAt(event, elements, chart);
+                    if (index !== null) globalThis.location.href = urlFn(data[index]);
                 },
-                onHover: (event, elements) => {
-                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                onHover: (event, elements, chart) => {
+                    event.native.target.style.cursor = rowIndexAt(event, elements, chart) === null ? 'default' : 'pointer';
                 },
             } : {}),
             scales: {

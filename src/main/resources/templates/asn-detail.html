@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('ASN Detail – ' + ${asnTitle}, ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title th:text="'ASN Detail – ' + ${asnTitle}">ASN Detail</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from" th:content="${from}"/>
+    <meta name="cf-to"   th:content="${to}"/>
+    <meta name="cf-asn"  th:content="${asn}"/>
+</th:block>
+<th:block class="page-content">
+
+    <th:block th:replace="~{fragments/toolbar :: detailToolbar('/asn-detail', 'asn', ${asn}, ${asnTitle})}"></th:block>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold">Requests per User Agent</div>
+                <div class="card-body"><canvas id="chartUaNames"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold">Top URLs</div>
+                <div class="card-body" style="position:relative;height:420px">
+                    <canvas id="chartUriStems"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header fw-semibold">Requests per Day</div>
+                <div class="card-body"><canvas id="chartRequestsPerDay"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/asn-detail.js}"></script>
+</th:block>
+</html>

@@ -59,6 +59,19 @@ public class DashboardController extends DateRangeController {
         return "country-detail";
     }
 
+    @GetMapping("/asn-detail")
+    public String asnDetail(
+            @RequestParam String asn,
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Model model) {
+        model.addAttribute("asn", asn);
+        model.addAttribute("asnTitle", dashboardService.asnTitle(asn));
+        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        return "asn-detail";
+    }
+
     @GetMapping("/referer-detail")
     public String refererDetail(
             @RequestParam String referer,

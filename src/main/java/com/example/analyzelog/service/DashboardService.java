@@ -51,6 +51,7 @@ public class DashboardService {
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
     private static final String UA_NAME_FILTER = "ua_name = ?";
+    private static final String ASN_FILTER = "asn = ?";
     private static final String COL_TIMESTAMP = "timestamp";
     private static final String COL_CLIENT_IP = "client_ip";
     private static final String COL_URI_STEM = "uri_stem";
@@ -377,6 +378,34 @@ public class DashboardService {
                 LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+    }
+
+    // "AS24940 - Hetzner Online GmbH - hosting"; parts without a downloaded asn_info row are left out.
+    public String asnTitle(String asn) {
+        var parts = new ArrayList<String>();
+        parts.add("AS" + asn);
+        jdbc.query("SELECT name, category FROM asn_info WHERE asn = ?", rs -> {
+            for (String col : List.of("name", "category")) {
+                String v = rs.getString(col);
+                if (v != null && !v.isBlank()) {
+                    parts.add(v);
+                }
+            }
+        }, asn);
+        return String.join(" - ", parts);
+    }
+
+    public List<NameResultTypeCount> asnTopUserAgentsByResultType(String asn, Instant from, Instant to, int limit) {
+        return uaResultTypesByFilter(ASN_FILTER, List.of(asn), from, to, limit);
+    }
+
+    public List<NameResultTypeCount> asnUrlsByResultType(String asn, Instant from, Instant to, int limit) {
+        return urlsByResultType(ASN_FILTER, List.of(TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), asn), limit);
+    }
+
+    public List<DailyResultTypeCount> asnRequestsPerDay(String asn, Instant from, Instant to) {
+        return queryDailyByResultType(SQL_DAILY_SELECT + "  AND asn = ?\n" + SQL_DAILY_GROUP_ORDER,
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), asn);
     }
 
     public List<NameResultTypeCount> topUserAgentsByResultType(Instant from, Instant to, int limit) {

@@ -387,3 +387,31 @@ describe('Charts.horizontalStackedBar — onClick / onHover', () => {
         expect(target.style.cursor).toBe('default');
     });
 });
+describe('Charts.horizontalStackedBar — label click', () => {
+    it('navigates when the y-axis name label is clicked', () => {
+        document.body.innerHTML = '<canvas id="labelBar"></canvas>';
+        const locationMock = { href: '' };
+        vi.stubGlobal('location', locationMock);
+        const data = [{ name: 'a' }, { name: 'b' }];
+        Charts.horizontalStackedBar('labelBar', data, item => `/d?n=${item.name}`);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const chart = { scales: { y: { left: 0, right: 100, top: 0, bottom: 64, getValueForPixel: () => 1.2 } } };
+        config.options.onClick({ x: 50, y: 40 }, [], chart);
+
+        expect(locationMock.href).toBe('/d?n=b');
+    });
+
+    it('ignores clicks outside the label column', () => {
+        document.body.innerHTML = '<canvas id="labelBar2"></canvas>';
+        const locationMock = { href: '' };
+        vi.stubGlobal('location', locationMock);
+        Charts.horizontalStackedBar('labelBar2', [{ name: 'a' }], item => `/d?n=${item.name}`);
+
+        const [, config] = globalThis.Chart.mock.calls[0];
+        const chart = { scales: { y: { left: 0, right: 100, top: 0, bottom: 64, getValueForPixel: () => 0 } } };
+        config.options.onClick({ x: 300, y: 10 }, [], chart);
+
+        expect(locationMock.href).toBe('');
+    });
+});
