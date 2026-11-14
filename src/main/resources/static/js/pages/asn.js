@@ -13,7 +13,7 @@ function shorten(name) {
 export function loadAsnCharts() {
     const p = buildBaseParams({});
     Charts.loadChart(`asns?${p}`, data => Charts.horizontalStackedBar('chartAsns',
-        data.map(d => ({ ...d, name: shorten(d.name) })),
+        data.map(d => ({ ...d, name: `${shorten(d.name)} · ${d.humanPercentage.toFixed(1)}% human` })),
         d => detailUrl('/asn-detail', { asn: d.name.match(/^AS(\d+)/)[1] })));
 }
 

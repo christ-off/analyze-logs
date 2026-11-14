@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.AsnResultTypeCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.CountryStats;
@@ -61,7 +62,7 @@ public class ApiController {
     }
 
     @GetMapping("/asns")
-    public List<NameResultTypeCount> asns(@RequestParam String from, @RequestParam String to) {
+    public List<AsnResultTypeCount> asns(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.topAsnsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
     }

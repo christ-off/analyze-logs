@@ -1,6 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
+import com.example.analyzelog.model.AsnResultTypeCount;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -109,14 +110,14 @@ class ApiControllerTest {
     @Test
     void asnsReturnsJson() {
         when(dashboardService.topAsnsByResultType(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new NameResultTypeCount("AS24940", 40, 5, 10, 2)));
+                .thenReturn(List.of(new AsnResultTypeCount("AS24940", 40, 5, 10, 2, 9)));
 
         assertThat(mvc.get().uri("/api/asns")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].name").isEqualTo("AS24940");
+                .extractingPath("$[0].humanPercentage").isEqualTo(20.0);
     }
 
     @Test

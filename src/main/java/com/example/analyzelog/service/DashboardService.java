@@ -3,6 +3,7 @@ package com.example.analyzelog.service;
 import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
+import com.example.analyzelog.model.AsnResultTypeCount;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryClientCounts;
@@ -10,6 +11,7 @@ import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.AsnResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.IpRequest;
@@ -367,17 +369,31 @@ public class DashboardService {
     }
 
     // ASNs only exist on rows fetched from logs that carry the `asn` field (NULL before) — see 025-add-asn.
-    public List<NameResultTypeCount> topAsnsByResultType(Instant from, Instant to, int limit) {
-        String sql = SQL_SELECT_ASN + ResultTypeSql.resultTypeSums("c") + "\n" +
+    public List<AsnResultTypeCount> topAsnsByResultType(Instant from, Instant to, int limit) {
+        String sql = """
+                WITH pair_class AS (
+                    SELECT client_ip, user_agent,
+                        %s AS category
+                    FROM cloudfront_logs
+                    WHERE timestamp BETWEEN ? AND ?
+                    GROUP BY client_ip, user_agent
+                )
+                """.formatted(categoryCaseExpr) +
+                SQL_SELECT_ASN + ResultTypeSql.resultTypeSums("c") + ",\n" +
+                "       SUM(CASE WHEN pc.category = 'Probable human' AND c.edge_response_result_type IN (" + HIT_OR_MISS_TYPE_LIST + ") THEN 1 ELSE 0 END) AS human\n" +
                 "FROM cloudfront_logs c\n" +
+                "JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent\n" +
                 "LEFT JOIN asn_info i ON i.asn = c.asn\n" +
                 "WHERE c.timestamp BETWEEN ? AND ?\n" +
                 "  AND c.asn IS NOT NULL\n" +
                 "GROUP BY c.asn\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
-        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
-                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("name"),
+                rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
+                rs.getLong("human")), fromSql, toSql, fromSql, toSql, limit);
     }
 
     // "AS24940 - Hetzner Online GmbH - hosting"; parts without a downloaded asn_info row are left out.
@@ -447,8 +463,8 @@ public class DashboardService {
                 )
                 SELECT c.country AS code,
                        %s,
-                       SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS human,
-                       SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' THEN 1 ELSE 0 END) AS non_webp,
+                       SUM(CASE WHEN pc.category = 'Probable human' AND c.uri_stem NOT LIKE '%%.webp' AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS human,
+                       SUM(CASE WHEN c.uri_stem NOT LIKE '%%.webp' AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS non_webp,
                        SUM(CASE WHEN c.ua_name = 'Mastodon' AND c.uri_stem <> '/' AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS mastodon,
                        SUM(CASE WHEN c.ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = '%s') AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS search_bots,
                        SUM(CASE WHEN c.uri_stem IN ('/feed.xml', '/rss.xml') AND c.edge_response_result_type IN (%s) THEN 1 ELSE 0 END) AS feeds
@@ -458,7 +474,8 @@ public class DashboardService {
                   AND c.country IS NOT NULL
                 GROUP BY c.country
                 ORDER BY (hit + miss + function + error) DESC
-                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), HIT_OR_MISS_TYPE_LIST,
+                """.formatted(categoryCaseExpr, ResultTypeSql.resultTypeSums("c"), HIT_OR_MISS_TYPE_LIST, HIT_OR_MISS_TYPE_LIST,
+                        HIT_OR_MISS_TYPE_LIST,
                         SEARCH_BOTS_GROUP, HIT_OR_MISS_TYPE_LIST, HIT_OR_MISS_TYPE_LIST);
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
@@ -1007,16 +1024,17 @@ public class DashboardService {
     }
 
     private static HumanTrafficStats toHumanTrafficStats(List<NameResultTypeCount> categories) {
-        long total = categories.stream().mapToLong(DashboardService::totalCount).sum();
+        long total = categories.stream().mapToLong(DashboardService::servedCount).sum();
         long human = categories.stream()
                 .filter(c -> "Probable human".equals(c.name()))
-                .mapToLong(DashboardService::totalCount)
+                .mapToLong(DashboardService::servedCount)
                 .sum();
         return new HumanTrafficStats(human, total);
     }
 
-    private static long totalCount(NameResultTypeCount c) {
-        return c.hit() + c.miss() + c.function() + c.error();
+    // Hit + Miss only: blocked (function/error) requests say nothing about human vs bot.
+    private static long servedCount(NameResultTypeCount c) {
+        return c.hit() + c.miss();
     }
 
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {

@@ -221,7 +221,7 @@ class DashboardServiceIntegrationTest {
         assertEquals(1, ie.mastodon());
         assertEquals(3, ie.hit());
         assertEquals(3, ie.error());
-        assertEquals(6, ie.nonWebpRequests());
+        assertEquals(3, ie.nonWebpRequests()); // served (Hit/Miss) only
         assertEquals(1, ie.searchBots());
         assertEquals(1, ie.feeds());
         assertTrue(ie.humanPercentage() >= 0 && ie.humanPercentage() <= 100);
