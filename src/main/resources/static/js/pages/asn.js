@@ -1,20 +1,36 @@
 'use strict';
 
-import { Charts } from '../charts.js';
-import { buildBaseParams, detailUrl } from '../utils.js';
+import { buildBaseParams, detailUrl, escapeHtml, stackedBar } from '../utils.js';
 import { initRefresh } from '../refresh.js';
 
-const MAX_LABEL = 40;
+const COLS = 7;
 
-function shorten(name) {
-    return name.length > MAX_LABEL ? name.slice(0, MAX_LABEL - 1) + '…' : name;
+function message(text) {
+    document.getElementById('asnTable').innerHTML =
+        `<tr><td colspan="${COLS}" class="text-center text-muted py-3">${text}</td></tr>`;
 }
 
 export function loadAsnCharts() {
-    const p = buildBaseParams({});
-    Charts.loadChart(`asns?${p}`, data => Charts.horizontalStackedBar('chartAsns',
-        data.map(d => ({ ...d, name: `${shorten(d.name)} · ${d.humanPercentage.toFixed(1)}% human` })),
-        d => detailUrl('/asn-detail', { asn: d.name.match(/^AS(\d+)/)[1] })));
+    fetch('/api/asns?' + buildBaseParams({}))
+        .then(r => r.json())
+        .then(data => {
+            if (data.length === 0) {
+                message('No requests found for the selected date range.');
+                return;
+            }
+            const maxTotal = Math.max(...data.map(r => r.total));
+            document.getElementById('asnTable').innerHTML = data.map(a => `<tr>
+        <td><a href="${detailUrl('/asn-detail', { asn: a.asn })}">AS${escapeHtml(a.asn)}</a></td>
+        <td>${escapeHtml(a.name ?? '')}</td>
+        <td>${escapeHtml(a.category ?? '')}</td>
+        <td class="text-end">${a.humanPercentage.toFixed(1)}%</td>
+        <td class="text-end">${a.feeds.toLocaleString()}</td>
+        <td class="text-end">${a.total.toLocaleString()}</td>
+        <td class="align-middle px-2">${stackedBar(a, maxTotal)}</td>
+    </tr>`).join('');
+            document.getElementById('asnLegend')?.style.removeProperty('display');
+        })
+        .catch(() => message('Failed to load data.'));
 }
 
 function initNamesDownload() {

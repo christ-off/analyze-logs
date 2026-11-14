@@ -21,7 +21,25 @@
                 <button type="button" id="asnNamesBtn" class="btn btn-sm btn-outline-secondary">Download ASN names</button>
             </span>
         </div>
-        <div class="card-body"><canvas id="chartAsns"></canvas></div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ASN</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th class="text-end">% human</th>
+                        <th class="text-end">Feed / RSS</th>
+                        <th class="text-end">Requests</th>
+                        <th style="width:35%">Hit / Miss / Filtered / Error</th>
+                    </tr>
+                </thead>
+                <tbody id="asnTable">
+                    <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/result-legend :: legend('asnLegend')}"></div>
     </div>
 
 </th:block>

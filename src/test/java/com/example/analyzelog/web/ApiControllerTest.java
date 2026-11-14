@@ -110,7 +110,7 @@ class ApiControllerTest {
     @Test
     void asnsReturnsJson() {
         when(dashboardService.topAsnsByResultType(any(Instant.class), any(Instant.class), anyInt()))
-                .thenReturn(List.of(new AsnResultTypeCount("AS24940", 40, 5, 10, 2, 9)));
+                .thenReturn(List.of(new AsnResultTypeCount("24940", "Hetzner", "hosting", 40, 5, 10, 2, 9, 3)));
 
         assertThat(mvc.get().uri("/api/asns")
                 .param("from", "2026-01-01").param("to", "2026-01-31")

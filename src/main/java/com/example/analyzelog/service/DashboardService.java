@@ -63,9 +63,7 @@ public class DashboardService {
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
-    // "AS24940 · Hetzner Online GmbH"; the bare "AS24940" when no name has been downloaded (asn_info).
-    private static final String SQL_SELECT_ASN =
-            "SELECT 'AS' || c.asn || COALESCE(' · ' || i.name, '') as name,\n";
+    private static final String SQL_SELECT_ASN = "SELECT c.asn AS asn, i.name AS name, i.category AS category,\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
@@ -380,7 +378,8 @@ public class DashboardService {
                 )
                 """.formatted(categoryCaseExpr) +
                 SQL_SELECT_ASN + ResultTypeSql.resultTypeSums("c") + ",\n" +
-                "       SUM(CASE WHEN pc.category = 'Probable human' AND c.edge_response_result_type IN (" + HIT_OR_MISS_TYPE_LIST + ") THEN 1 ELSE 0 END) AS human\n" +
+                "       SUM(CASE WHEN pc.category = 'Probable human' AND c.edge_response_result_type IN (" + HIT_OR_MISS_TYPE_LIST + ") THEN 1 ELSE 0 END) AS human,\n" +
+                "       SUM(CASE WHEN c.uri_stem IN (" + FEED_URI_LIST + ") AND c.edge_response_result_type IN (" + HIT_OR_MISS_TYPE_LIST + ") THEN 1 ELSE 0 END) AS feeds\n" +
                 "FROM cloudfront_logs c\n" +
                 "JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent\n" +
                 "LEFT JOIN asn_info i ON i.asn = c.asn\n" +
@@ -391,9 +390,10 @@ public class DashboardService {
                 LIMIT_PARAM;
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
-        return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("name"),
+        return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("asn"),
+                rs.getString("name"), rs.getString("category"),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                rs.getLong("human")), fromSql, toSql, fromSql, toSql, limit);
+                rs.getLong("human"), rs.getLong("feeds")), fromSql, toSql, fromSql, toSql, limit);
     }
 
     // "AS24940 - Hetzner Online GmbH - hosting"; parts without a downloaded asn_info row are left out.

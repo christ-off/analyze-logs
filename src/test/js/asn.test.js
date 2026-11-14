@@ -13,7 +13,7 @@ function setupPage() {
         <form id="refreshForm"><input type="hidden" name="_csrf" value="tok"></form>
         <span id="asnNamesStatus"></span>
         <button id="asnNamesBtn"></button>
-        <canvas id="chartAsns"></canvas>
+        <table><tbody id="asnTable"></tbody></table>
     `;
 }
 
@@ -32,6 +32,19 @@ describe('asn page', () => {
 
         const urls = fetchMock.mock.calls.map(c => c[0]);
         expect(urls.some(u => u.startsWith('/api/asns?from='))).toBe(true);
+    });
+
+    it('renders one row per ASN with name, category, % human and feed requests', async () => {
+        const rows = [{ asn: '24940', name: 'Hetzner', category: 'hosting', hit: 8, miss: 2, function: 0, error: 0,
+            total: 10, humanPercentage: 20, feeds: 3 }];
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(rows) }));
+
+        await import('../../main/resources/static/js/pages/asn.js');
+        await flushPromises();
+
+        const cells = [...document.querySelectorAll('#asnTable td')].map(td => td.textContent.trim());
+        expect(cells.slice(0, 6)).toEqual(['AS24940', 'Hetzner', 'hosting', '20.0%', '3', '10']);
+        expect(document.querySelector('#asnTable a').getAttribute('href')).toContain('asn=24940');
     });
 
     it('downloads the ASN names with the CSRF token and reports the count', async () => {

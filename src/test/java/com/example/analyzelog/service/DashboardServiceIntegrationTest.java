@@ -241,17 +241,17 @@ class DashboardServiceIntegrationTest {
         var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
 
         assertEquals(2, result.size());
-        assertEquals("AS24940", result.get(0).name());
+        assertEquals("24940", result.get(0).asn());
         assertEquals(2, result.get(0).hit());
         assertEquals(1, result.get(0).error());
-        assertEquals("AS16276", result.get(1).name());
+        assertEquals("16276", result.get(1).asn());
         assertEquals(1, result.get(1).miss());
     }
 
     @Test
     void topAsnsByResultType_labelsWithDownloadedNamesAndFallsBackToTheNumber() {
         Instant from = Instant.now();
-        asnInfoRepository.replaceAll(List.of(new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", null)));
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting")));
         repository.saveEntries("logs/asn-names-test.gz", List.of(
                 entryWithAsnAndResultType("24940", "Hit"),
                 entryWithAsnAndResultType("24940", "Hit"),
@@ -261,9 +261,11 @@ class DashboardServiceIntegrationTest {
         var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
 
         assertEquals(2, result.size());
-        assertEquals("AS24940 · Hetzner Online GmbH", result.get(0).name());
+        assertEquals("Hetzner Online GmbH", result.get(0).name());
+        assertEquals("hosting", result.get(0).category());
         assertEquals(2, result.get(0).hit());
-        assertEquals("AS16276", result.get(1).name());
+        assertEquals("16276", result.get(1).asn());
+        assertNull(result.get(1).name());
     }
 
     @Test
