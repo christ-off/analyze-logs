@@ -36,6 +36,21 @@ app:
   robots-url: "https://post-tenebras-lire.net/robots.txt"
   firefox-esr-version: 115
 
+# Hosting ASNs (quantcdn category) are blocked unless allowed; forced ASNs are blocked whatever their category.
+asn-blocklist:
+  allowed:
+    - 8075    # Microsoft (Bingbot)
+    - 714     # Apple (Applebot, Private Relay)
+    - 199064  # Qwant
+    - 60653   # Feedly
+    - 13335   # Cloudflare
+    - 63949   # Akamai
+    - 62044   # Zscaler
+    - 6939    # Hurricane Electric
+  forced:
+    - 4134    # China Telecom (tagged isp)
+    - 4837    # China Unicom (tagged isp)
+
 referer-filter:
   self-referers: []
 
