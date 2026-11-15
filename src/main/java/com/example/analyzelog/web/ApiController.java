@@ -35,6 +35,7 @@ public class ApiController {
 
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
     private static final int MAIN_PAGE_TOP_LIMIT = 20;
+    private static final int ASN_TOP_LIMIT = MAIN_PAGE_TOP_LIMIT * 2;
 
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
@@ -64,7 +65,7 @@ public class ApiController {
     @GetMapping("/asns")
     public List<AsnResultTypeCount> asns(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
-        return dashboardService.topAsnsByResultType(range.from(), range.to(), MAIN_PAGE_TOP_LIMIT);
+        return dashboardService.topAsnsByResultType(range.from(), range.to(), ASN_TOP_LIMIT);
     }
 
     @GetMapping("/countries")
