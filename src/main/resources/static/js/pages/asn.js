@@ -33,29 +33,6 @@ export function loadAsnCharts() {
         .catch(() => message('Failed to load data.'));
 }
 
-function loadBlocklist() {
-    const params = buildBaseParams({});
-    document.getElementById('asnKvsExport').href = '/api/asn-blocklist/kvs.json?' + params;
-    fetch('/api/asn-blocklist?' + params)
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('asnBlocklistTable').innerHTML = data.length === 0
-                ? '<tr><td colspan="6" class="text-center text-muted py-3">No candidate in the selected date range.</td></tr>'
-                : data.map(a => `<tr>
-        <td><a href="${detailUrl('/asn-detail', { asn: a.asn })}">AS${escapeHtml(a.asn)}</a></td>
-        <td>${escapeHtml(a.name ?? '')}</td>
-        <td>${a.blocked ? '<span class="badge text-bg-danger">block</span>' : '<span class="badge text-bg-success">allow</span>'}</td>
-        <td>${escapeHtml(a.reason)}</td>
-        <td class="text-end">${a.total.toLocaleString()}</td>
-        <td class="text-end">${a.humanRequests.toLocaleString()}</td>
-    </tr>`).join('');
-        })
-        .catch(() => {
-            document.getElementById('asnBlocklistTable').innerHTML =
-                '<tr><td colspan="6" class="text-center text-muted py-3">Failed to load data.</td></tr>';
-        });
-}
-
 function initNamesDownload() {
     const btn = document.getElementById('asnNamesBtn');
     const status = document.getElementById('asnNamesStatus');
@@ -72,7 +49,6 @@ function initNamesDownload() {
                 if (ok) {
                     status.textContent = `${body.count.toLocaleString()} ASN names loaded`;
                     loadAsnCharts();
-                    loadBlocklist();
                 } else {
                     status.textContent = body.error ?? 'Download failed';
                 }
@@ -83,6 +59,5 @@ function initNamesDownload() {
 }
 
 loadAsnCharts();
-loadBlocklist();
 initNamesDownload();
-initRefresh(() => { loadAsnCharts(); loadBlocklist(); });
+initRefresh(loadAsnCharts);
