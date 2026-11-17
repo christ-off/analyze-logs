@@ -238,7 +238,7 @@ class DashboardServiceIntegrationTest {
                 entryWithAsnAndResultType(null, "Hit")
         ));
 
-        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.size());
         assertEquals("24940", result.get(0).asn());
@@ -258,7 +258,7 @@ class DashboardServiceIntegrationTest {
                 entryWithAsnAndResultType("16276", "Miss")
         ));
 
-        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5), 10);
+        var result = dashboardService.topAsnsByResultType(from, Instant.now().plusSeconds(5));
 
         assertEquals(2, result.size());
         assertEquals("Hetzner Online GmbH", result.get(0).name());

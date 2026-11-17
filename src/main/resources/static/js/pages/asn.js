@@ -10,16 +10,32 @@ function message(text) {
         `<tr><td colspan="${COLS}" class="text-center text-muted py-3">${text}</td></tr>`;
 }
 
-export function loadAsnCharts() {
-    fetch('/api/asns?' + buildBaseParams({}))
-        .then(r => r.json())
-        .then(data => {
-            if (data.length === 0) {
-                message('No requests found for the selected date range.');
-                return;
-            }
-            const maxTotal = Math.max(...data.map(r => r.total));
-            document.getElementById('asnTable').innerHTML = data.map(a => `<tr>
+const NO_CATEGORY = '(none)';
+let rows = [];
+
+function categoryOf(a) {
+    return a.category || NO_CATEGORY;
+}
+
+function fillCategories() {
+    const select = document.getElementById('asnCategory');
+    if (!select) return;
+    const selected = select.value;
+    const categories = [...new Set(rows.map(categoryOf))].sort();
+    select.innerHTML = '<option value="">All</option>' +
+        categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    select.value = categories.includes(selected) ? selected : '';
+}
+
+function render() {
+    const category = document.getElementById('asnCategory')?.value ?? '';
+    const data = category ? rows.filter(a => categoryOf(a) === category) : rows;
+    if (data.length === 0) {
+        message('No requests found for the selected date range.');
+        return;
+    }
+    const maxTotal = Math.max(...data.map(r => r.total));
+    document.getElementById('asnTable').innerHTML = data.map(a => `<tr>
         <td><a href="${detailUrl('/asn-detail', { asn: a.asn })}">AS${escapeHtml(a.asn)}</a></td>
         <td>${escapeHtml(a.name ?? '')}</td>
         <td>${escapeHtml(a.category ?? '')}</td>
@@ -28,10 +44,21 @@ export function loadAsnCharts() {
         <td class="text-end">${a.total.toLocaleString()}</td>
         <td class="align-middle px-2">${stackedBar(a, maxTotal)}</td>
     </tr>`).join('');
-            document.getElementById('asnLegend')?.style.removeProperty('display');
+    document.getElementById('asnLegend')?.style.removeProperty('display');
+}
+
+export function loadAsnCharts() {
+    fetch('/api/asns?' + buildBaseParams({}))
+        .then(r => r.json())
+        .then(data => {
+            rows = data;
+            fillCategories();
+            render();
         })
         .catch(() => message('Failed to load data.'));
 }
+
+document.getElementById('asnCategory')?.addEventListener('change', render);
 
 function initNamesDownload() {
     const btn = document.getElementById('asnNamesBtn');

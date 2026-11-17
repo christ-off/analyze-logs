@@ -109,7 +109,7 @@ class ApiControllerTest {
 
     @Test
     void asnsReturnsJson() {
-        when(dashboardService.topAsnsByResultType(any(Instant.class), any(Instant.class), anyInt()))
+        when(dashboardService.topAsnsByResultType(any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(new AsnResultTypeCount("24940", "Hetzner", "hosting", 40, 5, 10, 2, 9, 3)));
 
         assertThat(mvc.get().uri("/api/asns")

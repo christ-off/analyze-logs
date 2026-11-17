@@ -11,6 +11,7 @@ function setupPage() {
     `;
     document.body.innerHTML = `
         <form id="refreshForm"><input type="hidden" name="_csrf" value="tok"></form>
+        <select id="asnCategory"><option value="">All</option></select>
         <span id="asnNamesStatus"></span>
         <button id="asnNamesBtn"></button>
         <table><tbody id="asnTable"></tbody></table>
@@ -78,5 +79,24 @@ describe('asn page', () => {
         await flushPromises();
 
         expect(document.getElementById('asnNamesStatus').textContent).toBe('Download failed: boom');
+    });
+
+    it('filters the rows by category', async () => {
+        const row = (asn, category) => ({ asn, name: 'n' + asn, category, hit: 1, miss: 0, function: 0, error: 0,
+            total: 1, humanPercentage: 0, feeds: 0 });
+        const rows = [row('1', 'hosting'), row('2', 'isp'), row('3', null)];
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(rows) }));
+
+        await import('../../main/resources/static/js/pages/asn.js');
+        await flushPromises();
+
+        const select = document.getElementById('asnCategory');
+        expect([...select.options].map(o => o.value)).toEqual(['', '(none)', 'hosting', 'isp']);
+        expect(document.querySelectorAll('#asnTable tr')).toHaveLength(3);
+
+        select.value = 'hosting';
+        select.dispatchEvent(new Event('change'));
+        const links = [...document.querySelectorAll('#asnTable a')].map(a => a.textContent);
+        expect(links).toEqual(['AS1']);
     });
 });

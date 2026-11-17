@@ -367,7 +367,7 @@ public class DashboardService {
     }
 
     // ASNs only exist on rows fetched from logs that carry the `asn` field (NULL before) — see 025-add-asn.
-    public List<AsnResultTypeCount> topAsnsByResultType(Instant from, Instant to, int limit) {
+    public List<AsnResultTypeCount> topAsnsByResultType(Instant from, Instant to) {
         String sql = """
                 WITH pair_class AS (
                     SELECT client_ip, user_agent,
@@ -386,14 +386,13 @@ public class DashboardService {
                 "WHERE c.timestamp BETWEEN ? AND ?\n" +
                 "  AND c.asn IS NOT NULL\n" +
                 "GROUP BY c.asn\n" +
-                ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                LIMIT_PARAM;
+                ResultTypeSql.ORDER_BY_TOTAL_DESC;
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("asn"),
                 rs.getString("name"), rs.getString("category"),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                rs.getLong("human"), rs.getLong("feeds")), fromSql, toSql, fromSql, toSql, limit);
+                rs.getLong("human"), rs.getLong("feeds")), fromSql, toSql, fromSql, toSql);
     }
 
     // "AS24940 - Hetzner Online GmbH - hosting"; parts without a downloaded asn_info row are left out.
