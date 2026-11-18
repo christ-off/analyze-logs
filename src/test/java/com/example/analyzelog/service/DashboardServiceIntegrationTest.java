@@ -591,6 +591,24 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void asnHumanTrafficStats_countsHumanPairsOfThatAsnOnly() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/asn-human-traffic-test.gz", List.of(
+                entryWithAsnUaAndUri("24940", "1.2.3.4", UA_CHROME_WINDOWS, "/"),               // human evidence (page hit)
+                entryWithAsnUaAndUri("24940", "1.2.3.4", UA_CHROME_WINDOWS, "/css/main.css"),   // human evidence (stylesheet)
+                entryWithAsnUaAndUri("24940", "1.2.3.4", UA_CHROME_WINDOWS, SVG_HUMAN_BADGE),   // human evidence (badge svg)
+                entryWithAsnUaAndUri("24940", "5.6.7.8", "TestAgent/1.0", "/index.html"),       // no evidence: not human
+                entryWithAsnUaAndUri("16276", "9.9.9.9", UA_CHROME_WINDOWS, "/")                // other ASN (another IP)
+        ));
+
+        HumanTrafficStats stats = dashboardService.asnHumanTrafficStats(
+                "24940", from, Instant.now().plusSeconds(5));
+
+        assertEquals(4, stats.totalRequests());
+        assertEquals(3, stats.humanRequests());
+    }
+
+    @Test
     void topUrlsByResultType_aggregatesPhpAndWordPress() {
         Instant from = Instant.now();
         repository.saveEntries("logs/urls-split-grouping-test.gz", List.of(
@@ -841,6 +859,16 @@ class DashboardServiceIntegrationTest {
         assertTrue(result.stream().anyMatch(r -> "Env/credential file probing".equals(r.name())));
         assertEquals(2, result.stream().filter(r -> "PHP/WordPress".equals(r.name())).count(),
                 "PHP/WordPress hits on both days");
+    }
+
+    private CloudFrontLogEntry entryWithAsnUaAndUri(String asn, String clientIp, String ua, String uriStem) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", clientIp, "GET",
+                uriStem, 200,
+                null, ua,
+                "Hit", "Hit", "Hit",
+                null, "US", asn
+        );
     }
 
     private CloudFrontLogEntry entryWithAsnAndResultType(String asn, String resultType) {

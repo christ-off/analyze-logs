@@ -68,7 +68,9 @@ public class DashboardController extends DateRangeController {
             Model model) {
         model.addAttribute("asn", asn);
         model.addAttribute("asnTitle", dashboardService.asnTitle(asn));
-        addDateAttributes(model, resolveRange(range, from, to), resolveActiveRange(range, from, to));
+        var dateRange = resolveRange(range, from, to);
+        addDateAttributes(model, dateRange, resolveActiveRange(range, from, to));
+        model.addAttribute("humanTrafficStats", dashboardService.asnHumanTrafficStats(asn, dateRange.from(), dateRange.to()));
         return "asn-detail";
     }
 

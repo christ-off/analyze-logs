@@ -35,6 +35,8 @@ class DashboardControllerTest {
     void stubHumanTrafficStats() {
         when(dashboardService.countryHumanTrafficStats(any(), any(Instant.class), any(Instant.class)))
                 .thenReturn(new HumanTrafficStats(0, 0));
+        when(dashboardService.asnHumanTrafficStats(any(), any(Instant.class), any(Instant.class)))
+                .thenReturn(new HumanTrafficStats(3, 4));
         when(dashboardService.countryClientCounts(any(), any(Instant.class), any(Instant.class)))
                 .thenReturn(new CountryClientCounts(0, 0, 0));
     }
@@ -114,7 +116,8 @@ class DashboardControllerTest {
                 .hasStatusOk()
                 .hasViewName("asn-detail")
                 .model().containsEntry("asnTitle", "AS24940 - Hetzner - hosting")
-                         .containsEntry("activeRange", "7d");
+                         .containsEntry("activeRange", "7d")
+                         .containsEntry("humanTrafficStats", new HumanTrafficStats(3, 4));
     }
 
     @Test

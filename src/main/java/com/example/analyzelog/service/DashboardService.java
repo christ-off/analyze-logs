@@ -1006,6 +1006,13 @@ public class DashboardService {
         return toHumanTrafficStats(categories);
     }
 
+    // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one ASN.
+    public HumanTrafficStats asnHumanTrafficStats(String asn, Instant from, Instant to) {
+        List<NameResultTypeCount> categories =
+                trafficCategories(ASN_FILTER, List.of(asn), from, to, true);
+        return toHumanTrafficStats(categories);
+    }
+
     // Same Mastodon (non-'/' only) / search-bots / feeds definitions as countryStats() (served requests only), for one country.
     public CountryClientCounts countryClientCounts(String country, Instant from, Instant to) {
         String sql = """
