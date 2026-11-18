@@ -46,6 +46,26 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 Open `http://localhost:8080`.
 
+### Tests
+
+`mvn verify` runs fully offline. `RobotsServiceTest` serves `robots.txt` from
+`src/test/resources/robots-snapshot.txt` instead of fetching the live site, so CI never depends on
+the blog being up, reachable or un-blocked. Refresh the snapshot now and then:
+
+```bash
+curl -o src/test/resources/robots-snapshot.txt https://post-tenebras-lire.net/robots.txt
+```
+
+Keep provenance in a comment at the top if you want it — comment lines are ignored by the parser:
+`# Snapshot: 2026-11-18, fetched from post-tenebras-lire.net/robots.txt`.
+
+The tests assert structure (rules stored, stale rows cleared, `refreshed_at` set, the configured
+`app.robots-url` requested) rather than this exact content, so a stale snapshot never fails the
+build — it just stops proving `parseRules()` against production. This snapshot yields **82 rules
+across 37 user agents**. If a future refresh writes a very different number, check that the live
+file still separates its groups with blank lines: the parser splits blocks on blank lines, so a
+missing one merges two groups and every agent in them inherits every `Disallow`.
+
 ## Configuration
 
 ### `application.yml` (committed — safe defaults)

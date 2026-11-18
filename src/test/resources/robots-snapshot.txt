@@ -1,0 +1,70 @@
+Sitemap: https://post-tenebras-lire.net/sitemap.xml
+
+# Machine-Readable Training Preference Signal
+User-Agent: __usage_ai-training
+Disallow: /
+
+# Allowed search engines. Assets (images) and search index stay excluded.
+# Googlebot-Image/News/Video are denied separately below.
+User-agent: Bingbot
+User-agent: BingPreview
+User-agent: DuckDuckBot
+User-agent: Qwantbot
+User-agent: IbouBot
+User-agent: ibou-search
+User-agent: MojeekBot
+User-agent: Kagibot
+User-agent: Bravebot
+User-agent: Google-InspectionTool
+User-agent: Applebot
+User-agent: Owler
+User-agent: Lycos
+User-agent: SeekportBot
+User-agent: SeznamBot
+Allow: /
+Disallow: /assets
+Disallow: /pagefind
+Disallow: /recherche
+Disallow: /page/
+
+# Disallow Exa : "The world's data for AI agents"
+User-agent: ExaSearchBot
+Disallow: /
+
+# Disallow Baidu
+User-agent: Baiduspider
+User-agent: Baiduspider-render
+User-agent: Baiduspider-image
+User-agent: Baiduspider-video
+User-agent: Baiduspider-news
+Disallow: /
+
+# Disallow Google
+User-agent: Googlebot
+User-agent: Googlebot-Image
+User-agent: Googlebot-Video
+User-agent: Googlebot-News
+Disallow: /
+
+# Deny All Facebook
+User-agent: FacebookBot
+User-agent: meta-webindexer
+User-agent: facebookexternalhit
+User-agent: meta-externalads
+User-agent: meta-externalagent
+User-agent: meta-externalfetcher
+Disallow: /
+
+# Disallow Amazon
+User-agent: Amazonbot
+User-agent: Amzn-SearchBot
+User-agent: Amzn-User
+Disallow: /
+
+# This bot tries to "check user rights on images"
+User-agent: tphotobot
+Disallow: /
+
+# Everyone else is blocked
+User-agent: *
+Disallow: /

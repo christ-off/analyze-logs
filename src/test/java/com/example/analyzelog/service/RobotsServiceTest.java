@@ -1,5 +1,6 @@
 package com.example.analyzelog.service;
 
+import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.DisobedientBot;
 import com.example.analyzelog.model.ObedientBot;
@@ -10,10 +11,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.http.client.MockClientHttpRequest;
+import org.springframework.mock.http.client.MockClientHttpResponse;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -41,6 +57,14 @@ class RobotsServiceTest {
 
     @Autowired
     LogRepository repository;
+
+    @Autowired
+    AppProperties appProperties;
+
+    @Autowired
+    FixtureRequestFactory fixtureRequestFactory;
+
+    private static final String ROBOTS_FIXTURE = "robots-snapshot.txt";
 
     @BeforeEach
     void clearTable() {
@@ -280,14 +304,13 @@ class RobotsServiceTest {
     }
 
     @Test
-    void refresh_fetchesAndParsesLiveRobotsTxt() {
+    void refresh_storesRulesFromRobotsTxtFixture() {
         robotsService.refresh();
 
-        var refreshedAt = robotsService.getRefreshedAt();
-        assertTrue(refreshedAt.isPresent(), "refreshed_at should be set after refresh");
-
-        var count = jdbc.queryForObject("SELECT COUNT(*) FROM robots_rules", Long.class);
-        assertTrue(count != null && count > 0, "robots_rules should have entries after live fetch");
+        assertTrue(robotsService.getRefreshedAt().isPresent(), "refreshed_at should be set after refresh");
+        assertEquals(expectedRules(), storedRules(), "stored rules must mirror the robots.txt fixture");
+        assertEquals(appProperties.robotsUrl(), fixtureRequestFactory.requestedUri().toString(),
+                "refresh() must request the configured app.robots-url");
     }
 
     @Test
@@ -299,6 +322,69 @@ class RobotsServiceTest {
 
         var remaining = jdbc.queryForList("SELECT user_agent FROM robots_rules WHERE user_agent = 'OldBot'", String.class);
         assertTrue(remaining.isEmpty(), "OldBot removed from stale entry should be gone after refresh");
+        assertEquals(expectedRules(), storedRules(), "the fixture's rules should have been reloaded in place");
+    }
+
+    private List<String> storedRules() {
+        return jdbc.queryForList("SELECT user_agent || '|' || path FROM robots_rules", String.class)
+                .stream().sorted().toList();
+    }
+
+    private static List<String> expectedRules() {
+        return RobotsService.parseRules(fixtureText()).stream()
+                .map(r -> r.userAgent() + "|" + r.path())
+                .sorted().toList();
+    }
+
+    private static String fixtureText() {
+        try {
+            return new String(new ClassPathResource(ROBOTS_FIXTURE).getInputStream()
+                    .readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("missing test fixture src/test/resources/" + ROBOTS_FIXTURE, e);
+        }
+    }
+
+    // robots.txt is served from src/test/resources/robots-snapshot.txt, never from the live site:
+    // the suite must stay green when the blog is down, rate-limited or blocked. @Primary so this
+    // client wins over AppConfig's real one, which keeps the URL assertion without any network access.
+    @TestConfiguration
+    static class RobotsTxtFixture {
+        @Bean
+        FixtureRequestFactory fixtureRequestFactory() {
+            return new FixtureRequestFactory(fixtureText());
+        }
+
+        // Distinct name: AppConfig already registers a bean called "restClient", and bean
+        // definition overriding is off by default. @Primary is what makes RobotsService take this one.
+        @Bean
+        @Primary
+        RestClient fixtureRestClient(FixtureRequestFactory fixtureRequestFactory) {
+            return RestClient.builder().requestFactory(fixtureRequestFactory).build();
+        }
+    }
+
+    static final class FixtureRequestFactory implements ClientHttpRequestFactory {
+        private final byte[] body;
+        private volatile URI requestedUri;
+
+        FixtureRequestFactory(String body) {
+            this.body = body.getBytes(StandardCharsets.UTF_8);
+        }
+
+        URI requestedUri() {
+            return requestedUri;
+        }
+
+        @Override
+        public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) {
+            requestedUri = uri;
+            MockClientHttpRequest request = new MockClientHttpRequest(httpMethod, uri);
+            MockClientHttpResponse response = new MockClientHttpResponse(body, HttpStatus.OK);
+            response.getHeaders().setContentType(MediaType.TEXT_PLAIN);
+            request.setResponse(response);
+            return request;
+        }
     }
 
     @Test
