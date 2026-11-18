@@ -31,7 +31,7 @@ A security review found no exploitable vulnerabilities. The following controls a
 
 ## Build & run
 
-Requires Java 27 and Maven.
+Requires Java 25 (`java.version` in `pom.xml`) and Maven.
 
 ```bash
 mvn package
@@ -54,7 +54,7 @@ Key properties:
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `app.aws.region` | `us-east-1` | AWS region of the S3 bucket |
+| `app.aws.region` | `eu-west-3` | AWS region of the S3 bucket |
 | `app.aws.bucket` | `` | S3 bucket containing CloudFront logs |
 | `app.aws.prefix` | `` | S3 key prefix (e.g. `AWSLogs/123456789/CloudFront/`) |
 | `app.aws.profile` | `` | AWS credentials profile (`~/.aws/credentials`); empty = default chain |
@@ -62,7 +62,10 @@ Key properties:
 | `server.port` | `8080` | HTTP port |
 | `uri-stem-filter.excluded-extensions` | `.css`, `.js`, `.png`, … | File extensions excluded from all URL charts (static assets) |
 | `referer-filter.self-referers` | `[]` | Referer prefixes to exclude from Top Referers (your own domain). Matched with and without trailing slash, and as a bare domain without scheme. |
-| `referer-normalizer.rules` | Google, Bing, Yahoo, … | Rules to group referer URLs into a single label. Each rule has `label` and one of `domain` (exact), `domain-starts-with`, or `domain-ends-with`. |
+| `app.top-limit`, `app.top-detail-limit`, `app.top-urls-limit`, `app.top-referers-limit` | `10`, `20`, `20`, `20` | Number of rows in the "Top …" charts |
+| `app.nb-months-to-keep` | `3` | Months of logs kept in the database |
+| `app.robots-url` | the blog's `/robots.txt` | `robots.txt` fetched by **Refresh Robots** |
+| `app.firefox-esr-version` | `115` | Firefox ESR major version used by the browser pages |
 | `uri-stem-groups.groups` | PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing | Groups of `uri_stem` LIKE patterns collapsed into one label on the **Top URLs** chart. A group with `security: true` also feeds the **Security** traffic category and the [Security page](#security-page). |
 
 ### `application-local.yml` (gitignored — your secrets)
@@ -85,41 +88,32 @@ app:
 
 This file is listed in `.gitignore` and will never be committed. Activate it with `--spring.profiles.active=local`.
 
-### User-agent classification rules
+### User-agent and referer rules
 
-The `ua-classifier.rules` list in `application.yml` maps UA substrings to human-readable labels.
-Rules are evaluated top-to-bottom; first match wins. Add entries to classify custom bots or internal tools:
-
-```yaml
-ua-classifier:
-  rules:
-    - pattern: "MyInternalBot"
-      label: "Internal crawler"
-```
+UA classification and referer grouping are stored in the database (`static_ua`, `static_referer`
+tables, seeded by Liquibase changesets), not in `application.yml`. Edit them on the
+**Admin** page (`/admin`): add, update or delete a UA pattern or a referer rule, then **Reclassify**
+to apply the rules to the existing rows.
 
 ## Dashboard
 
 ### Bot Analysis page
 
-Four detection methods, all scoped to the selected date range:
+Sections, all scoped to the selected date range:
 
 | Section | Detection signal |
 |---------|-----------------|
+| **Countries with Most Filtered Traffic** | Countries ranked by requests answered by the CloudFront function (Filtered). |
+| **Most Active Bots** | Known bots ranked by request count. |
 | **Top Probable Bots** | IPs that fetched `/robots.txt` and then crawled another URL within 1 hour using the same IP and user agent. |
-| **No Static Assets Bots** | IPs whose every request (per IP+UA pair) contains zero CSS, JS, WebP, ICO, or SVG fetches — real browsers always load static assets. Feed readers (`/feed.xml`, `/rss.xml`) are excluded. |
+| **Site Config Fetchers** | Browsers that requested `robots.txt`, `ads.txt`, `sitemap.xml`, `humans.txt`, `llms.txt`, `ai.txt` or `security.txt` — real browsers never do. |
+| **Bots Skipping Robots.txt** | Known bots active in the range that have never requested `/robots.txt` (checked across the full log). |
 | **Robots.txt Disobedient Bots** | Known bots that requested a path their `robots.txt` group disallows (a bot with no named group falls back to `User-agent: *`; `/robots.txt` itself is always allowed). Requires a **Refresh Robots** to load the latest rules. |
 | **Robots.txt Obedient Bots** | Known bots that fetched `/robots.txt` and never requested a path disallowed for them; the count is their other content requests (excluding `/robots.txt`); the bar covers all their requests. |
 
 The **Bot vs Human Traffic Over Time** chart shows daily request volume split between known bots (AI Bots, Search Bots, Other Bots, Apps) and human browsers.
 
 Date range presets and custom date picker are shared with the main dashboard.
-
-### Bene Tleilax page
-
-Lists IPs that presented more than one known crawler identity (`ua_name` in a bot `ua_group`) within the
-selected date range — real bots each operate from their own infrastructure, so one IP claiming several is
-a strong UA-spoofing signal. Each entry shows first/last seen, the distinct user agents used (click one to
-open its `/ua-requests` page), and the URLs requested with a Hit/Miss/Filtered/Error bar per URL.
 
 ### Social Referrals page
 
@@ -135,22 +129,19 @@ agent's `/ua-detail` page, the URI and the country.
 
 ### Main dashboard
 
-Eight charts, all scoped to the selected date range:
+Seven charts, all scoped to the selected date range:
 
 | Chart | Description |
 |-------|-------------|
-| Traffic Categories | Horizontal stacked bar — each `(client_ip, user_agent)` pair classified as **Probable human**, **Declared bots** (fetched `/robots.txt`), **Feeds** (`/feed.xml`, `/rss.xml`), **Security** (probed a `uri-stem-groups` pattern flagged `security: true`), or **Other**. Click a bar to open the category detail page. |
 | Top User Agents | Horizontal stacked bar — classified UA names by request count, coloured by edge result type. Click a bar to open the UA detail page. |
 | Top Countries | Horizontal stacked bar — request volume by country, coloured by edge result type. Click a bar to open the country detail page. |
 | Top URLs | Horizontal stacked bar — most-requested paths, coloured by edge result type; static assets excluded, and `uri-stem-groups` patterns (PHP/WordPress, `.env`/`.git` probing, backup dumps, actuator/Struts, cgi-bin, etc.) collapsed into one label each. |
-| Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. Known search engines and social sites (Google, Bing, Yahoo, DuckDuckGo, Qwant, Facebook, Babelio) are grouped under a single label. Configurable via `referer-normalizer.rules`. |
+| Top Referers | Horizontal bar — most frequent `Referer` headers; self-referrals and null referers excluded. Known search engines and social sites are grouped under a single label (rules edited on the **Admin** page). Click a bar to open the referer detail page. |
 | User Agent Groups | Pie — request share by UA group (Browsers, AI Bots, Search Bots, Other Bots, Apps, Feed Readers). |
 | Platforms | Pie — request share by OS/platform detected from the user agent (iOS, Android, Windows, Mac, Linux, Other). |
 | Requests per Day | Stacked bar — daily breakdown by edge result type: Hit, Miss, Function, Redirect, Error. |
 
 Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
-
-**Hide bots & apps** toggle removes traffic from the *AI Bots*, *Search Bots*, *Other Bots*, and *Apps* UA groups — as well as entries with no user agent — from all charts simultaneously. State is persisted in `localStorage`.
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 
@@ -183,13 +174,34 @@ Opened by clicking a bar in **Top User Agents**. Shows charts scoped to a single
 
 ### Country detail page
 
-Opened by clicking a bar in **Top Blocked Countries**. Shows charts scoped to a single country:
+Opened by clicking a bar in **Top Countries** or a row of the **Countries** page. Shows charts scoped to a single country:
 
 | Chart | Description |
 |-------|-------------|
 | Result Types | Pie — edge result type breakdown for this country |
 | Top URLs | Horizontal stacked bar — most-requested paths from this country, coloured by edge result type (PHP / WordPress grouping applied) |
 | Requests per Day | Line — daily request trend by edge result type |
+
+### Human page
+
+Traffic from "probable human" visitors only (distinct IP + user agent): the same top charts and requests per day as the main dashboard, plus a table of requests from unknown user agents. See [Known limitations](#known-limitations) for how a visitor qualifies as human.
+
+### ASN page
+
+Per-ASN table (name, category, % human, requests) for logs delivered with the `asn` field (since 2026-11-11), with a category filter. Names and categories come from the `asn_info` table; load them once with the **Names** download button on the page. Click an ASN to open its detail page.
+
+### Browsers pages
+
+`/chrome`, `/firefox`, `/edge` and `/safari`: request count and share of human traffic per browser version, plus the usual detail charts.
+
+### Other pages
+
+| Page | Content |
+|------|---------|
+| Zip requests (`/zip-requests`) | Requested archive URIs with a Hit / Miss / Filtered / Error bar. |
+| Covers (`/covers`) | User agents and referers fetching post cover images. |
+| URL detail, Referer detail, IP requests, UA requests | Drill-down pages opened from the charts above. |
+| Admin (`/admin`) | Edit UA and referer rules, reclassify existing rows. |
 
 ## AWS credentials
 
@@ -213,36 +225,15 @@ No credentials are stored by this application. Authentication is delegated to th
 }
 ```
 
-## Findings
-
-Investigation queries are in `etc/queries/`. Run them with:
-
-```bash
-sqlite3 logs.db < etc/queries/suspicious_user_agents.sql
-```
-
-### Suspicious user agents (PHP / WordPress scanners)
-
-Agents hitting `.php` or `/wp*` URLs 10+ times per day, with no legitimate traffic on the site:
-
-| User Agent | Date | Hits |
-|---|---|---|
-| `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/71.0.3542.0 Safari/537.36` | 2026-04-07 | 15 |
-
-> Requests with an empty `user_agent` are excluded upfront — they are always suspicious by definition.
-
----
-
 ## Known limitations
 
-### "Probable human" traffic category can include bots
+### "Probable human" traffic can include bots
 
-The **Traffic Categories** chart classifies each `(client_ip, user_agent)` pair as
-**Probable human** if it ever requests a trailing-slash path (e.g. `/`) *and* the
-any icon svg (`/assets/svgs/*.svg`), each as a Hit or Miss. The stylesheet is deliberately not required: browsers serve it from cache on
-return visits, while scrapers do fetch it. The Human page applies the same rule, but
-requires the svg within ±1h of the page request. A bot that fetches an svg
-can still qualify. Known limitation, not currently fixed.
+A `(client_ip, user_agent)` pair counts as **Probable human** if it ever requests a trailing-slash
+path (e.g. `/`) *and* any icon svg (`/assets/svgs/*.svg`), each as a Hit or Miss. The stylesheet is
+deliberately not required: browsers serve it from cache on return visits, while scrapers do fetch it.
+The Human page applies the same rule, but requires the svg within ±1h of the page request. A bot that
+fetches an svg can still qualify. Known limitation, not currently fixed.
 
 ---
 
@@ -274,11 +265,22 @@ cloudfront_logs (
     content_type              TEXT,
     country                   TEXT,            -- ISO 3166-1 alpha-2
     ua_name                   TEXT,            -- classified user-agent label
-    edge_location_iata        TEXT             -- IATA code from edge_location
+    edge_location_iata        TEXT,            -- IATA code from edge_location
+    asn                       TEXT             -- empty for logs before 2026-11-11 22:00 UTC
 )
 
 fetched_files (
     s3_key     TEXT PRIMARY KEY,
     fetched_at TEXT
 )
+
+asn_info (
+    asn          TEXT PRIMARY KEY,
+    handle       TEXT,
+    name         TEXT,
+    country_code TEXT,
+    category     TEXT
+)
 ```
+
+Also: `static_ua` and `static_referer` (classification rules, see [User-agent and referer rules](#user-agent-and-referer-rules)) and `robots_rules` (parsed `robots.txt` groups).
