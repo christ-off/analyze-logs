@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.AsnResultTypeCount;
+import com.example.analyzelog.model.BlockedUserAgent;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.CountryStats;
@@ -173,6 +174,18 @@ public class ApiController {
     public List<SiteConfigFetcher> browserConfig(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.browserConfigFetches(range.from(), range.to(), appProperties.topLimit());
+    }
+
+    @GetMapping("/blocked-feed-readers")
+    public List<BlockedUserAgent> blockedFeedReaders(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.blockedFeedReaders(range.from(), range.to(), appProperties.topDetailLimit());
+    }
+
+    @GetMapping("/blocked-fediverse")
+    public List<BlockedUserAgent> blockedFediverse(@RequestParam String from, @RequestParam String to) {
+        var range = DateRange.fromParams(from, to);
+        return dashboardService.blockedFediverseApps(range.from(), range.to(), appProperties.topDetailLimit());
     }
 
     @GetMapping("/robots-disobedient")

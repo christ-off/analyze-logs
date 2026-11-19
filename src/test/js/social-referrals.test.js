@@ -6,7 +6,8 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     formatTimestamp:  vi.fn((iso) => iso),
     stackedBar:       vi.fn(() => '<bar/>'),
     resultTotal:      vi.fn((r) => r.hit + r.miss + r['function'] + r.error),
-    detailUrl:        vi.fn((path, params) => `${path}?ua=${params.ua}`),
+    // Raw user_agent rows link to /ua-requests (keyed by raw UA), not /ua-detail (keyed by ua_name)
+    uaRequestsUrl:    vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
 import { loadSocialReferrals } from '../../main/resources/static/js/social-referrals.js';
@@ -25,11 +26,11 @@ const section = (network) => document.querySelector(`tbody[data-network="${netwo
 const SAMPLE_RESPONSE = {
     Facebook: [
         { timestamp: '2026-08-24T11:06:46Z', userAgent: 'facebookexternalhit/1.1',
-            uaName: 'Facebook', uriStem: '/article/', country: 'United States' },
+            uriStem: '/article/', country: 'United States' },
     ],
     Mastodon: [
         { timestamp: '2026-08-24T12:00:00Z', userAgent: 'http.rb/5.1.1 (Mastodon/4.2.17)',
-            uaName: 'Mastodon', uriStem: '/toot/', country: '-' },
+            uriStem: '/toot/', country: '-' },
     ],
     WhatsApp: [],
 };
@@ -51,7 +52,7 @@ describe('loadSocialReferrals', () => {
         expect(fb.textContent).toContain('/article/');
         expect(fb.textContent).toContain('United States');
         const uaLink = fb.querySelector('a');
-        expect(uaLink.getAttribute('href')).toBe('/ua-detail?ua=Facebook');
+        expect(uaLink.getAttribute('href')).toBe('/ua-requests?ua=facebookexternalhit/1.1');
         expect(uaLink.textContent).toContain('facebookexternalhit/1.1');
         expect(fb.querySelectorAll('td')).toHaveLength(4);
 

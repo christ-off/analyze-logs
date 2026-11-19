@@ -145,7 +145,8 @@ host such as `facebook.com.evil.example`. Mastodon is matched on the user-agent 
 instead (fediverse UA strings vary too much for substring matching) and excludes the home page `/`,
 which every instance polls often enough to bury the actual article previews. Only served pages count — Hit, RefreshHit
 and Miss; Filtered and Error responses are dropped. Each row shows its timestamp, a link to the user
-agent's `/ua-detail` page, the URI and the country.
+agent's `/ua-requests` page (rows are raw user agents, so they key on the raw string), the URI and the
+country.
 
 ### Main dashboard
 
@@ -204,11 +205,29 @@ Opened by clicking a bar in **Top Countries** or a row of the **Countries** page
 
 ### Human page
 
-Traffic from "probable human" visitors only (distinct IP + user agent): the same top charts and requests per day as the main dashboard, plus a table of requests from unknown user agents. See [Known limitations](#known-limitations) for how a visitor qualifies as human.
+Traffic from "probable human" visitors only (distinct IP + user agent): the same top charts and requests per day as the main dashboard, plus a table of requests from unknown
+user agents (each linking to its `/ua-requests` page). See [Known limitations](#known-limitations) for how a visitor qualifies as human.
 
 ### ASN page
 
 Per-ASN table (name, category, % human, requests) for logs delivered with the `asn` field (since 2026-11-11), with a category filter. Names and categories come from the `asn_info` table; load them once with the **Names** download button on the page. Click an ASN to open its detail page.
+
+### Blocked Hosted Applications page
+
+`/blocked-hosted-apps`: two lists scoped to the selected date range, restricted to requests whose
+ASN is classified `hosting` or `business` in `asn_info` (so the ASN names must be downloaded once on
+the ASN page, and only logs since 2026-11-11 carry the ASN field). These are apps blocked by the
+CloudFront function while running on rented infrastructure — candidates to review for the allowlist.
+Each row shows the raw user agent (link to its UA requests page — keyed by the raw string, unlike the
+UA detail page which is keyed by the classified `ua_name`) and its blocked-request count.
+
+| List | Content |
+|------|---------|
+| **Blocked Feed Readers** | User agents that requested *nothing but* `/feed.xml` / `/rss.xml` in the range and were Filtered — a UA that also fetched content paths is a scraper, not a reader, and is dropped. |
+| **Blocked Fediverse** | User agents that requested *nothing but* the home page (`/`) in the range and were Filtered — link-preview bots; a UA that also fetched content paths (following links like a visitor) is dropped. |
+
+Later, add a third list, **Other blocked apps**. Its criteria are not known yet — decide which
+requests and which ASN categories define it before implementing.
 
 ### Browsers pages
 

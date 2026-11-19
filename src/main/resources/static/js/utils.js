@@ -25,6 +25,8 @@ export function resultTotal(row) {
     return row.hit + row.miss + row['function'] + row.error;
 }
 
+// Link keying rule: a row whose identity is a raw user_agent string links here (/ua-requests is
+// keyed by user_agent); a row that is a classified ua_name group uses detailUrl('/ua-detail', { ua }).
 export function uaRequestsUrl(ua) {
     const from = readMeta('cf-from').slice(0, 10);
     const to   = readMeta('cf-to-date');

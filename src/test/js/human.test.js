@@ -5,6 +5,8 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
     escapeHtml:       vi.fn((s) => s),
     formatTimestamp:  vi.fn((iso) => iso),
     stackedBar:       vi.fn(() => '<div class="bar"></div>'),
+    // Raw user_agent rows link to /ua-requests (keyed by raw UA), not /ua-detail (keyed by ua_name)
+    uaRequestsUrl:    vi.fn((ua) => `/ua-requests?ua=${ua}`),
 }));
 
 vi.mock('../../main/resources/static/js/dashboard-charts.js', () => ({
@@ -43,6 +45,7 @@ describe('human page unknown user agents', () => {
 
         const tbody = document.getElementById('humanUnknownUas');
         expect(tbody.textContent).toContain('SomeUnknownClient/9.9');
+        expect(tbody.querySelector('a').getAttribute('href')).toBe('/ua-requests?ua=SomeUnknownClient/9.9');
         expect(tbody.textContent).toContain('/');
         expect(tbody.querySelector('.bar')).not.toBeNull();
         expect(document.getElementById('humanUnknownUasCount').textContent).toBe('(1 rows)');
