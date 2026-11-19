@@ -2,6 +2,7 @@ package com.example.analyzelog;
 
 import com.enofex.taikai.ClassCriteria;
 import com.enofex.taikai.Taikai;
+import com.enofex.taikai.spring.BootConfigurer;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -43,8 +44,7 @@ class ArchitectureTest {
                 .spring(spring -> spring
                         .noAutowiredFields()
                         .noSelfInvocationOfProxiedMethods()
-                        .boot(boot -> boot
-                                .applicationClassShouldResideInPackage())
+                        .boot(BootConfigurer::applicationClassShouldResideInPackage)
                         .controllers(controllers -> controllers
                                 .namesShouldEndWithController()
                                 .shouldNotDependOnOtherControllers()

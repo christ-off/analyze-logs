@@ -5,6 +5,9 @@ import java.util.regex.Pattern;
 
 public class UserAgentClassifier {
 
+    // Both the detectOs() label and the token raw iOS UA strings carry.
+    private static final String IPHONE = "iPhone";
+
     private record CompiledRule(Pattern pattern, String label) {}
 
     private final List<CompiledRule> rules;
@@ -38,7 +41,7 @@ public class UserAgentClassifier {
 
         // Embedded WebKit view (WKWebView): AppleWebKit without the "Version/x Safari/x" tokens
         if (ua.contains("AppleWebKit/") && !ua.contains("Safari/")
-                && (os.equals("macOS") || os.equals("iPhone") || os.equals("iPad"))) {
+                && (os.equals("macOS") || os.equals(IPHONE) || os.equals("iPad"))) {
             return "WebView / " + os;
         }
 
@@ -46,7 +49,7 @@ public class UserAgentClassifier {
     }
 
     private static String detectOs(String ua) {
-        if (ua.contains("iPhone") || ua.contains("iPod")) return "iPhone";
+        if (ua.contains(IPHONE) || ua.contains("iPod")) return IPHONE;
         if (ua.contains("iPad"))                           return "iPad";
         if (ua.contains("Android"))                        return "Android";
         if (ua.contains("Windows NT"))                     return "Windows";

@@ -35,7 +35,7 @@ public class AsnInfoService {
     public int refresh() {
         List<AsnInfo> entries = restClient.get().uri(JSON_URL)
                 .exchange((request, response) -> parseJson(response.getBody()));
-        if (entries == null || entries.isEmpty()) {
+        if (entries.isEmpty()) {
             throw new IllegalStateException("No ASN found in " + JSON_URL);
         }
         repository.replaceAll(entries);
