@@ -2,6 +2,7 @@ package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
 import com.example.analyzelog.model.AsnResultTypeCount;
+import com.example.analyzelog.model.BlockedUserAgent;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.DailyResultTypeCount;
@@ -441,6 +442,40 @@ class ApiControllerTest {
                 .extractingPath("$[0].hit").isEqualTo(40);
     }
 
+    @Test
+    void blockedFeedReadersReturnsJson() {
+        when(dashboardService.blockedFeedReaders(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new BlockedUserAgent("SomeFeedReader/2.0", 7)));
+
+        assertThat(mvc.get().uri("/api/blocked-feed-readers")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].userAgent").isEqualTo("SomeFeedReader/2.0");
+
+        assertThat(mvc.get().uri("/api/blocked-feed-readers")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].count").isEqualTo(7);
+    }
+
+    @Test
+    void blockedFediverseReturnsJson() {
+        when(dashboardService.blockedFediverseApps(any(Instant.class), any(Instant.class), anyInt()))
+                .thenReturn(List.of(new BlockedUserAgent("Mastodon/4.3.0 (+https://mastodon.example/)", 3)));
+
+        assertThat(mvc.get().uri("/api/blocked-fediverse")
+                .param("from", "2026-01-01").param("to", "2026-01-31")
+                .exchange())
+                .hasStatusOk()
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .bodyJson()
+                .extractingPath("$[0].userAgent").isEqualTo("Mastodon/4.3.0 (+https://mastodon.example/)");
+    }
 
     @Test
     void ipInfoReturnsJson() {

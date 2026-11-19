@@ -1,11 +1,11 @@
 import { loadCoreCharts } from './dashboard-charts.js';
 import { initRefresh } from './refresh.js';
-import { buildBaseParams, escapeHtml, formatTimestamp, stackedBar } from './utils.js';
+import { buildBaseParams, escapeHtml, formatTimestamp, stackedBar, uaRequestsUrl } from './utils.js';
 
 function renderRow(req) {
     return `<tr>
         <td class="text-nowrap">${escapeHtml(formatTimestamp(req.timestamp))}</td>
-        <td class="text-break small" title="${escapeHtml(req.userAgent)}">${escapeHtml(req.userAgent)}</td>
+        <td class="text-break small"><a href="${uaRequestsUrl(req.userAgent)}">${escapeHtml(req.userAgent)}</a></td>
         <td class="font-monospace small text-truncate" style="max-width:320px" title="${escapeHtml(req.uriStem)}">${escapeHtml(req.uriStem)}</td>
         <td class="align-middle">${stackedBar(req, null)}</td>
     </tr>`;

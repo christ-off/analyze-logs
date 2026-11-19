@@ -277,6 +277,64 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void blockedFeedReaders_listsPureReadersOnHostingAndBusinessAsns() {
+        Instant from = Instant.now();
+        asnInfoRepository.replaceAll(List.of(
+                new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting"),
+                new AsnInfo("16276", "OO-AS188", "Online S.A.S.", "FR", "business"),
+                new AsnInfo("9121", "TTNET", "TTNET A.S.", "TR", "isp")));
+        repository.saveEntries("logs/blocked-feed-readers-test.gz", List.of(
+                // included: pure reader on a hosting ASN, both feed URIs; the served feed request
+                // neither counts nor demotes (the UA stays feed-only)
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/feed.xml", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/rss.xml", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/feed.xml", "Hit"),
+                // included: a business ASN counts like hosting
+                entryWithAsnUaUriAndResultType("16276", UA_EDGE_WINDOWS, "/feed.xml", "FunctionGeneratedResponse"),
+                // demoted: a single non-feed request drops the whole UA, whatever its result type
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/feed.xml", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/index.html", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_MACOS, "/feed.xml", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_MACOS, "/some-post/", "Hit"),
+                // not counted: isp ASN, ASN with no asn_info row (their feed-only UAs stay undemoted)
+                entryWithAsnUaUriAndResultType("9121", UA_EDGE_MACOS, "/feed.xml", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("99999", UA_EDGE_MACOS, "/feed.xml", "FunctionGeneratedResponse")
+        ));
+
+        var result = dashboardService.blockedFeedReaders(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        assertEquals(UA_FIREFOX_LINUX, result.getFirst().userAgent()); // ordered by blocked count
+        assertEquals(2, result.getFirst().count());
+        assertEquals(UA_EDGE_WINDOWS, result.get(1).userAgent());
+        assertEquals(1, result.get(1).count());
+    }
+
+    @Test
+    void blockedFediverseApps_countsFilteredHomePageOnlyRequests() {
+        Instant from = Instant.now();
+        asnInfoRepository.replaceAll(List.of(
+                new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting")));
+        repository.saveEntries("logs/blocked-fediverse-test.gz", List.of(
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "FunctionExecutionError"),
+                // a served '/' request neither counts nor demotes — it is still the only URI requested
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "Hit"),
+                // demoted: its '/' was blocked but it also fetched content (followed a link like a visitor)
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/some-post/", "Hit"),
+                // excluded: '/' request from an ASN with no asn_info row — nothing counted, UA absent
+                entryWithAsnUaUriAndResultType("99999", UA_EDGE_WINDOWS, "/", "FunctionGeneratedResponse")
+        ));
+
+        var result = dashboardService.blockedFediverseApps(from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(1, result.size());
+        assertEquals(UA_CHROME_WINDOWS, result.getFirst().userAgent());
+        assertEquals(2, result.getFirst().count());
+    }
+
+    @Test
     void topCountriesByResultType_countsPerResultTypeAndResolvesDisplayName() {
         Instant from = Instant.now();
         repository.saveEntries("logs/countries-split-test.gz", List.of(
@@ -867,6 +925,17 @@ class DashboardServiceIntegrationTest {
                 uriStem, 200,
                 null, ua,
                 "Hit", "Hit", "Hit",
+                null, "US", asn
+        );
+    }
+
+    private CloudFrontLogEntry entryWithAsnUaUriAndResultType(String asn, String ua, String uriStem, String resultType) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", "1.2.3.4", "GET",
+                uriStem, 200,
+                null, ua,
+                resultType,
+                resultType, resultType,
                 null, "US", asn
         );
     }

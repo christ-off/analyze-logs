@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Blocked Hosted Applications', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Blocked Hosted Applications</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"    th:content="${from}"/>
+    <meta name="cf-to"      th:content="${to}"/>
+    <meta name="cf-to-date" th:content="${toDate}"/>
+</th:block>
+<th:block class="page-content">
+
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/blocked-hosted-apps')}"></th:block>
+
+    <p class="text-muted small mb-3">
+        Both lists are restricted to requests coming from an ASN classified hosting or business
+        (names downloaded once on the ASN page; only logs since 2026-11-11 carry the ASN field).
+        Candidates for the CloudFront function allowlist.
+    </p>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">
+            <span>Blocked Feed Readers</span>
+            <span class="text-muted fw-normal small ms-2">user agents that only ever requested /feed.xml or /rss.xml, and whose requests were Filtered (scrapers also read content, so they are not listed)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User Agent</th>
+                        <th class="text-end">Blocked requests</th>
+                    </tr>
+                </thead>
+                <tbody id="blockedFeedReadersTable">
+                    <tr><td colspan="2" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">
+            <span>Blocked Fediverse</span>
+            <span class="text-muted fw-normal small ms-2">user agents that only ever requested /, and whose requests were Filtered (apps that also fetched content are not listed)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User Agent</th>
+                        <th class="text-end">Blocked requests</th>
+                    </tr>
+                </thead>
+                <tbody id="blockedFediverseTable">
+                    <tr><td colspan="2" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/blocked-hosted-apps.js}"></script>
+</th:block>
+</html>

@@ -4,6 +4,7 @@ import com.example.analyzelog.config.RefererFilterProperties;
 import com.example.analyzelog.config.UriStemFilterProperties;
 import com.example.analyzelog.config.UriStemGroupProperties;
 import com.example.analyzelog.model.AsnResultTypeCount;
+import com.example.analyzelog.model.BlockedUserAgent;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryClientCounts;
@@ -342,6 +343,51 @@ public class DashboardService {
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
+    }
+
+    // Blocked Hosted Applications page: "Blocked Feed Readers" (UAs that only ever requested feeds)
+    // and "Blocked Fediverse" (UAs that only ever requested the home page — the pings Fediverse
+    // link-preview bots send).
+    public List<BlockedUserAgent> blockedFeedReaders(Instant from, Instant to, int limit) {
+        return blockedUserAgents("c.uri_stem IN (" + FEED_URI_LIST + ")", from, to, limit);
+    }
+
+    public List<BlockedUserAgent> blockedFediverseApps(Instant from, Instant to, int limit) {
+        return blockedUserAgents("c.uri_stem = '/'", from, to, limit);
+    }
+
+    // A raw user agent qualifies when, within the range, every one of its requests matched
+    // `listUriPredicate` and at least one of those was answered by the blocking function (Filtered)
+    // from an ASN classified hosting or business in asn_info — an app answering from a VPS/cloud range
+    // rather than a home ISP is one a human runs on rented infrastructure, worth reviewing for the
+    // allowlist (names must be downloaded once on the ASN page; only logs since 2026-11-11 carry the
+    // asn field). An app that also fetched another path is following links like any visitor — a single
+    // off-list URI demotes it out of the list (scrapers read every content path too). The per-UA "ever touched an off-list URI" flag is aggregated over one pass of the range
+    // rather than a correlated NOT EXISTS per candidate row (the probe re-scans the whole row set of
+    // the UA for every blocked row: ~10s vs ~0.2s on 250k rows). The ASN check is an EXISTS evaluated
+    // only on list/Filtered rows (CASE short-circuits), and MAX(ua_name) keeps a raw UA that was
+    // reclassified mid-history in a single group — the grouping key is the raw user_agent, matching
+    // the demotion rule.
+    private List<BlockedUserAgent> blockedUserAgents(String listUriPredicate, Instant from, Instant to, int limit) {
+        String sql = """
+                SELECT COALESCE(user_agent, MAX(ua_name)) AS user_agent, SUM(blocked) AS count
+                FROM (
+                    SELECT c.user_agent, c.ua_name,
+                           CASE WHEN c.edge_response_result_type IN (%1$s) AND %2$s
+                                AND EXISTS (SELECT 1 FROM asn_info i
+                                            WHERE i.asn = c.asn AND i.category IN ('hosting','business'))
+                                THEN 1 ELSE 0 END AS blocked,
+                           CASE WHEN NOT (%2$s) THEN 1 ELSE 0 END AS other_uri
+                    FROM cloudfront_logs c
+                    WHERE c.timestamp BETWEEN ? AND ?
+                )
+                GROUP BY user_agent
+                HAVING SUM(other_uri) = 0 AND SUM(blocked) > 0
+                ORDER BY count DESC
+                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST, listUriPredicate) + LIMIT_PARAM;
+        return jdbc.query(sql,
+                (rs, _) -> new BlockedUserAgent(rs.getString(COL_USER_AGENT), rs.getLong(COUNT_FIELD)),
+                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
     }
 
     private List<NameResultTypeCount> uaResultTypesByFilter(String additionalFilter, List<Object> extraArgs,

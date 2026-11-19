@@ -1,6 +1,6 @@
 'use strict';
 
-import { buildBaseParams, detailUrl, escapeHtml, formatTimestamp, stackedBar, resultTotal } from './utils.js';
+import { buildBaseParams, escapeHtml, formatTimestamp, stackedBar, resultTotal, uaRequestsUrl } from './utils.js';
 import { initRefresh } from './refresh.js';
 
 // The template owns which networks are shown and in what order; each section tags its tbody.
@@ -8,14 +8,10 @@ function sections() {
     return document.querySelectorAll('#socialReferralsSections tbody[data-network]');
 }
 
-function shortUa(name) {
-    return name.length > 60 ? name.slice(0, 57) + '…' : name;
-}
-
 function renderRow(req) {
     return `<tr>
         <td class="text-nowrap">${escapeHtml(formatTimestamp(req.timestamp))}</td>
-        <td><a href="${detailUrl('/ua-detail', { ua: req.uaName })}" title="${escapeHtml(req.userAgent)}">${escapeHtml(shortUa(req.userAgent))}</a></td>
+        <td class="text-break small"><a href="${uaRequestsUrl(req.userAgent)}">${escapeHtml(req.userAgent)}</a></td>
         <td class="font-monospace small text-truncate" style="max-width:320px" title="${escapeHtml(req.uriStem)}">${escapeHtml(req.uriStem)}</td>
         <td>${escapeHtml(req.country)}</td>
     </tr>`;
