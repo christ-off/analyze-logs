@@ -1911,33 +1911,6 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void zipUriCounts_excludesLegitimateAssetAndSortsByCountDesc() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/zip-requests-test.gz", List.of(
-                entryAt(Instant.now(), "1.1.1.1", "scanner/1.0", "/backup.zip"),
-                entryAt(Instant.now().plusSeconds(1), "1.1.1.2", "scanner/2.0", "/backup.zip"),
-                entryAt(Instant.now().plusSeconds(2), "1.1.1.3", "scanner/3.0", "/old.zip"),
-                // Legitimate asset must be excluded
-                entryAt(Instant.now().plusSeconds(3), "1.1.1.4", "Mozilla/5.0", "/assets/posts_other/DeDRM_plugin.zip"),
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.6", "scanner/4.0", "/db.sql.gz"),
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.7", "scanner/4.0", "/www.tgz"),
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.8", "scanner/4.0", "/www.rar"),
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.9", "scanner/4.0", "/www.7z"),
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.10", "Googlebot", "/sitemap.xml.gz"),
-                // Non-archive must be excluded
-                entryAt(Instant.now().plusSeconds(4), "1.1.1.5", "Mozilla/5.0", "/index.html")
-        ));
-
-        var result = dashboardService.zipUriCounts(from, Instant.now().plusSeconds(5), 10);
-
-        assertEquals(6, result.size());
-        assertEquals("/backup.zip", result.get(0).name());
-        assertEquals(2, result.get(0).total());
-        assertEquals(1, result.get(1).total());
-        assertTrue(result.stream().noneMatch(r -> "/assets/posts_other/DeDRM_plugin.zip".equals(r.name())
-                || "/sitemap.xml.gz".equals(r.name())));
-    }
-    @Test
     void coverQueries_onlyCountWebpOrJpgUnderAssetsPosts_andSplitByBlogReferer() {
         Instant from = Instant.now();
         String blog = "https://post-tenebras-lire.net/some-post/";

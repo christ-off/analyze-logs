@@ -218,7 +218,6 @@ Per-ASN table (name, category, % human, requests) for logs delivered with the `a
 
 | Page | Content |
 |------|---------|
-| Zip requests (`/zip-requests`) | Requested archive URIs with a Hit / Miss / Filtered / Error bar. |
 | Covers (`/covers`) | User agents and referers fetching post cover images. |
 | URL detail, Referer detail, IP requests, UA requests | Drill-down pages opened from the charts above. |
 | Admin (`/admin`) | Edit UA and referer rules, reclassify existing rows. |

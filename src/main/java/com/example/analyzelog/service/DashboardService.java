@@ -138,11 +138,6 @@ public class DashboardService {
     // (the "written by a human" badge, tag, user...). A single one is enough since browsers may cache
     // some of them. The stylesheet is deliberately not required: browsers serve it from cache on return
     // visits, while scrapers do fetch it (without ever fetching the svgs).
-    // The legitimate archives the site serves (DeDRM plugin, sitemap) — excluded from zipUriCounts so only
-    // scanner probes for archive dumps remain.
-    @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
-    private static final String LEGITIMATE_ZIP_PATH = "/assets/posts_other/DeDRM_plugin.zip";
-    private static final String SITEMAP_GZ_PATH = "/sitemap.xml.gz";
     @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
     private static final String HUMAN_EVIDENCE_SVG_PATTERN = "/assets/svgs/%.svg";
     // Only Hit/Miss responses count as real traffic — Error and FunctionGeneratedResponse rows
@@ -1353,23 +1348,6 @@ public class DashboardService {
                 NAME_RESULT_TYPE_COUNT_MAPPER,
                 params.toArray()).forEach(row -> byNetwork.put(row.name(), row));
         return byNetwork;
-    }
-
-    // Archive (.zip/.gz/.tgz/.rar/.7z) uri_stems requested, excluding the one legitimate asset, most
-    // frequent first, with the Hit/Miss/Filtered/Error split per URI for the result-type bar.
-    public List<NameResultTypeCount> zipUriCounts(Instant from, Instant to, int limit) {
-        String sql = "SELECT uri_stem as name, " + RESULT_TYPE_SUMS + "\n" +
-                """
-                FROM cloudfront_logs
-                WHERE timestamp BETWEEN ? AND ?
-                  AND (uri_stem LIKE '%.zip' OR uri_stem LIKE '%.gz' OR uri_stem LIKE '%.tgz'
-                       OR uri_stem LIKE '%.rar' OR uri_stem LIKE '%.7z')
-                  AND uri_stem NOT IN (?, ?)
-                """ +
-                SQL_URI_RESULT_TYPE_GROUP_ORDER;
-        return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER,
-                TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to),
-                LEGITIMATE_ZIP_PATH, SITEMAP_GZ_PATH, limit);
     }
 
     // Blog book covers: webp or jpg files under /assets/posts*.
