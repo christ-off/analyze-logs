@@ -60,9 +60,12 @@ class CloudFrontLogParserTest {
 
     @Test
     void parsesAsnFromTsv() {
-        String tsv = "#Version: 1.0\n#Fields: date\ttime\tc-ip\tasn\n"
-                + "2026-11-12\t10:00:00\t1.2.3.4\t24940\n"
-                + "2026-11-12\t10:00:01\t1.2.3.5\t-\n";
+        String tsv = """
+                #Version: 1.0
+                #Fields: date\ttime\tc-ip\tasn
+                2026-11-12\t10:00:00\t1.2.3.4\t24940
+                2026-11-12\t10:00:01\t1.2.3.5\t-
+                """;
 
         var entries = parser.parse(tsv);
 

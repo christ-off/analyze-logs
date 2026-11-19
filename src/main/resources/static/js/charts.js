@@ -72,14 +72,15 @@ Charts.toDateParam = function (iso) {
     return iso.substring(0, 10);
 };
 
-Charts.loadChart = async function (endpoint, render) {
-    try {
-        const resp = await fetch(`/api/${endpoint}`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        render(await resp.json());
-    } catch (e) {
-        console.error(`Failed to load ${endpoint}:`, e);
-    }
+// Fire-and-forget on purpose: failures are logged here, so callers don't get a promise back.
+Charts.loadChart = function (endpoint, render) {
+    fetch(`/api/${endpoint}`)
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        })
+        .then(render)
+        .catch(e => console.error(`Failed to load ${endpoint}:`, e));
 };
 
 Charts.horizontalBar = function (canvasId, data, urlFn, color = Charts.ACCENT) {

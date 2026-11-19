@@ -56,12 +56,9 @@ function buildPlainReportText(entries) {
     return { text: entries.map(formatRequestLine).join('\n') + '\n', omitted: 0 };
 }
 
-export async function copyAndOpen(text, url) {
-    try {
-        await navigator.clipboard.writeText(text);
-    } catch {
-        // best-effort clipboard write; the form still opens either way
-    }
+export function copyAndOpen(text, url) {
+    // best-effort clipboard write; the form still opens either way
+    navigator.clipboard.writeText(text).catch(() => {});
     window.open(url, '_blank', 'noopener');
 }
 

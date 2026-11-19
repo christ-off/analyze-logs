@@ -21,7 +21,7 @@ function fillCategories() {
     const select = document.getElementById('asnCategory');
     if (!select) return;
     const selected = select.value;
-    const categories = [...new Set(rows.map(categoryOf))].sort();
+    const categories = [...new Set(rows.map(categoryOf))].sort((a, b) => a.localeCompare(b));
     select.innerHTML = '<option value="">All</option>' +
         categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     select.value = categories.includes(selected) ? selected : '';

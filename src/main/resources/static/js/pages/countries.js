@@ -46,7 +46,7 @@ function render() {
         tbody.innerHTML = `<tr><td colspan="${COLS}" class="text-center text-muted py-3">No countries match the selected filters.</td></tr>`;
         return;
     }
-    const sorted = filtered.sort(([a], [b]) => {
+    const sorted = filtered.toSorted(([a], [b]) => {
         const x = a[sort.key], y = b[sort.key];
         return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sort.dir;
     });

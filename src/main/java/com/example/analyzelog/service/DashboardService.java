@@ -12,7 +12,6 @@ import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
-import com.example.analyzelog.model.AsnResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
 import com.example.analyzelog.model.IpRequest;
@@ -50,6 +49,8 @@ public class DashboardService {
     private static final String COUNT_FIELD = "count";
     private static final String FIELD_FUNCTION = "function";
     private static final String FIELD_ERROR = "error";
+    private static final String FIELD_HUMAN = "human";
+    private static final String FIELD_FEEDS = "feeds";
     private static final String AND_SEPARATOR = " AND ";
     private static final String SQL_AND_INDENT = "  AND ";
     private static final String COUNTRY_FILTER = "country = ?";
@@ -59,6 +60,7 @@ public class DashboardService {
     private static final String COL_CLIENT_IP = "client_ip";
     private static final String COL_URI_STEM = "uri_stem";
     private static final String COL_USER_AGENT = "user_agent";
+    private static final String COL_COUNTRY = "country";
     // Every ua_name variant of a browser (desktop and mobile) is "<Browser> / <OS>" — the browser
     // dashboards aggregate across all of them regardless of OS.
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
@@ -79,14 +81,14 @@ public class DashboardService {
                 rs.getString(COL_URI_STEM),
                 rs.getString("referer"),
                 rs.getString("result_type"),
-                countryOrDash(rs.getString("country")),
+                countryOrDash(rs.getString(COL_COUNTRY)),
                 rs.getInt("status"));
     };
     private static final RowMapper<IpRequest> IP_REQUEST_MAPPER = (rs, _) -> new IpRequest(
             Instant.parse(rs.getString(COL_TIMESTAMP)),
             rs.getString(COL_CLIENT_IP),
             rs.getString("ua_name"),
-            countryOrDash(rs.getString("country")),
+            countryOrDash(rs.getString(COL_COUNTRY)),
             rs.getString(COL_USER_AGENT),
             rs.getString(COL_URI_STEM),
             rs.getString("result_type"),
@@ -153,7 +155,7 @@ public class DashboardService {
     // the pair classification in categoryCaseExpr.
     private static final String HUMAN_PAGE_FILTER =
             "uri_stem LIKE '%/'\n" +
-            "  AND " + RESULT_TYPE_HIT_OR_MISS + "\n" +
+            SQL_AND_INDENT + RESULT_TYPE_HIT_OR_MISS + "\n" +
             "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
             "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_SVG_PATTERN);
     private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem LIKE '" + HUMAN_EVIDENCE_SVG_PATTERN + "'";
@@ -433,7 +435,7 @@ public class DashboardService {
         return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("asn"),
                 rs.getString("name"), rs.getString("category"),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                rs.getLong("human"), rs.getLong("feeds")), fromSql, toSql, fromSql, toSql);
+                rs.getLong(FIELD_HUMAN), rs.getLong(FIELD_FEEDS)), fromSql, toSql, fromSql, toSql);
     }
 
     // "AS24940 - Hetzner Online GmbH - hosting"; parts without a downloaded asn_info row are left out.
@@ -523,8 +525,8 @@ public class DashboardService {
             String iso = rs.getString("code");
             return new CountryStats(iso, resolveCountryLabel(iso),
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
-                    rs.getLong("human"), rs.getLong("non_webp"), rs.getLong("mastodon"), rs.getLong("search_bots"),
-                    rs.getLong("feeds"));
+                    rs.getLong(FIELD_HUMAN), rs.getLong("non_webp"), rs.getLong("mastodon"), rs.getLong("search_bots"),
+                    rs.getLong(FIELD_FEEDS));
         }, fromSql, toSql, fromSql, toSql);
     }
 
@@ -639,7 +641,7 @@ public class DashboardService {
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND referer IS NOT NULL\n" +
-                "  AND " + RESULT_TYPE_EXCLUSION + "\n" +
+                SQL_AND_INDENT + RESULT_TYPE_EXCLUSION + "\n" +
                 andClause(selfExclusionClause) +
                 andClause(additionalFilter) +
                 "GROUP BY referer\n" +
@@ -713,7 +715,7 @@ public class DashboardService {
         return jdbc.query("SELECT user_agent as name,\n" + RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND " + filterClause + "\n" +
+                SQL_AND_INDENT + filterClause + "\n" +
                 "GROUP BY user_agent\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC,
                 NAME_RESULT_TYPE_COUNT_MAPPER,
@@ -752,7 +754,7 @@ public class DashboardService {
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql,
-                (rs, _) -> new NameHumanTrafficStats(rs.getString("name"), rs.getLong("human"), rs.getLong("total")),
+                (rs, _) -> new NameHumanTrafficStats(rs.getString("name"), rs.getLong(FIELD_HUMAN), rs.getLong("total")),
                 fromSql, toSql, fromSql, toSql, filterArg);
     }
 
@@ -776,7 +778,7 @@ public class DashboardService {
         return jdbc.query("SELECT country as name, COUNT(*) as count\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND " + filterClause + "\n" +
+                SQL_AND_INDENT + filterClause + "\n" +
                 "GROUP BY country\n" +
                 "ORDER BY count DESC\n" +
                 "LIMIT " + UA_COUNTRIES_LIMIT + "\n",
@@ -856,7 +858,7 @@ public class DashboardService {
         String sql = "SELECT " + RESULT_TYPE_GROUP_EXPR + " as name, COUNT(*) as count\n"
                 + "FROM cloudfront_logs\n"
                 + "WHERE timestamp BETWEEN ? AND ?\n"
-                + "  AND " + filterClause + "\n"
+                + SQL_AND_INDENT + filterClause + "\n"
                 + "GROUP BY name\n"
                 + "ORDER BY count DESC\n";
         return jdbc.query(sql, NAME_COUNT_MAPPER, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), value);
@@ -868,7 +870,7 @@ public class DashboardService {
                 RESULT_TYPE_SUMS + "\n" +
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND " + entry.getKey() + "\n" +
+                SQL_AND_INDENT + entry.getKey() + "\n" +
                 "GROUP BY uri_stem\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC;
         var args = new ArrayList<>();
@@ -1020,7 +1022,7 @@ public class DashboardService {
                 "FROM cloudfront_logs\n" +
                 "WHERE timestamp BETWEEN ? AND ?\n" +
                 "  AND country IS NOT NULL\n" +
-                "  AND " + entry.getKey() + "\n" +
+                SQL_AND_INDENT + entry.getKey() + "\n" +
                 "GROUP BY country\n" +
                 ResultTypeSql.ORDER_BY_TOTAL_DESC +
                 LIMIT_PARAM;
@@ -1066,7 +1068,7 @@ public class DashboardService {
                   AND edge_response_result_type IN (%s)
                 """.formatted(SEARCH_BOTS_GROUP, COUNTRY_FILTER, HIT_OR_MISS_TYPE_LIST);
         return jdbc.queryForObject(sql, (rs, _) -> new CountryClientCounts(
-                rs.getLong("mastodon"), rs.getLong("search_bots"), rs.getLong("feeds")),
+                rs.getLong("mastodon"), rs.getLong("search_bots"), rs.getLong(FIELD_FEEDS)),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), country);
     }
 
@@ -1327,7 +1329,7 @@ public class DashboardService {
                     rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
 
     private static SocialNetworkRequest socialNetworkRequest(ResultSet rs) throws SQLException {
-        String countryName = resolveCountryDisplayOrNull(rs.getString("country"));
+        String countryName = resolveCountryDisplayOrNull(rs.getString(COL_COUNTRY));
         return new SocialNetworkRequest(Instant.parse(rs.getString(COL_TIMESTAMP)), rs.getString(COL_USER_AGENT),
                 rs.getString("ua_name"), rs.getString(COL_URI_STEM), countryName == null ? "-" : countryName);
     }
@@ -1430,7 +1432,7 @@ public class DashboardService {
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         String blogLike = COVER_BLOG_REFERER_PREFIX + "%";
-        return jdbc.query(sql, (rs, _) -> new CoverUserAgent(rs.getString("name"), rs.getLong("human"),
+        return jdbc.query(sql, (rs, _) -> new CoverUserAgent(rs.getString("name"), rs.getLong(FIELD_HUMAN),
                 rs.getLong("blog"), rs.getLong("other"),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR)),
                 fromSql, toSql, blogLike, blogLike, fromSql, toSql, limit);

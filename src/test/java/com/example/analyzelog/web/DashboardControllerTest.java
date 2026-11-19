@@ -111,7 +111,7 @@ class DashboardControllerTest {
 
     @Test
     void asnDetailRendersTitleAndDefaultRange() {
-        org.mockito.Mockito.when(dashboardService.asnTitle("24940")).thenReturn("AS24940 - Hetzner - hosting");
+        when(dashboardService.asnTitle("24940")).thenReturn("AS24940 - Hetzner - hosting");
         assertThat(mvc.get().uri("/asn-detail").param("asn", "24940").exchange())
                 .hasStatusOk()
                 .hasViewName("asn-detail")

@@ -66,10 +66,10 @@ describe('Charts.loadChart', () => {
         }));
         const render = vi.fn();
 
-        await Charts.loadChart('ua-groups?from=2026-01-01&to=2026-01-31', render);
+        Charts.loadChart('ua-groups?from=2026-01-01&to=2026-01-31', render);
+        await vi.waitFor(() => expect(render).toHaveBeenCalledWith(payload));
 
         expect(fetch).toHaveBeenCalledWith('/api/ua-groups?from=2026-01-01&to=2026-01-31');
-        expect(render).toHaveBeenCalledWith(payload);
     });
 
     it('does not call render when HTTP response is not ok', async () => {
@@ -77,10 +77,10 @@ describe('Charts.loadChart', () => {
         const render = vi.fn();
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-        await Charts.loadChart('bad-endpoint', render);
+        Charts.loadChart('bad-endpoint', render);
+        await vi.waitFor(() => expect(consoleSpy).toHaveBeenCalled());
 
         expect(render).not.toHaveBeenCalled();
-        expect(consoleSpy).toHaveBeenCalled();
     });
 
     it('does not throw and logs error on network failure', async () => {
@@ -88,9 +88,9 @@ describe('Charts.loadChart', () => {
         const render = vi.fn();
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-        await expect(Charts.loadChart('any', render)).resolves.toBeUndefined();
+        Charts.loadChart('any', render);
+        await vi.waitFor(() => expect(consoleSpy).toHaveBeenCalled());
         expect(render).not.toHaveBeenCalled();
-        expect(consoleSpy).toHaveBeenCalled();
     });
 });
 
