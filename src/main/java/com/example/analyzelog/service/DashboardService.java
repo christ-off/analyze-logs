@@ -1396,6 +1396,28 @@ public class DashboardService {
         return byNetwork;
     }
 
+    // Feed Readers page: classified user agents (ua_name) whose every request in the range was for a feed
+    // (a single off-feed URI makes it a scraper or a browser, not a reader). The predicate binds
+    // the range twice (outer query + this subquery), so callers pass from/to before and after it.
+    private static final String FEED_READER_FILTER = """
+            ua_name IN (SELECT ua_name FROM cloudfront_logs
+                        WHERE timestamp BETWEEN ? AND ?
+                        GROUP BY ua_name
+                        HAVING SUM(CASE WHEN uri_stem NOT IN (%s) THEN 1 ELSE 0 END) = 0)""".formatted(FEED_URI_LIST);
+
+    public List<NameResultTypeCount> feedReaderUserAgents(Instant from, Instant to, int limit) {
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return uaResultTypesByFilter(FEED_READER_FILTER, List.of(fromSql, toSql), from, to, limit);
+    }
+
+    public List<DailyResultTypeCount> feedReaderRequestsPerDay(Instant from, Instant to) {
+        String sql = SQL_DAILY_SELECT + andClause(FEED_READER_FILTER) + SQL_DAILY_GROUP_ORDER;
+        String fromSql = TimestampFormat.sqlValue(from);
+        String toSql = TimestampFormat.sqlValue(to);
+        return queryDailyByResultType(sql, fromSql, toSql, fromSql, toSql);
+    }
+
     // Blog book covers: webp or jpg files under /assets/posts*.
     private static final String COVER_FILTER = "uri_stem LIKE '/assets/posts%' AND (uri_stem LIKE '%.webp' OR uri_stem LIKE '%.jpg')";
     private static final String COVER_BLOG_REFERER_PREFIX = "https://post-tenebras-lire.net";

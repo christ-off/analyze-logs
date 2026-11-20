@@ -2009,4 +2009,24 @@ class DashboardServiceIntegrationTest {
         assertEquals(5, dashboardService.coverRequestsPerDay(from, to).stream()
                 .mapToLong(d -> d.hit() + d.miss() + d.function() + d.error()).sum());
     }
+
+    @Test
+    void feedReaderQueries_onlyKeepUaNamesThatNeverRequestedAnythingButFeeds() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/feed-readers-test.gz", List.of(
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/feed.xml", null, "Miniflux/2.0", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/rss.xml", null, "Miniflux/2.0", "US", "Miss"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/feed.xml", null, "facebookexternalhit/1.1", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/some-post/", null, "facebookexternalhit/1.1", "US", "Hit")
+        ));
+        Instant to = Instant.now().plusSeconds(5);
+
+        var uas = dashboardService.feedReaderUserAgents(from, to, 10);
+        assertEquals(1, uas.size());
+        assertEquals("Miniflux", uas.getFirst().name());
+        assertEquals(2, uas.getFirst().total());
+
+        assertEquals(2, dashboardService.feedReaderRequestsPerDay(from, to).stream()
+                .mapToLong(d -> d.hit() + d.miss() + d.function() + d.error()).sum());
+    }
 }
