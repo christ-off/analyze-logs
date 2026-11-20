@@ -273,6 +273,19 @@ deliberately not required: browsers serve it from cache on return visits, while 
 The Human page applies the same rule, but requires the svg within ±1h of the page request. A bot that
 fetches an svg can still qualify. Known limitation, not currently fixed.
 
+## TODO
+
+### Re-check the blocked-bot user-agent regex (around early January 2027)
+
+`asn` has only been recorded in `cloudfront_logs` since 2026-11-11. The big `blockedBotRegex` is mostly
+redundant with the "not coming from an ISP" ASN rule: only the alternatives that match traffic from
+`isp` ASNs still matter (as of 2026-11-20: `baiduspider`, `got`, `twitterbot/1.0`, `python-requests/`,
+`tphotobot/`, `emacs/`, `curl/`, `coccocbot`, `seojuice-searchbot/`, `konqueror/`).
+
+Once there are a few weeks of ASN data, run `python3 -I etc/isp_regex_check.py` from the repo root. It
+prints the alternatives still hitting `isp` traffic and the reduced regex. Replace the regex with that
+output, and check whether it can be dropped altogether.
+
 ---
 
 ## Database
