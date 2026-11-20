@@ -182,19 +182,6 @@ class DashboardControllerTest {
                 .model().containsEntry("activeRange", "7d");
     }
 
-    @Test
-    void securityReturns200() {
-        assertThat(mvc.get().uri("/security").exchange())
-                .hasStatusOk()
-                .hasViewName("security");
-    }
-
-    @Test
-    void securityDefaultRangeIs7Days() {
-        assertThat(mvc.get().uri("/security").exchange())
-                .model().containsEntry("activeRange", "7d");
-    }
-
     @ParameterizedTest
     @CsvSource({"chrome,Chrome", "edge,Edge", "firefox,Firefox", "safari,Safari"})
     void browserPageRendersBrowserViewWithDefaultRange(String key, String label) {

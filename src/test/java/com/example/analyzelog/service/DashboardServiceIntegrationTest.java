@@ -4,7 +4,6 @@ import com.example.analyzelog.model.AsnInfo;
 import com.example.analyzelog.model.BotUaRequest;
 import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.CountryResultTypeCount;
-import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.CoverUserAgent;
@@ -859,64 +858,6 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, today.hit());
         assertEquals(1, today.miss());
         assertEquals(0, today.error());
-    }
-
-    // --- security page integration tests ---
-
-    @Test
-    void securityTrafficCategories_returnsOneRowPerSecurityGroup() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/security-traffic-categories-test.gz", List.of(
-                entryWithUri("/wp-login.php"),
-                entryWithUri("/.env"),
-                entryWithUri("/index.html")
-        ));
-
-        var result = dashboardService.securityTrafficCategories(from, Instant.now().plusSeconds(5));
-
-        assertTrue(result.size() > 1, "expected a row per configured security group");
-        var byName = result.stream().collect(Collectors.toMap(NameCount::name, NameCount::count));
-        assertEquals(1L, byName.get("PHP/WordPress"));
-        assertEquals(1L, byName.get("Env/credential file probing"));
-        assertEquals(0L, byName.get("Java/Spring exploit probing"));
-    }
-
-    @Test
-    void securityTopCountries_filtersToPhpWordpressUris() {
-        Instant from = Instant.now();
-        repository.saveEntries("logs/security-top-countries-test.gz", List.of(
-                entryWithCountryAndUriAndResultType("FR", "/wp-login.php", "Hit"),
-                entryWithCountryAndUriAndResultType("FR", "/wp-login.php", "Hit"),
-                entryWithCountryAndUriAndResultType("US", "/index.html", "Hit")
-        ));
-
-        var result = dashboardService.securityTopCountries(from, Instant.now().plusSeconds(5), 10);
-
-        assertEquals(1, result.size());
-        assertEquals("FR", result.getFirst().code());
-        assertEquals(2, result.getFirst().hit() + result.getFirst().miss() + result.getFirst().function() + result.getFirst().error());
-    }
-
-    @Test
-    void securityRequestsPerDay_breaksDownByCategory() {
-        Instant now = Instant.now();
-        Instant yesterday = now.minus(1, ChronoUnit.DAYS);
-        repository.saveEntries("logs/security-rpd-test.gz", List.of(
-                makeEntry(now, "SFO53-P7", "1.2.3.4", "/wp-login.php", null, "TestAgent/1.0", "US", "Hit"),
-                makeEntry(now, "SFO53-P7", "1.2.3.4", "/.env", null, "TestAgent/1.0", "US", "Hit"),
-                makeEntry(now, "SFO53-P7", "1.2.3.4", "/index.html", null, "TestAgent/1.0", "US", "Hit"),
-                makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/page.php", null, "TestAgent/1.0", "US", "Hit"),
-                makeEntry(yesterday, "SFO53-P7", "1.2.3.4", "/about.html", null, "TestAgent/1.0", "US", "Hit")
-        ));
-
-        var result = dashboardService.securityRequestsPerDay(yesterday.minusSeconds(5), now.plusSeconds(5));
-
-        assertEquals(3, result.size(), "one row per (day, category) with at least one match");
-        long total = result.stream().mapToLong(DailyNameCount::count).sum();
-        assertEquals(3, total);
-        assertTrue(result.stream().anyMatch(r -> "Env/credential file probing".equals(r.name())));
-        assertEquals(2, result.stream().filter(r -> "PHP/WordPress".equals(r.name())).count(),
-                "PHP/WordPress hits on both days");
     }
 
     private CloudFrontLogEntry entryWithAsnUaAndUri(String asn, String clientIp, String ua, String uriStem) {

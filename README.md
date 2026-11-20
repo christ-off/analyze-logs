@@ -86,7 +86,7 @@ Key properties:
 | `app.nb-months-to-keep` | `3` | Months of logs kept in the database |
 | `app.robots-url` | the blog's `/robots.txt` | `robots.txt` fetched by **Refresh Robots** |
 | `app.firefox-esr-version` | `115` | Firefox ESR major version used by the browser pages |
-| `uri-stem-groups.groups` | PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing | Groups of `uri_stem` LIKE patterns collapsed into one label on the **Top URLs** chart. A group with `security: true` also feeds the **Security** traffic category and the [Security page](#security-page). |
+| `uri-stem-groups.groups` | PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing | Groups of `uri_stem` LIKE patterns collapsed into one label on the **Top URLs** chart. A group with `security: true` also feeds the **Security** traffic category. |
 
 ### `application-local.yml` (gitignored — your secrets)
 
@@ -169,18 +169,6 @@ Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date pic
 ### Countries page
 
 One sortable table of all countries for the selected date range: requests, human requests, Mastodon requests (excluding `/`, which Mastodon polls without human interaction), search-bot requests, % human (same "Probable human" classification as the country detail page) and a Hit / Miss / Filtered / Error bar. Use it to spot countries with many requests but almost no human traffic — candidates for blocking upstream.
-
-### Security page
-
-Focuses on the traffic flagged by `uri-stem-groups` entries with `security: true` (scanner/exploit probing), scoped to the selected date range:
-
-| Chart | Description |
-|-------|-------------|
-| Traffic Categories | Horizontal bar — request count per security scan category (PHP/WordPress, Env/credential file probing, Config/backup dump probing, Open-proxy / IP-echo probing, Java/Spring exploit probing, CGI-bin / router-IoT probing). |
-| Top Countries | Horizontal bar — countries the security-flagged requests originate from. |
-| Requests per Day | Stacked bar — daily breakdown by scan category. |
-
-Date range presets are shared with the main dashboard.
 
 ### UA detail page
 

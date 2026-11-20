@@ -10,7 +10,6 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryClientCounts;
 import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.CoverUserAgent;
-import com.example.analyzelog.model.DailyNameCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
@@ -39,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("java:S2077") // dynamic SQL parts are static constants or parameterized — no user input is concatenated
@@ -118,8 +116,6 @@ public class DashboardService {
                         rs.getLong("hit"), rs.getLong("miss"),
                         rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR));
             };
-    private static final RowMapper<DailyNameCount> DAILY_NAME_COUNT_MAPPER =
-            (rs, _) -> new DailyNameCount(LocalDate.parse(rs.getString("day")), rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final String URI_STEM_EXCLUSION_PREDICATE = "uri_stem NOT LIKE ?";
     private static final String RESULT_TYPE_SUMS = ResultTypeSql.RESULT_TYPE_SUMS;
 
@@ -284,24 +280,13 @@ public class DashboardService {
         return Map.entry("uri_stem = ?", List.of(urlName));
     }
 
-    // Inline (not parameterized) equivalent of securityPredicate(), for embedding into CATEGORY_CASE_EXPR_TEMPLATE
+    // Inline (not parameterized) predicate, for embedding into CATEGORY_CASE_EXPR_TEMPLATE
     // alongside other literal patterns (FEED_URI_LIST) — same trusted-config style as buildUriStemNameCase().
     private String securityUriStemWhenClause() {
         return securityGroupNames.stream()
                 .flatMap(name -> groupPatterns.get(name).stream())
                 .map(pattern -> "LOWER(uri_stem) LIKE LOWER('" + pattern + "')")
                 .collect(Collectors.joining(" OR "));
-    }
-
-    // Union of every uri-stem-groups entry flagged security: true — used to filter overall security-scan traffic.
-    private Map.Entry<String, List<Object>> securityPredicate() {
-        List<String> patterns = securityGroupNames.stream()
-                .flatMap(name -> groupPatterns.get(name).stream())
-                .toList();
-        String pred = patterns.stream()
-                .map(_ -> "LOWER(uri_stem) LIKE LOWER(?)")
-                .collect(Collectors.joining(" OR ", "(", ")"));
-        return Map.entry(pred, List.copyOf(patterns));
     }
 
     private static String andClause(String clause) {
@@ -980,60 +965,6 @@ public class DashboardService {
 
         return jdbc.query(sql, NAME_RESULT_TYPE_COUNT_MAPPER, args.toArray());
     }
-
-    public List<NameCount> securityTrafficCategories(Instant from, Instant to) {
-        var args = new ArrayList<>();
-        String sql = buildSecurityUnionSql(securityGroupNames, from, to, args,
-                name -> "SELECT '" + name + "' as name, COUNT(*) as count\n"
-                        + "FROM cloudfront_logs\n"
-                        + "WHERE timestamp BETWEEN ? AND ?\n"
-                        + "  AND %s\n");
-        return jdbc.query(sql + "ORDER BY count DESC\n", NAME_COUNT_MAPPER, args.toArray());
-    }
-
-    public List<DailyNameCount> securityRequestsPerDay(Instant from, Instant to) {
-        var args = new ArrayList<>();
-        String sql = buildSecurityUnionSql(securityGroupNames, from, to, args,
-                name -> "SELECT date(timestamp) as day, '" + name + "' as name, COUNT(*) as count\n"
-                        + "FROM cloudfront_logs\n"
-                        + "WHERE timestamp BETWEEN ? AND ?\n"
-                        + "  AND %s\n"
-                        + "GROUP BY day\n");
-        return jdbc.query(sql + "ORDER BY day\n", DAILY_NAME_COUNT_MAPPER, args.toArray());
-    }
-
-    private String buildSecurityUnionSql(List<String> names, Instant from, Instant to,
-                                          List<Object> args,
-                                          UnaryOperator<String> selectFmt) {
-        return names.stream()
-                .map(name -> {
-                    var entry = uriStemPredicate(name);
-                    args.add(TimestampFormat.sqlValue(from));
-                    args.add(TimestampFormat.sqlValue(to));
-                    args.addAll(entry.getValue());
-                    return selectFmt.apply(name).formatted(entry.getKey());
-                })
-                .collect(Collectors.joining("UNION ALL\n"));
-    }
-
-    public List<CountryResultTypeCount> securityTopCountries(Instant from, Instant to, int limit) {
-        var entry = securityPredicate();
-        String sql = SQL_SELECT_COUNTRY + ResultTypeSql.RESULT_TYPE_SUMS + "\n" +
-                "FROM cloudfront_logs\n" +
-                "WHERE timestamp BETWEEN ? AND ?\n" +
-                "  AND country IS NOT NULL\n" +
-                SQL_AND_INDENT + entry.getKey() + "\n" +
-                "GROUP BY country\n" +
-                ResultTypeSql.ORDER_BY_TOTAL_DESC +
-                LIMIT_PARAM;
-        var args = new ArrayList<>();
-        args.add(TimestampFormat.sqlValue(from));
-        args.add(TimestampFormat.sqlValue(to));
-        args.addAll(entry.getValue());
-        args.add(limit);
-        return jdbc.query(sql, COUNTRY_RESULT_TYPE_COUNT_MAPPER, args.toArray());
-    }
-
 
     // Reuses the "Probable human" (client_ip, user_agent) pair classification, scoped to one UA.
     public HumanTrafficStats humanTrafficStats(String ua, Instant from, Instant to) {
