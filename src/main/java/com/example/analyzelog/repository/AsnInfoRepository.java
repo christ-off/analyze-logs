@@ -22,15 +22,9 @@ public class AsnInfoRepository {
         jdbc.update("DELETE FROM asn_info");
         jdbc.batchUpdate(
                 "INSERT OR REPLACE INTO asn_info (asn, handle, name, country_code, category) VALUES (?,?,?,?,?)",
-                entries,
-                entries.size(),
-                (stmt, e) -> {
-                    stmt.setString(1, e.asn());
-                    stmt.setString(2, e.handle());
-                    stmt.setString(3, e.name());
-                    stmt.setString(4, e.countryCode());
-                    stmt.setString(5, e.category());
-                });
+                entries.stream()
+                        .map(e -> new Object[]{e.asn(), e.handle(), e.name(), e.countryCode(), e.category()})
+                        .toList());
     }
 
     public int count() {

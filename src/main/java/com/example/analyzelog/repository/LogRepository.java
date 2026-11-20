@@ -46,26 +46,25 @@ public class LogRepository {
                         ua_name, edge_location_iata, asn
                     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
-                    entries,
-                    entries.size(),
-                    (stmt, e) -> {
-                        stmt.setString(1, TimestampFormat.sqlValue(e.timestamp()));
-                        stmt.setString(2, e.edgeLocation());
-                        stmt.setString(3, e.clientIp());
-                        stmt.setString(4, e.method());
-                        stmt.setString(5, e.uriStem());
-                        stmt.setInt(6, e.status());
-                        stmt.setString(7, e.referer());
-                        stmt.setString(8, e.userAgent());
-                        stmt.setString(9, e.edgeResultType());
-                        stmt.setString(10, e.edgeResponseResultType());
-                        stmt.setString(11, e.edgeDetailedResultType());
-                        stmt.setString(12, e.contentType());
-                        stmt.setString(13, e.country());
-                        stmt.setString(14, classifier.classify(e.userAgent()));
-                        stmt.setString(15, edgeLocationResolver.extractIata(e.edgeLocation()));
-                        stmt.setString(16, e.asn());
-                    });
+                    entries.stream()
+                            .map(e -> new Object[]{
+                                    TimestampFormat.sqlValue(e.timestamp()),
+                                    e.edgeLocation(),
+                                    e.clientIp(),
+                                    e.method(),
+                                    e.uriStem(),
+                                    e.status(),
+                                    e.referer(),
+                                    e.userAgent(),
+                                    e.edgeResultType(),
+                                    e.edgeResponseResultType(),
+                                    e.edgeDetailedResultType(),
+                                    e.contentType(),
+                                    e.country(),
+                                    classifier.classify(e.userAgent()),
+                                    edgeLocationResolver.extractIata(e.edgeLocation()),
+                                    e.asn()})
+                            .toList());
         }
 
         jdbc.update(
