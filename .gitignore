@@ -13,3 +13,6 @@ logs.db
 # Playwright
 /test-results/
 /playwright-report/
+
+# Local sandbox helper scripts
+etc/sbx_*.sh
