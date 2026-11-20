@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Feed Readers', ~{:: .extra-head}, ~{:: .page-content}, ~{:: .page-script})}">
+<head><title>Feed Readers</title></head>
+<th:block class="extra-head">
+    <meta name="cf-from"    th:content="${from}"/>
+    <meta name="cf-to"      th:content="${to}"/>
+    <meta name="cf-to-date" th:content="${toDate}"/>
+</th:block>
+<th:block class="page-content">
+
+    <div th:replace="~{fragments/flash :: messages}"></div>
+
+    <th:block th:replace="~{fragments/toolbar :: toolbar('/feed-readers')}"></th:block>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">
+            <span>User Agents</span>
+            <span class="text-muted fw-normal small ms-2">user agents (by name) that only ever requested /feed.xml or /rss.xml — click one for its detail</span>
+        </div>
+        <div class="card-body"><canvas id="chartFeedReaders"></canvas></div>
+    </div>
+
+    <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
+
+</th:block>
+<th:block class="page-script">
+    <script type="module" th:src="@{/js/pages/feed-readers.js}"></script>
+</th:block>
+</html>
