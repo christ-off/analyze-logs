@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Chrome for iOS ("... CriOS/137.0.7151.171 Mobile/15E148 Safari/537.36") has no "Chrome/" token,
+         so it was classified Unknown. CriOS is handled in UserAgentClassifier; reclassify older log rows. -->
+    <changeSet id="028-reclassify-crios-chrome-iphone" author="analyze-logs">
+        <sql>
+            UPDATE cloudfront_logs SET ua_name = 'Chrome / iPhone'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%CriOS/%' AND user_agent LIKE '%iPhone%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

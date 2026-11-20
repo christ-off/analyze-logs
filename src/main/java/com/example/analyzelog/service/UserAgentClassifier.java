@@ -28,8 +28,8 @@ public class UserAgentClassifier {
         }
 
         boolean isEdge    = ua.contains("Edg/");
-        boolean isChrome  = ua.contains("Chrome/") && !isEdge;
-        boolean isFirefox = ua.contains("Firefox/");
+        boolean isChrome  = (ua.contains("Chrome/") || ua.contains("CriOS/")) && !isEdge;
+        boolean isFirefox = ua.contains("Firefox/") || ua.contains("FxiOS/");
         boolean isSafari  = ua.contains("Safari/") && ua.contains("Version/") && !isChrome && !isEdge;
 
         String os = detectOs(ua);
