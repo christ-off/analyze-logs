@@ -6,6 +6,7 @@ import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
+import com.example.analyzelog.model.IpRequest;
 import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
@@ -273,6 +274,81 @@ class DashboardServiceIntegrationTest {
         asnInfoRepository.replaceAll(List.of(new AsnInfo("2", "B", "Second", "FR", "hosting")));
 
         assertEquals(1, asnInfoRepository.count());
+    }
+
+    @Test
+    void asnTitle_combinesAsNumberNameAndCategory() {
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting")));
+
+        assertEquals("AS24940 - Hetzner Online GmbH - hosting", dashboardService.asnTitle("24940"));
+    }
+
+    @Test
+    void asnTitle_omitsPartsWhenTheRowIsMissingOrBlank() {
+        asnInfoRepository.replaceAll(List.of());
+        assertEquals("AS16276", dashboardService.asnTitle("16276"));
+
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("99999", "X-AS", null, null, null)));
+        assertEquals("AS99999", dashboardService.asnTitle("99999"));
+    }
+
+    @Test
+    void asnTopUserAgentsByResultType_countsPerResultTypeAndFiltersToAsn() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/asn-ua-split-test.gz", List.of(
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/index.html", "Hit"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/feed.xml",   "Miss"),
+                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX,  "/index.html", "Hit"),
+                entryWithAsnUaUriAndResultType("16276", UA_CHROME_WINDOWS, "/index.html", "Hit")  // different ASN — must not appear
+        ));
+
+        var result = dashboardService.asnTopUserAgentsByResultType("24940", from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        NameResultTypeCount chrome = result.stream().filter(r -> "Chrome / Windows".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, chrome.hit());
+        assertEquals(1, chrome.miss());
+        NameResultTypeCount firefox = result.stream().filter(r -> "Firefox / Linux".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, firefox.hit());
+    }
+
+    @Test
+    void asnUrlsByResultType_countsPerResultTypeAndFiltersToAsn() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/asn-url-split-test.gz", List.of(
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/index.html", "Hit"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/about.html", "Hit"),
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/about.html", "Miss"),
+                entryWithAsnUaUriAndResultType("16276", UA_CHROME_WINDOWS, "/index.html", "Hit")  // different ASN — must not count
+        ));
+
+        var result = dashboardService.asnUrlsByResultType("24940", from, Instant.now().plusSeconds(5), 10);
+
+        assertEquals(2, result.size());
+        NameResultTypeCount index = result.stream().filter(r -> "/index.html".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, index.hit());
+        NameResultTypeCount about = result.stream().filter(r -> "/about.html".equals(r.name())).findFirst().orElseThrow();
+        assertEquals(1, about.hit());
+        assertEquals(1, about.miss());
+    }
+
+    @Test
+    void asnRequestsPerDay_countsPerResultType() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/asn-requests-per-day-test.gz", List.of(
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType("24940", "Miss"),
+                entryWithAsnAndResultType("16276", "Hit")  // different ASN — must not count
+        ));
+
+        List<DailyResultTypeCount> result = dashboardService.asnRequestsPerDay("24940", from, Instant.now().plusSeconds(5));
+
+        assertFalse(result.isEmpty());
+        DailyResultTypeCount today = result.getLast();
+        assertEquals(2, today.hit());
+        assertEquals(1, today.miss());
+        assertEquals(0, today.error());
     }
 
     @Test
@@ -976,6 +1052,34 @@ class DashboardServiceIntegrationTest {
 
         assertEquals(List.of("/third", "/second", "/first"),
                 result.stream().map(BotUaRequest::uriStem).toList());
+    }
+
+    @Test
+    void requestsByIp_filtersToExactIpAndMapsCountryAndUaName() {
+        Instant from = Instant.now();
+        Instant first = Instant.now().plusSeconds(1);
+        Instant second = Instant.now().plusSeconds(2);
+        repository.saveEntries("logs/ip-requests-test.gz", List.of(
+                makeEntry(first,  "SFO53-P7", "8.8.8.8", "/index.html", null, UA_CHROME_WINDOWS, "FR", "Hit"),
+                makeEntry(second, "SFO53-P7", "8.8.8.8", "/about.html", null, UA_CHROME_WINDOWS, null, "Miss"),
+                makeEntry(first,  "SFO53-P7", "9.9.9.9", "/index.html", null, UA_CHROME_WINDOWS, "US", "Hit")  // different IP — must not appear
+        ));
+
+        var result = dashboardService.requestsByIp("8.8.8.8", from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.size());
+        // ORDER BY timestamp DESC: the newer request comes first
+        IpRequest newer = result.getFirst();
+        assertEquals("/about.html", newer.uriStem());
+        assertEquals("-", newer.country());  // NULL country → dash
+        IpRequest older = result.getLast();
+        assertEquals("8.8.8.8", older.clientIp());
+        assertEquals("Chrome / Windows", older.name());
+        assertEquals("France", older.country());
+        assertEquals(UA_CHROME_WINDOWS, older.userAgent());
+        assertEquals("/index.html", older.uriStem());
+        assertEquals(200, older.scStatus());
+        assertEquals("Hit", older.resultType());
     }
 
     @Test
