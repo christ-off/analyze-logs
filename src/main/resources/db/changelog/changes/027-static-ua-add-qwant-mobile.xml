@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Qwant iOS browser ("... QwantMobile/6.9.0 Mobile/15E148 Safari/604.1") and Firefox for iOS ("... FxiOS/122.0 ...").
+         Neither carries the "Firefox/" or "Version/" tokens, so they were classified Unknown.
+         FxiOS is handled in UserAgentClassifier; reclassify log rows ingested before this existed. -->
+    <changeSet id="027-static-ua-add-qwant-mobile" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('Qwant / iPhone', 'Browsers', 'Qwant / iPhone', 'QwantMobile', 87);
+            UPDATE cloudfront_logs SET ua_name = 'Qwant / iPhone'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%QwantMobile%';
+            UPDATE cloudfront_logs SET ua_name = 'Firefox / iPhone'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%FxiOS/%' AND user_agent LIKE '%iPhone%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
