@@ -6,6 +6,7 @@ vi.mock('../../main/resources/static/js/charts.js', () => ({
     Charts: {
         COLORS: { green: '#4CAF50', blue: '#2196F3', orange: '#FF9800', red: '#f44336' },
         loadChart: vi.fn(),
+        horizontalStackedBar: vi.fn(),
     },
 }));
 
@@ -17,9 +18,11 @@ vi.mock('../../main/resources/static/js/utils.js', async (importOriginal) => ({
     resultTotal:     (row) => row.hit + row.miss + (row['function'] ?? 0) + row.error,
     stackedBar:      vi.fn(() => ''),
     uaRequestsUrl:   vi.fn((ua) => `/ua-requests?ua=${ua}`),
+    detailUrl:       vi.fn((path, params) => `${path}?${new URLSearchParams(params).toString()}`),
 }));
 
-import { loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
+import { Charts } from '../../main/resources/static/js/charts.js';
+import { loadAllCharts, loadDisobedientSection, loadObedientSection, loadRobotsSkippedBots, initRobotsRefresh, loadBrowserConfigFetches } from '../../main/resources/static/js/bot-analysis.js';
 import { flushPromises } from './test-helpers.js';
 
 const BOTS_HTML = `
@@ -242,5 +245,24 @@ describe('initRobotsRefresh', () => {
 
         expect(document.getElementById('robotsRefreshedAt').textContent)
             .toContain('OK — refreshed at');
+    });
+});
+
+describe('loadAllCharts (Most Active Bots)', () => {
+    it('links the top bots bars to /ua-detail, like the other user agents charts', async () => {
+        document.body.innerHTML = BOTS_HTML;
+        vi.clearAllMocks();
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) }));
+
+        loadAllCharts();
+        await flushPromises();
+
+        const botsCall = Charts.loadChart.mock.calls.find(([endpoint]) => endpoint.startsWith('top-bots?'));
+        expect(botsCall).toBeDefined();
+        const [, renderFn] = botsCall;
+        renderFn([{ name: 'Googlebot', hit: 2, miss: 1, function: 0, error: 0 }]);
+        const [canvasId, , urlFn] = Charts.horizontalStackedBar.mock.calls[0];
+        expect(canvasId).toBe('chartTopBots');
+        expect(urlFn({ name: 'Googlebot' })).toMatch(/\/ua-detail\?ua=Googlebot/);
     });
 });

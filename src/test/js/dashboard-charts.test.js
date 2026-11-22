@@ -15,7 +15,22 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
 }));
 
 import { Charts } from '../../main/resources/static/js/charts.js';
-import { loadCoreCharts } from '../../main/resources/static/js/dashboard-charts.js';
+import { loadCoreCharts, loadUaChart } from '../../main/resources/static/js/dashboard-charts.js';
+
+describe('loadUaChart', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('renders into the given canvas with a /ua-detail link builder, for any endpoint', () => {
+        loadUaChart('chartCoverUas', 'covers/user-agents?from=2026-01-01&to=2026-01-31');
+        const [endpoint, renderFn] = Charts.loadChart.mock.calls[0];
+        expect(endpoint.split('?')[0]).toBe('covers/user-agents');
+        renderFn([]);
+        const [canvasId, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
+        expect(canvasId).toBe('chartCoverUas');
+        expect(urlBuilder({ name: 'Chrome / Windows' }))
+            .toMatch(/\/ua-detail\?ua=Chrome/);
+    });
+});
 
 describe('loadCoreCharts', () => {
     beforeEach(() => vi.clearAllMocks());

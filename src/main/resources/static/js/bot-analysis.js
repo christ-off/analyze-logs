@@ -3,10 +3,7 @@
 import { Charts } from './charts.js';
 import { initRefresh } from './refresh.js';
 import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl, loadSimpleTable } from './utils.js';
-
-function uaDetailUrl(uaName) {
-    return detailUrl('/ua-detail', { ua: uaName });
-}
+import { loadUaChart } from './dashboard-charts.js';
 
 function loadBotTable(url, tbodyId, emptyMsg) {
     fetch(url)
@@ -117,7 +114,7 @@ export function loadAllCharts() {
 
     const p = buildBaseParams({});
     Charts.loadChart(`countries-filtered-ratio?${p}`, data => Charts.horizontalStackedBar('chartCountriesFiltered', data, countryDetailUrl));
-    Charts.loadChart(`top-bots?${p}`, data => Charts.horizontalStackedBar('chartTopBots', data, d => uaDetailUrl(d.name)));
+    loadUaChart('chartTopBots', `top-bots?${p}`);
     loadProbableBots();
     loadBrowserConfigFetches();
     loadDisobedientSection();

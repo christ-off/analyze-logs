@@ -1,13 +1,13 @@
 'use strict';
 
 import { Charts } from '../charts.js';
-import { buildBaseParams, detailUrl, escapeHtml, loadSimpleTable, resultTotal, stackedBar, uaRequestsUrl } from '../utils.js';
+import { buildBaseParams, escapeHtml, loadSimpleTable, resultTotal, stackedBar, uaRequestsUrl } from '../utils.js';
+import { loadUaChart } from '../dashboard-charts.js';
 import { initRefresh } from '../refresh.js';
 
 export function loadCoverCharts() {
     const p = buildBaseParams({});
-    Charts.loadChart(`covers/user-agents?${p}`, data => Charts.horizontalStackedBar('chartCoverUas', data,
-        d => detailUrl('/ua-detail', { ua: d.name })));
+    loadUaChart('chartCoverUas', `covers/user-agents?${p}`);
     loadSimpleTable(`/api/covers/user-agent-table?${p}`, 'coverUaTable', 6, r => `<tr>
         <td class="text-break small"><a href="${uaRequestsUrl(r.name)}">${escapeHtml(r.name)}</a></td>
         <td class="text-end">${resultTotal(r).toLocaleString()}</td>
