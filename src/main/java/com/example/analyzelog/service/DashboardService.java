@@ -65,6 +65,7 @@ public class DashboardService {
     private static final String SQL_SELECT_UA_NAME = "SELECT ua_name as name,\n";
     private static final String SQL_SELECT_COUNTRY = "SELECT country as code,\n";
     private static final String SQL_SELECT_ASN = "SELECT c.asn AS asn, i.name AS name, i.category AS category,\n";
+    private static final String SQL_JOIN_ASN_INFO = "LEFT JOIN asn_info i ON i.asn = c.asn\n";
     private static final int UA_COUNTRIES_LIMIT = 10;
     private static final String RESULT_TYPE_EXCLUSION =
             "edge_response_result_type NOT IN ('Error'," + ResultTypeSql.FUNCTION_TYPE_LIST + ")";
@@ -76,6 +77,9 @@ public class DashboardService {
         return new BotUaRequest(
                 Instant.parse(rs.getString(COL_TIMESTAMP)),
                 rs.getString(COL_CLIENT_IP),
+                rs.getString("asn"),
+                rs.getString("name"),
+                rs.getString("category"),
                 rs.getString(COL_URI_STEM),
                 rs.getString("referer"),
                 rs.getString("result_type"),
@@ -410,7 +414,7 @@ public class DashboardService {
                 "       SUM(CASE WHEN c.uri_stem IN (" + FEED_URI_LIST + ") AND c.edge_response_result_type IN (" + HIT_OR_MISS_TYPE_LIST + ") THEN 1 ELSE 0 END) AS feeds\n" +
                 "FROM cloudfront_logs c\n" +
                 "JOIN pair_class pc ON c.client_ip = pc.client_ip AND c.user_agent = pc.user_agent\n" +
-                "LEFT JOIN asn_info i ON i.asn = c.asn\n" +
+                SQL_JOIN_ASN_INFO +
                 "WHERE c.timestamp BETWEEN ? AND ?\n" +
                 "  AND c.asn IS NOT NULL\n" +
                 "GROUP BY c.asn\n" +
@@ -1017,15 +1021,17 @@ public class DashboardService {
         return c.hit() + c.miss();
     }
 
+    // asn is NULL on rows fetched from logs delivered before the field existed (see 025-add-asn),
+    // so the join yields NULL name/category for those.
     public List<BotUaRequest> requestsByUserAgent(String ua, Instant from, Instant to) {
-        String sql = """
-                SELECT timestamp, client_ip, uri_stem, referer, country, status,
-                       %s as result_type
-                FROM cloudfront_logs
-                WHERE user_agent = ?
-                  AND timestamp >= ? AND timestamp < ?
-                ORDER BY timestamp DESC, id DESC
-                """.formatted(RESULT_TYPE_GROUP_EXPR);
+        String sql = SQL_SELECT_ASN +
+                "c.timestamp, c.client_ip, c.uri_stem, c.referer, c.country, c.status,\n" +
+                RESULT_TYPE_GROUP_EXPR + " as result_type\n" +
+                "FROM cloudfront_logs c\n" +
+                SQL_JOIN_ASN_INFO +
+                "WHERE c.user_agent = ?\n" +
+                "  AND c.timestamp >= ? AND c.timestamp < ?\n" +
+                "ORDER BY c.timestamp DESC, c.id DESC";
         return jdbc.query(sql, BOT_UA_REQUEST_MAPPER, ua, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 

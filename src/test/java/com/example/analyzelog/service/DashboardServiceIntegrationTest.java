@@ -1055,6 +1055,22 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void requestsByUserAgent_mapsAsnNameAndCategoryFromAsnInfo() {
+        Instant from = Instant.now();
+        asnInfoRepository.replaceAll(List.of(new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting")));
+        repository.saveEntries("logs/bot-ua-asn-name-test.gz", List.of(
+                entryWithAsnAndResultType("24940", "Hit"),
+                entryWithAsnAndResultType(null, "Hit")  // legacy row without asn — name/category stay null
+        ));
+
+        var result = dashboardService.requestsByUserAgent("TestAgent/1.0", from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(r -> "24940".equals(r.asn()) && "Hetzner Online GmbH".equals(r.asnName()) && "hosting".equals(r.asnCategory())));
+        assertTrue(result.stream().anyMatch(r -> r.asn() == null && r.asnName() == null && r.asnCategory() == null));
+    }
+
+    @Test
     void requestsByIp_filtersToExactIpAndMapsCountryAndUaName() {
         Instant from = Instant.now();
         Instant first = Instant.now().plusSeconds(1);

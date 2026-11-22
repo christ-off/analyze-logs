@@ -48,15 +48,16 @@
         <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2">
             <span>All Requests</span>
             <span class="text-muted fw-normal small" th:text="'(' + ${#lists.size(requests)} + ' rows)'"></span>
-            <button type="button" id="bulkReportBtn" class="btn btn-sm btn-outline-danger ms-auto d-none">Report selected</button>
         </div>
         <div class="card-body p-0">
             <table class="table table-sm table-hover table-striped mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th th:if="${not #lists.isEmpty(requests)}"><input type="checkbox" id="selectAllRows" class="form-check-input" aria-label="Select all rows"/></th>
                         <th>Date / Time (UTC)</th>
                         <th>IP</th>
+                        <th>ASN Number</th>
+                        <th>ASN Name</th>
+                        <th>Category</th>
                         <th>Country</th>
                         <th>URI</th>
                         <th>Referer</th>
@@ -66,17 +67,18 @@
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(requests)}">
-                        <td colspan="8" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
+                        <td colspan="10" class="text-center text-muted py-3">No requests found for this user agent in the selected date range.</td>
                     </tr>
-                    <tr th:each="req : ${requests}"
-                        th:data-timestamp="${req.timestamp()}"
-                        th:data-uri="${req.uriStem()}"
-                        th:data-result="${req.resultType()}"
-                        th:data-status="${req.scStatus()}"
-                        th:data-country="${req.country()}">
-                        <td><input type="checkbox" class="form-check-input row-select" aria-label="Select row"/></td>
+                    <tr th:each="req : ${requests}">
                         <td th:text="${#temporals.format(req.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        <td class="ip-cell" th:data-ip="${req.clientIp()}" th:text="${req.clientIp()}"></td>
+                        <td th:text="${req.clientIp()}"></td>
+                        <td>
+                            <a th:if="${req.asn() != null}"
+                               th:href="@{/asn-detail(asn=${req.asn()}, from=${fromDate}, to=${toDate})}"
+                               th:text="'AS' + ${req.asn()}"></a>
+                        </td>
+                        <td th:text="${req.asnName()}"></td>
+                        <td th:text="${req.asnCategory()}"></td>
                         <td th:text="${req.country()}"></td>
                         <td><code th:text="${req.uriStem()}"></code></td>
                         <td class="text-break" th:text="${req.referer()}"></td>

@@ -5,6 +5,9 @@ import java.time.Instant;
 public record BotUaRequest(
     Instant timestamp,
     String clientIp,
+    String asn,
+    String asnName,
+    String asnCategory,
     String uriStem,
     String referer,
     String resultType,
