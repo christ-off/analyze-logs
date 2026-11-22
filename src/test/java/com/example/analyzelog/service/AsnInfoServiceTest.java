@@ -65,7 +65,7 @@ class AsnInfoServiceTest {
         @Override public InputStream getBody() {
             return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
         }
-        @Override public void close() { }
+        @Override public void close() { /* No resources to close: the body is an in-memory stream. */ }
     }
 
     @Test

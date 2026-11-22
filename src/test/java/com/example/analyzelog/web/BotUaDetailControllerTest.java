@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
@@ -64,7 +65,7 @@ class BotUaDetailControllerTest {
     }
 
     @Test
-    void requestsArePassedToModel() {
+    void requestsArePassedToModel() throws Exception {
         var request = new BotUaRequest(Instant.parse("2026-01-15T10:00:00Z"), "1.2.3.4", "24940", "Hetzner Online GmbH", "hosting", "/index.html", "https://example.com/", "Hit", "France", 200);
         when(dashboardService.requestsByUserAgent(eq(UA), any(Instant.class), any(Instant.class)))
                 .thenReturn(List.of(request));
@@ -76,7 +77,7 @@ class BotUaDetailControllerTest {
                 .hasStatusOk()
                 .model().containsEntry("requests", List.of(request));
         // The ASN link must carry date-only range params — /asn-detail's range resolution parses yyyy-MM-dd.
-        assertThat(result).bodyText()
+        assertThat(result.getResponse().getContentAsString(StandardCharsets.UTF_8))
                 .contains("AS24940", "/asn-detail?asn=24940&amp;from=2026-01-01&amp;to=2026-01-31");
     }
 

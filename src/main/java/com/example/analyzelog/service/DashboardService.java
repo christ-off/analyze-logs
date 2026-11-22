@@ -58,6 +58,7 @@ public class DashboardService {
     private static final String COL_URI_STEM = "uri_stem";
     private static final String COL_USER_AGENT = "user_agent";
     private static final String COL_COUNTRY = "country";
+    private static final String COL_CATEGORY = "category";
     // Every ua_name variant of a browser (desktop and mobile) is "<Browser> / <OS>" — the browser
     // dashboards aggregate across all of them regardless of OS.
     private static final String BROWSER_UA_FILTER = "ua_name LIKE ?";
@@ -78,7 +79,7 @@ public class DashboardService {
                 rs.getString(COL_CLIENT_IP),
                 rs.getString("asn"),
                 rs.getString("name"),
-                rs.getString("category"),
+                rs.getString(COL_CATEGORY),
                 rs.getString(COL_URI_STEM),
                 rs.getString("referer"),
                 rs.getString("result_type"),
@@ -412,7 +413,7 @@ public class DashboardService {
         String fromSql = TimestampFormat.sqlValue(from);
         String toSql = TimestampFormat.sqlValue(to);
         return jdbc.query(sql, (rs, _) -> new AsnResultTypeCount(rs.getString("asn"),
-                rs.getString("name"), rs.getString("category"),
+                rs.getString("name"), rs.getString(COL_CATEGORY),
                 rs.getLong("hit"), rs.getLong("miss"), rs.getLong(FIELD_FUNCTION), rs.getLong(FIELD_ERROR),
                 rs.getLong(FIELD_HUMAN), rs.getLong(FIELD_FEEDS)), fromSql, toSql, fromSql, toSql);
     }
@@ -422,7 +423,7 @@ public class DashboardService {
         var parts = new ArrayList<String>();
         parts.add("AS" + asn);
         jdbc.query("SELECT name, category FROM asn_info WHERE asn = ?", rs -> {
-            for (String col : List.of("name", "category")) {
+            for (String col : List.of("name", COL_CATEGORY)) {
                 String v = rs.getString(col);
                 if (v != null && !v.isBlank()) {
                     parts.add(v);

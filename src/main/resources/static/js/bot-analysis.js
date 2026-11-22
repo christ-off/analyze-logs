@@ -1,6 +1,5 @@
 'use strict';
 
-import { Charts } from './charts.js';
 import { initRefresh } from './refresh.js';
 import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, loadSimpleTable } from './utils.js';
 import { loadUaChart, loadCountriesChart } from './dashboard-charts.js';

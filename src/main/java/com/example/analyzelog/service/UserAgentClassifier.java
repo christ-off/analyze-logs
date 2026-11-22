@@ -27,25 +27,30 @@ public class UserAgentClassifier {
             if (r.pattern().matcher(ua).find()) return r.label();
         }
 
+        String os = detectOs(ua);
+        String browser = detectBrowser(ua, os);
+        return browser == null ? "Unknown" : browser + " / " + os;
+    }
+
+    // Browser family for raw UA strings no static rule matched, or null for unrecognised ones.
+    private static String detectBrowser(String ua, String os) {
         boolean isEdge    = ua.contains("Edg/");
         boolean isChrome  = (ua.contains("Chrome/") || ua.contains("CriOS/")) && !isEdge;
         boolean isFirefox = ua.contains("Firefox/") || ua.contains("FxiOS/");
         boolean isSafari  = ua.contains("Safari/") && ua.contains("Version/") && !isChrome && !isEdge;
 
-        String os = detectOs(ua);
-
-        if (isEdge)    return "Edge / " + os;
-        if (isChrome)  return "Chrome / " + os;
-        if (isFirefox) return "Firefox / " + os;
-        if (isSafari)  return "Safari / " + os;
+        if (isEdge)    return "Edge";
+        if (isChrome)  return "Chrome";
+        if (isFirefox) return "Firefox";
+        if (isSafari)  return "Safari";
 
         // Embedded WebKit view (WKWebView): AppleWebKit without the "Version/x Safari/x" tokens
         if (ua.contains("AppleWebKit/") && !ua.contains("Safari/")
                 && (os.equals("macOS") || os.equals(IPHONE) || os.equals("iPad"))) {
-            return "WebView / " + os;
+            return "WebView";
         }
 
-        return "Unknown";
+        return null;
     }
 
     private static String detectOs(String ua) {
