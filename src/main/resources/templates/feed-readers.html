@@ -16,12 +16,18 @@
     <div class="card mb-4">
         <div class="card-header fw-semibold">
             <span>User Agents</span>
-            <span class="text-muted fw-normal small ms-2">user agents (by name) that only ever requested /feed.xml or /rss.xml — click one for its detail</span>
+            <span class="text-muted fw-normal small ms-2">user agents (by name) that requesting /feed.xml or /rss.xml — click one for its detail</span>
         </div>
         <div class="card-body"><canvas id="chartFeedReaders"></canvas></div>
     </div>
 
-    <th:block th:replace="~{fragments/dashboard-rows :: requestsPerDayRow}"></th:block>
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">
+            <span>Subscribers per Day</span>
+            <span class="text-muted fw-normal small ms-2">subscribers announced in the user agent, else 1 per user agent and source (IP, or whole ASN if hosting) seen that day</span>
+        </div>
+        <div class="card-body"><canvas id="chartSubscribersPerDay"></canvas></div>
+    </div>
 
 </th:block>
 <th:block class="page-script">

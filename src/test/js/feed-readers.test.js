@@ -19,7 +19,7 @@ describe('feed readers page', () => {
 
         const urls = fetchMock.mock.calls.map(c => c[0]);
         expect(urls.some(u => u.startsWith('/api/feed-readers/user-agents?from='))).toBe(true);
-        expect(urls.some(u => u.startsWith('/api/feed-readers/requests-per-day?from='))).toBe(true);
+        expect(urls.some(u => u.startsWith('/api/feed-readers/subscribers-per-day?from='))).toBe(true);
     });
 
     // Shared loadUaChart behavior: every bar of the user agents chart is a link to /ua-detail.

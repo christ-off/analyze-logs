@@ -33,5 +33,6 @@
     <include file="db/changelog/changes/026-asn-info.xml"/>
     <include file="db/changelog/changes/027-static-ua-add-qwant-mobile.xml"/>
     <include file="db/changelog/changes/028-reclassify-crios-chrome-iphone.xml"/>
+    <include file="db/changelog/changes/029-ms-office-out-of-feed-readers.xml"/>
 
 </databaseChangeLog>

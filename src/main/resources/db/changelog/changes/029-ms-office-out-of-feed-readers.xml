@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Microsoft Office (Outlook) fetches feeds but is not a feed reader: keep it out of the
+         Feed Readers subscribers count. -->
+    <changeSet id="029-ms-office-out-of-feed-readers" author="analyze-logs">
+        <sql>
+            UPDATE static_ua SET ua_group = 'Other' WHERE ua_name = 'Microsoft Office';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

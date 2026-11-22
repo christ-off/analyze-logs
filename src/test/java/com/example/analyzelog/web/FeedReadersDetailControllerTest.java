@@ -1,7 +1,7 @@
 package com.example.analyzelog.web;
 
 import com.example.analyzelog.config.AppProperties;
-import com.example.analyzelog.model.DailyResultTypeCount;
+import com.example.analyzelog.model.DailyFeedSubscribers;
 import com.example.analyzelog.model.NameResultTypeCount;
 import com.example.analyzelog.service.DashboardService;
 import org.junit.jupiter.api.Test;
@@ -53,15 +53,15 @@ class FeedReadersDetailControllerTest {
     }
 
     @Test
-    void requestsPerDayReturnsJson() {
-        when(dashboardService.feedReaderRequestsPerDay(any(Instant.class), any(Instant.class)))
-                .thenReturn(List.of(new DailyResultTypeCount(LocalDate.of(2026, Month.JANUARY, 15), 10, 2, 0, 0)));
+    void subscribersPerDayReturnsJson() {
+        when(dashboardService.feedSubscribersPerDay(any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(new DailyFeedSubscribers(LocalDate.of(2026, Month.JANUARY, 15), "Feedly", 7)));
 
-        assertThat(mvc.get().uri("/api/feed-readers/requests-per-day")
+        assertThat(mvc.get().uri("/api/feed-readers/subscribers-per-day")
                 .param("from", "2026-01-01").param("to", "2026-01-31")
                 .exchange())
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].hit").isEqualTo(10);
+                .extractingPath("$[0].count").isEqualTo(7);
     }
 }

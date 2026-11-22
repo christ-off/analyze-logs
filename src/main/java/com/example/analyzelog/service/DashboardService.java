@@ -10,6 +10,7 @@ import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.CountryClientCounts;
 import com.example.analyzelog.model.CountryStats;
 import com.example.analyzelog.model.CoverUserAgent;
+import com.example.analyzelog.model.DailyFeedSubscribers;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
@@ -37,6 +38,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("java:S2077") // dynamic SQL parts are static constants or parameterized — no user input is concatenated
@@ -1314,26 +1317,59 @@ public class DashboardService {
         return byNetwork;
     }
 
-    // Feed Readers page: classified user agents (ua_name) whose every request in the range was for a feed
-    // (a single off-feed URI makes it a scraper or a browser, not a reader). The predicate binds
-    // the range twice (outer query + this subquery), so callers pass from/to before and after it.
+    // Feed Readers page: requests on a feed URI from the classified user agents (ua_name) of the 'Feed Readers' group.
+    // Off-feed requests (home page, favicon, articles) are ignored, so readers that also fetch those still count.
     private static final String FEED_READER_FILTER = """
-            ua_name IN (SELECT ua_name FROM cloudfront_logs
-                        WHERE timestamp BETWEEN ? AND ?
-                        GROUP BY ua_name
-                        HAVING SUM(CASE WHEN uri_stem NOT IN (%s) THEN 1 ELSE 0 END) = 0)""".formatted(FEED_URI_LIST);
+            uri_stem IN (%s)
+              AND ua_name IN (SELECT ua_name FROM static_ua WHERE ua_group = 'Feed Readers')""".formatted(FEED_URI_LIST);
 
     public List<NameResultTypeCount> feedReaderUserAgents(Instant from, Instant to, int limit) {
-        String fromSql = TimestampFormat.sqlValue(from);
-        String toSql = TimestampFormat.sqlValue(to);
-        return uaResultTypesByFilter(FEED_READER_FILTER, List.of(fromSql, toSql), from, to, limit);
+        return uaResultTypesByFilter(FEED_READER_FILTER, List.of(), from, to, limit);
     }
 
-    public List<DailyResultTypeCount> feedReaderRequestsPerDay(Instant from, Instant to) {
-        String sql = SQL_DAILY_SELECT + andClause(FEED_READER_FILTER) + SQL_DAILY_GROUP_ORDER;
-        String fromSql = TimestampFormat.sqlValue(from);
-        String toSql = TimestampFormat.sqlValue(to);
-        return queryDailyByResultType(sql, fromSql, toSql, fromSql, toSql);
+    // Subscribers per day, for each feed reader (ua_name of the 'Feed Readers' group) seen on a feed URI that day:
+    // - it announces a count in its user agent ("7 subscribers", "1 subscriber"): the highest announced that day
+    //   (a count can change mid-day), whatever the number of requests or IPs;
+    // - otherwise: 1 per distinct (user agent, source) pair that day, where the source is the whole ASN when it is a
+    //   hosting one (a hosted reader polls from many IPs) and the client IP otherwise (one IP, one user on an ISP).
+    //   Rows ingested before the asn field existed have no ASN and fall back to the IP.
+    //   Repeated requests never accumulate.
+    private static final Pattern SUBSCRIBERS_PATTERN = Pattern.compile("(\\d+) subscribers?\\b", Pattern.CASE_INSENSITIVE);
+
+    public List<DailyFeedSubscribers> feedSubscribersPerDay(Instant from, Instant to) {
+        String sql = """
+                SELECT date(timestamp) AS day, ua_name, user_agent,
+                       CASE WHEN a.category = 'hosting' THEN 'AS' || cloudfront_logs.asn ELSE client_ip END AS source
+                FROM cloudfront_logs
+                LEFT JOIN asn_info a ON a.asn = cloudfront_logs.asn
+                WHERE timestamp BETWEEN ? AND ?
+                  AND %s
+                GROUP BY day, ua_name, user_agent, source
+                ORDER BY day, ua_name
+                """.formatted(FEED_READER_FILTER);
+        Map<String, long[]> byDayAndReader = new LinkedHashMap<>(); // {max announced, anonymous pairs}
+        jdbc.query(sql, rs -> {
+            long announced = announcedSubscribers(rs.getString("user_agent"));
+            long[] counts = byDayAndReader.computeIfAbsent(rs.getString("day") + "|" + rs.getString("ua_name"), _ -> new long[2]);
+            if (announced > 0) {
+                counts[0] = Math.max(counts[0], announced);
+            } else {
+                counts[1]++;
+            }
+        }, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
+        return byDayAndReader.entrySet().stream()
+                .map(e -> {
+                    String[] key = e.getKey().split("\\|", 2);
+                    long[] counts = e.getValue();
+                    return new DailyFeedSubscribers(LocalDate.parse(key[0]), key[1], counts[0] > 0 ? counts[0] : counts[1]);
+                })
+                .toList();
+    }
+
+    // 0 when the user agent announces no count.
+        static long announcedSubscribers(String userAgent) {
+        Matcher m = SUBSCRIBERS_PATTERN.matcher(userAgent == null ? "" : userAgent);
+        return m.find() ? Math.max(1, Long.parseLong(m.group(1))) : 0;
     }
 
     // Blog book covers: webp or jpg files under /assets/posts*.
