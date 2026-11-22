@@ -6,7 +6,6 @@ import com.example.analyzelog.model.CloudFrontLogEntry;
 import com.example.analyzelog.model.CountryResultTypeCount;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
-import com.example.analyzelog.model.IpRequest;
 import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
@@ -48,9 +47,6 @@ class DashboardServiceIntegrationTest {
         registry.add("referer-filter.self-referers[0]", () -> "https://post-tenebras-lire.net/");
         registry.add("referer-filter.self-referers[1]", () -> "http://post-tenebras-lire.net/");
     }
-
-    @MockitoBean
-    IpInfoService ipInfoService;
 
     @Autowired
     LogRepository repository;
@@ -1068,34 +1064,6 @@ class DashboardServiceIntegrationTest {
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(r -> "24940".equals(r.asn()) && "Hetzner Online GmbH".equals(r.asnName()) && "hosting".equals(r.asnCategory())));
         assertTrue(result.stream().anyMatch(r -> r.asn() == null && r.asnName() == null && r.asnCategory() == null));
-    }
-
-    @Test
-    void requestsByIp_filtersToExactIpAndMapsCountryAndUaName() {
-        Instant from = Instant.now();
-        Instant first = Instant.now().plusSeconds(1);
-        Instant second = Instant.now().plusSeconds(2);
-        repository.saveEntries("logs/ip-requests-test.gz", List.of(
-                makeEntry(first,  "SFO53-P7", "8.8.8.8", "/index.html", null, UA_CHROME_WINDOWS, "FR", "Hit"),
-                makeEntry(second, "SFO53-P7", "8.8.8.8", "/about.html", null, UA_CHROME_WINDOWS, null, "Miss"),
-                makeEntry(first,  "SFO53-P7", "9.9.9.9", "/index.html", null, UA_CHROME_WINDOWS, "US", "Hit")  // different IP — must not appear
-        ));
-
-        var result = dashboardService.requestsByIp("8.8.8.8", from, Instant.now().plusSeconds(5));
-
-        assertEquals(2, result.size());
-        // ORDER BY timestamp DESC: the newer request comes first
-        IpRequest newer = result.getFirst();
-        assertEquals("/about.html", newer.uriStem());
-        assertEquals("-", newer.country());  // NULL country → dash
-        IpRequest older = result.getLast();
-        assertEquals("8.8.8.8", older.clientIp());
-        assertEquals("Chrome / Windows", older.name());
-        assertEquals("France", older.country());
-        assertEquals(UA_CHROME_WINDOWS, older.userAgent());
-        assertEquals("/index.html", older.uriStem());
-        assertEquals(200, older.scStatus());
-        assertEquals("Hit", older.resultType());
     }
 
     @Test

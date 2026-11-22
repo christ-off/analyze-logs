@@ -17,12 +17,10 @@ import com.example.analyzelog.model.SiteConfigFetcher;
 import com.example.analyzelog.model.SocialNetworkRequest;
 import com.example.analyzelog.model.UnknownUaRequest;
 import com.example.analyzelog.service.DashboardService;
-import com.example.analyzelog.service.IpInfoService;
 import com.example.analyzelog.service.RobotsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,14 +38,12 @@ public class ApiController {
     private final DashboardService dashboardService;
     private final AppProperties appProperties;
     private final RobotsService robotsService;
-    private final IpInfoService ipInfoService;
 
     public ApiController(DashboardService dashboardService, AppProperties appProperties,
-                         RobotsService robotsService, IpInfoService ipInfoService) {
+                         RobotsService robotsService) {
         this.dashboardService = dashboardService;
         this.appProperties = appProperties;
         this.robotsService = robotsService;
-        this.ipInfoService = ipInfoService;
     }
 
     @GetMapping("/ua-groups")
@@ -223,11 +219,6 @@ public class ApiController {
     public Map<String, NameResultTypeCount> socialNetworkResultTypes(@RequestParam String from, @RequestParam String to) {
         var range = DateRange.fromParams(from, to);
         return dashboardService.socialNetworkResultTypes(range.from(), range.to());
-    }
-
-    @GetMapping("/ip-info/{ip}")
-    public IpInfoService.IpInfo ipInfo(@PathVariable String ip) {
-        return ipInfoService.lookup(ip);
     }
 
     @GetMapping("/robots-refresh")

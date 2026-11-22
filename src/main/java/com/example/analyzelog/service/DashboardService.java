@@ -13,7 +13,6 @@ import com.example.analyzelog.model.CoverUserAgent;
 import com.example.analyzelog.model.DailyResultTypeCount;
 import com.example.analyzelog.model.HumanTrafficStats;
 import com.example.analyzelog.model.IdentityShift;
-import com.example.analyzelog.model.IpRequest;
 import com.example.analyzelog.model.NameCount;
 import com.example.analyzelog.model.NameHumanTrafficStats;
 import com.example.analyzelog.model.NameResultTypeCount;
@@ -86,15 +85,6 @@ public class DashboardService {
                 countryOrDash(rs.getString(COL_COUNTRY)),
                 rs.getInt("status"));
     };
-    private static final RowMapper<IpRequest> IP_REQUEST_MAPPER = (rs, _) -> new IpRequest(
-            Instant.parse(rs.getString(COL_TIMESTAMP)),
-            rs.getString(COL_CLIENT_IP),
-            rs.getString("ua_name"),
-            countryOrDash(rs.getString(COL_COUNTRY)),
-            rs.getString(COL_USER_AGENT),
-            rs.getString(COL_URI_STEM),
-            rs.getString("result_type"),
-            rs.getInt("status"));
     private static final RowMapper<NameCount> NAME_COUNT_MAPPER =
             (rs, _) -> new NameCount(rs.getString("name"), rs.getLong(COUNT_FIELD));
     private static final RowMapper<NameResultTypeCount> NAME_RESULT_TYPE_COUNT_MAPPER =
@@ -1038,18 +1028,6 @@ public class DashboardService {
     private static String countryOrDash(String iso) {
         String name = resolveCountryDisplayOrNull(iso);
         return name != null ? name : "-";
-    }
-
-    public List<IpRequest> requestsByIp(String ip, Instant from, Instant to) {
-        String sql = """
-                SELECT timestamp, client_ip, ua_name, user_agent, uri_stem, country, status,
-                       %s as result_type
-                FROM cloudfront_logs
-                WHERE client_ip = ?
-                  AND timestamp >= ? AND timestamp < ?
-                ORDER BY timestamp DESC, id DESC
-                """.formatted(RESULT_TYPE_GROUP_EXPR);
-        return jdbc.query(sql, IP_REQUEST_MAPPER, ip, TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to));
     }
 
     public List<DailyResultTypeCount> requestsPerDayByUserAgent(String ua, Instant from, Instant to) {
