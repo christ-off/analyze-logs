@@ -15,7 +15,7 @@ vi.mock('../../main/resources/static/js/utils.js', () => ({
 }));
 
 import { Charts } from '../../main/resources/static/js/charts.js';
-import { loadCoreCharts, loadUaChart } from '../../main/resources/static/js/dashboard-charts.js';
+import { loadCoreCharts, loadUaChart, loadCountriesChart } from '../../main/resources/static/js/dashboard-charts.js';
 
 describe('loadUaChart', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -29,6 +29,21 @@ describe('loadUaChart', () => {
         expect(canvasId).toBe('chartCoverUas');
         expect(urlBuilder({ name: 'Chrome / Windows' }))
             .toMatch(/\/ua-detail\?ua=Chrome/);
+    });
+});
+
+describe('loadCountriesChart', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('renders into the given canvas with a /country-detail link builder, for any endpoint', () => {
+        loadCountriesChart('chartCountriesFiltered', 'countries-filtered-ratio?from=2026-01-01&to=2026-01-31');
+        const [endpoint, renderFn] = Charts.loadChart.mock.calls[0];
+        expect(endpoint.split('?')[0]).toBe('countries-filtered-ratio');
+        renderFn([]);
+        const [canvasId, , urlBuilder] = Charts.horizontalStackedBar.mock.calls[0];
+        expect(canvasId).toBe('chartCountriesFiltered');
+        expect(urlBuilder({ code: 'FR' }))
+            .toMatch(/\/country-detail\?country=FR/);
     });
 });
 

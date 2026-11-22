@@ -1,6 +1,6 @@
 import { Charts } from './charts.js';
-import { readMeta, escapeHtml, buildBaseParams, detailUrl, resultTotal, stackedBar } from './utils.js';
-import { loadUaChart } from './dashboard-charts.js';
+import { readMeta, escapeHtml, buildBaseParams, resultTotal, stackedBar } from './utils.js';
+import { loadUaChart, loadCountriesChart } from './dashboard-charts.js';
 import { initRefresh } from './refresh.js';
 
 const urlName = readMeta('cf-url');
@@ -36,9 +36,7 @@ function loadUrlsTable() {
 export function loadAllCharts() {
     const p = buildBaseParams({ url: urlName });
 
-    Charts.loadChart(`url-detail/countries?${p}`,
-        data => Charts.horizontalStackedBar('chartCountries', data,
-            item => detailUrl('/country-detail', { country: item.code })));
+    loadCountriesChart('chartCountries', `url-detail/countries?${p}`);
 
     loadUaChart('chartUserAgents', `url-detail/user-agents?${p}`);
 

@@ -265,4 +265,21 @@ describe('loadAllCharts (Most Active Bots)', () => {
         expect(canvasId).toBe('chartTopBots');
         expect(urlFn({ name: 'Googlebot' })).toMatch(/\/ua-detail\?ua=Googlebot/);
     });
+
+    it('links the countries bars to /country-detail, like the other countries charts', async () => {
+        document.body.innerHTML = BOTS_HTML;
+        vi.clearAllMocks();
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) }));
+
+        loadAllCharts();
+        await flushPromises();
+
+        const countriesCall = Charts.loadChart.mock.calls.find(([endpoint]) => endpoint.startsWith('countries-filtered-ratio?'));
+        expect(countriesCall).toBeDefined();
+        const [, renderFn] = countriesCall;
+        renderFn([{ code: 'FR', hit: 1, miss: 0, function: 0, error: 2 }]);
+        const [canvasId, , urlFn] = Charts.horizontalStackedBar.mock.calls[0];
+        expect(canvasId).toBe('chartCountriesFiltered');
+        expect(urlFn({ code: 'FR' })).toMatch(/\/country-detail\?country=FR/);
+    });
 });

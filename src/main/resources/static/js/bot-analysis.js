@@ -2,8 +2,8 @@
 
 import { Charts } from './charts.js';
 import { initRefresh } from './refresh.js';
-import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, detailUrl, loadSimpleTable } from './utils.js';
-import { loadUaChart } from './dashboard-charts.js';
+import { buildBaseParams, escapeHtml, resultTotal, stackedBar, uaRequestsUrl, loadSimpleTable } from './utils.js';
+import { loadUaChart, loadCountriesChart } from './dashboard-charts.js';
 
 function loadBotTable(url, tbodyId, emptyMsg) {
     fetch(url)
@@ -106,14 +106,10 @@ export function initRobotsRefresh() {
     });
 }
 
-function countryDetailUrl(d) {
-    return detailUrl('/country-detail', { country: d.code });
-}
-
 export function loadAllCharts() {
 
     const p = buildBaseParams({});
-    Charts.loadChart(`countries-filtered-ratio?${p}`, data => Charts.horizontalStackedBar('chartCountriesFiltered', data, countryDetailUrl));
+    loadCountriesChart('chartCountriesFiltered', `countries-filtered-ratio?${p}`);
     loadUaChart('chartTopBots', `top-bots?${p}`);
     loadProbableBots();
     loadBrowserConfigFetches();

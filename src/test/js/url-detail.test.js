@@ -11,13 +11,15 @@ describe('url detail page', () => {
             <meta name="cf-to"   content="2026-01-31T00:00:00Z">
             <meta name="cf-url"  content="/feed.xml">
         `;
-        document.body.innerHTML = '<canvas id="chartUserAgents"></canvas><table><tbody id="tbodyUrls"></tbody></table>';
+        document.body.innerHTML = '<canvas id="chartUserAgents"></canvas><canvas id="chartCountries"></canvas><table><tbody id="tbodyUrls"></tbody></table>';
         const ChartMock = globalThis.Chart;
         ChartMock.getChart = vi.fn(() => null);
-        const fetchMock = vi.fn().mockResolvedValue({
+        const fetchMock = vi.fn(url => Promise.resolve({
             ok: true,
-            json: () => Promise.resolve([{ name: 'Mastodon/4.0', hit: 3, miss: 1, function: 0, error: 0 }]),
-        });
+            json: () => Promise.resolve(url.startsWith('/api/url-detail/countries?')
+                ? [{ code: 'FR', name: 'France', hit: 2, miss: 1, function: 0, error: 0 }]
+                : [{ name: 'Mastodon/4.0', hit: 3, miss: 1, function: 0, error: 0 }]),
+        }));
         vi.stubGlobal('fetch', fetchMock);
 
         await import('../../main/resources/static/js/url-detail.js');
@@ -28,9 +30,11 @@ describe('url detail page', () => {
         expect(urls.some(u => u.startsWith('/api/url-detail/countries?url='))).toBe(true);
         expect(urls.some(u => u.startsWith('/api/url-detail/requests-per-day?url='))).toBe(true);
 
-        const config = ChartMock.mock.calls.map(c => c[1]).find(cfg => cfg?.data?.labels?.includes('Mastodon/4.0'));
-        expect(config).toBeDefined();
-        expect(config.options.onClick).toBeTypeOf('function');
-        expect(config.options.onHover).toBeTypeOf('function');
+        for (const label of ['Mastodon/4.0', 'France']) {
+            const config = ChartMock.mock.calls.map(c => c[1]).find(cfg => cfg?.data?.labels?.includes(label));
+            expect(config).toBeDefined();
+            expect(config.options.onClick).toBeTypeOf('function');
+            expect(config.options.onHover).toBeTypeOf('function');
+        }
     });
 });
