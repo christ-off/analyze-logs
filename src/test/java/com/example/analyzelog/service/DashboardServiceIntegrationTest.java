@@ -2039,11 +2039,13 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
-    void feedReaderQueries_onlyKeepUaNamesThatNeverRequestedAnythingButFeeds() {
+    void feedReaderQueries_keepFeedRequestsOfFeedReaderGroupOnly() {
         Instant from = Instant.now();
         repository.saveEntries("logs/feed-readers-test.gz", List.of(
                 makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/feed.xml", null, "Miniflux/2.0", "US", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/rss.xml", null, "Miniflux/2.0", "US", "Miss"),
+                // a reader also fetching the home page still counts, for its feed requests only
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/", null, "Miniflux/2.0", "US", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/feed.xml", null, "facebookexternalhit/1.1", "US", "Hit"),
                 makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/some-post/", null, "facebookexternalhit/1.1", "US", "Hit")
         ));
@@ -2054,7 +2056,68 @@ class DashboardServiceIntegrationTest {
         assertEquals("Miniflux", uas.getFirst().name());
         assertEquals(2, uas.getFirst().total());
 
-        assertEquals(2, dashboardService.feedReaderRequestsPerDay(from, to).stream()
-                .mapToLong(d -> d.hit() + d.miss() + d.function() + d.error()).sum());
+    }
+
+    @Test
+    void feedSubscribersPerDay_usesAnnouncedCountElseOnePerUserAgentAndSourcePerDay() {
+        Instant from = Instant.now();
+        repository.saveEntries("logs/feed-subscribers-test.gz", List.of(
+                // announced count: highest of the day wins, repeated requests never accumulate
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/feed.xml", null, "Feedly/1.0 (poller; 6 subscribers; )", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/feed.xml", null, "Feedly/1.0 (poller; 7 subscribers; )", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.1", "/rss.xml", null, "Feedly/1.0 (poller; 7 subscribers; )", "US", "Hit"),
+                // no count announced: one per distinct (user agent, source) pair per day, the source being the ASN when hosting, else the IP; repeated requests never accumulate
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/feed.xml", null, "Miniflux/2.0", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.2", "/rss.xml", null, "Miniflux/2.0", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.3", "/feed.xml", null, "Miniflux/2.0", "US", "Hit"),
+                // not a feed URI / not a feed reader: ignored
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.4", "/some-post/", null, "Feedbin feed-id:1 - 1 subscribers", "US", "Hit"),
+                makeEntry(Instant.now(), "SFO53-P7", "2.2.2.5", "/feed.xml", null, "facebookexternalhit/1.1", "US", "Hit")
+        ));
+
+        var result = dashboardService.feedSubscribersPerDay(from, Instant.now().plusSeconds(5));
+
+        assertEquals(2, result.size());
+        assertEquals(2, result.stream().filter(r -> r.name().equals("Miniflux")).findFirst().orElseThrow().count());
+        assertEquals(7, result.stream().filter(r -> r.name().equals("Feedly")).findFirst().orElseThrow().count());
+    }
+
+    @Test
+    void feedSubscribersPerDay_countsHostingAsnOnceAndIspClientsPerIp() {
+        Instant from = Instant.now();
+        asnInfoRepository.replaceAll(List.of(
+                new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting"),
+                new AsnInfo("9121", "TTNET", "TTNET A.S.", "TR", "isp")));
+        String ua = "Feeder/1.0 (feeder.co/fetcher)";
+        repository.saveEntries("logs/feed-subscribers-asn-test.gz", List.of(
+                feedEntry("5.5.5.1", ua, "24940"), feedEntry("5.5.5.2", ua, "24940"), feedEntry("5.5.5.3", ua, "24940"),
+                feedEntry("6.6.6.1", ua, "9121"), feedEntry("6.6.6.2", ua, "9121"),
+                // no ASN (rows ingested before the field existed): falls back to the IP
+                feedEntry("7.7.7.1", ua, null), feedEntry("7.7.7.2", ua, null)
+        ));
+
+        var result = dashboardService.feedSubscribersPerDay(from, Instant.now().plusSeconds(5));
+
+        assertEquals(1, result.size());
+        assertEquals(5, result.getFirst().count()); // 1 hosting ASN + 2 ISP IPs + 2 IPs without ASN
+    }
+
+    private CloudFrontLogEntry feedEntry(String ip, String ua, String asn) {
+        return new CloudFrontLogEntry(
+                Instant.now(), "SFO53-P7", ip, "GET",
+                "/feed.xml", 304,
+                null, ua,
+                "Hit", "Hit", "Hit",
+                null, "US", asn
+        );
+    }
+
+    @Test
+    void announcedSubscribers_parsesKnownPatterns() {
+        assertEquals(7, DashboardService.announcedSubscribers("Feedly/1.0 (poller; 7 subscribers; )"));
+        assertEquals(1, DashboardService.announcedSubscribers("Feedbin feed-id:2878303 - 1 subscribers"));
+        assertEquals(1, DashboardService.announcedSubscribers("NewsBlur Feed Fetcher - 1 subscriber - https://www.newsblur.com"));
+        assertEquals(0, DashboardService.announcedSubscribers("Reeder/5060003 CFNetwork/3896.200.61"));
+        assertEquals(0, DashboardService.announcedSubscribers(null));
     }
 }

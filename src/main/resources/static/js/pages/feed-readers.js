@@ -8,7 +8,7 @@ import { initRefresh } from '../refresh.js';
 export function loadFeedReaderCharts() {
     const p = buildBaseParams({});
     loadUaChart('chartFeedReaders', `feed-readers/user-agents?${p}`);
-    Charts.loadChart(`feed-readers/requests-per-day?${p}`, data => Charts.stackedBarByDay('chartRequestsPerDay', data));
+    Charts.loadChart(`feed-readers/subscribers-per-day?${p}`, data => Charts.stackedBarByDayCategory('chartSubscribersPerDay', data));
 }
 
 loadFeedReaderCharts();
