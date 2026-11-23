@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- SpaceCowboys Android RSS Reader ("SpaceCowboys Android RSS Reader / 2.25.0(4191)").
+         Reclassify log rows ingested before this existed. -->
+    <changeSet id="030-static-ua-add-spacecowboys" author="analyze-logs">
+        <sql>
+            INSERT INTO static_ua (ua_name, ua_group, ua_label, pattern, sort_order) VALUES
+            ('SpaceCowboys', 'Feed Readers', 'SpaceCowboys', 'SpaceCowboys', 88);
+            UPDATE cloudfront_logs SET ua_name = 'SpaceCowboys'
+            WHERE ua_name = 'Unknown' AND user_agent LIKE '%SpaceCowboys%';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
