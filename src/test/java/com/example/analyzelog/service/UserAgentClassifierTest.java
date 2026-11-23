@@ -89,6 +89,7 @@ class UserAgentClassifierTest {
         "'flus/2.3.1 (https://app.flus.fr/about)', Flus",
         "'wp.com feedbot/1.0', WP.com FeedBot",
         "'Mozilla/5.0 (compatible; Miniflux/2.3.3; https://miniflux.app)', Miniflux",
+        "'SpaceCowboys Android RSS Reader / 2.25.0(4191)', SpaceCowboys",
         "'Mozilla/4.0 (compatible; ms-office; MSOffice 16)', Microsoft Office",
         // Fediverse
         "'http.rb/5.1.1 (Mastodon/4.2.17; +https://mastodon.example.org/)', Mastodon",

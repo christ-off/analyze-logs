@@ -34,5 +34,6 @@
     <include file="db/changelog/changes/027-static-ua-add-qwant-mobile.xml"/>
     <include file="db/changelog/changes/028-reclassify-crios-chrome-iphone.xml"/>
     <include file="db/changelog/changes/029-ms-office-out-of-feed-readers.xml"/>
+    <include file="db/changelog/changes/030-static-ua-add-spacecowboys.xml"/>
 
 </databaseChangeLog>
