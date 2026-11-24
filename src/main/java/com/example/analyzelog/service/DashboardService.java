@@ -137,6 +137,8 @@ public class DashboardService {
     // visits, while scrapers do fetch it (without ever fetching the svgs).
     @SuppressWarnings("java:S1075") // fixed site path, not a deployment-specific URI
     private static final String HUMAN_EVIDENCE_SVG_PATTERN = "/assets/svgs/%.svg";
+    // Site icons fetched by browsers (favicon, iOS home-screen icon) count as evidence too.
+    private static final String HUMAN_EVIDENCE_ICON_LIST = "'/favicon.ico','/apple-touch-icon.png'";
     // Only Hit/Miss responses count as real traffic — Error and FunctionGeneratedResponse rows
     // (scanners, filtered requests) are excluded from these predicates. RefreshHit counts as a Hit.
     private static final String RESULT_TYPE_HIT_OR_MISS =
@@ -151,8 +153,8 @@ public class DashboardService {
             "uri_stem LIKE '%/'\n" +
             SQL_AND_INDENT + RESULT_TYPE_HIT_OR_MISS + "\n" +
             "  AND ua_name NOT IN (SELECT ua_name FROM static_ua WHERE ua_group IN (" + BOT_UA_GROUPS_SQL_LIST + "))\n" +
-            "  " + withinOneHourExistsClause("m1", HUMAN_EVIDENCE_SVG_PATTERN);
-    private static final String HUMAN_EVIDENCE_SVG_PREDICATE = "uri_stem LIKE '" + HUMAN_EVIDENCE_SVG_PATTERN + "'";
+            "  " + withinOneHourExistsClause("m1", humanEvidencePredicate("m1.uri_stem"));
+    private static final String HUMAN_EVIDENCE_SVG_PREDICATE = humanEvidencePredicate("uri_stem");
     // Any pair (client_ip, user_agent) requesting one of these is classified as the 'Feeds' category.
     private static final String FEED_URI_LIST = "'/feed.xml','/rss.xml'";
     // Pair classification used to label rows (trafficCategories) and to scope human-traffic
@@ -176,12 +178,16 @@ public class DashboardService {
     // strftime (not datetime()) keeps the 'T'/'Z' ISO-8601 shape of the stored timestamp column —
     // datetime() reformats to a space-separated string that would sort before/after it inconsistently in
     // the BETWEEN comparison below, since cloudfront_logs.timestamp is TEXT compared lexicographically.
-    private static String withinOneHourExistsClause(String alias, String uriStemPattern) {
+    private static String humanEvidencePredicate(String column) {
+        return "(" + column + " LIKE '" + HUMAN_EVIDENCE_SVG_PATTERN + "' OR " + column + " IN (" + HUMAN_EVIDENCE_ICON_LIST + "))";
+    }
+
+    private static String withinOneHourExistsClause(String alias, String evidencePredicate) {
         return "AND EXISTS (\n" +
                 "    SELECT 1 FROM cloudfront_logs " + alias + "\n" +
                 "    WHERE " + alias + ".client_ip = cloudfront_logs.client_ip\n" +
                 "      AND " + alias + ".user_agent = cloudfront_logs.user_agent\n" +
-                "      AND " + alias + ".uri_stem LIKE '" + uriStemPattern + "'\n" +
+                "      AND " + evidencePredicate + "\n" +
                 "      AND " + alias + ".edge_response_result_type IN (" + ResultTypeSql.HIT_TYPE_LIST + ", 'Miss')\n" +
                 "      AND " + alias + ".timestamp BETWEEN strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '-1 hour')\n" +
                 "                                       AND strftime('%Y-%m-%dT%H:%M:%SZ', cloudfront_logs.timestamp, '+1 hour')\n" +
