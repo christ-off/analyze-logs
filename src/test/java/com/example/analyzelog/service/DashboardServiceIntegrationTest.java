@@ -386,22 +386,40 @@ class DashboardServiceIntegrationTest {
         asnInfoRepository.replaceAll(List.of(
                 new AsnInfo("24940", "HETZNER-AS", "Hetzner Online GmbH", "DE", "hosting")));
         repository.saveEntries("logs/blocked-fediverse-test.gz", List.of(
-                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "FunctionGeneratedResponse"),
-                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "FunctionExecutionError"),
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_APP, "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_APP, "/", "FunctionExecutionError"),
                 // a served '/' request neither counts nor demotes — it is still the only URI requested
-                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "Hit"),
-                // demoted: its '/' was blocked but it also fetched content (followed a link like a visitor)
-                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/", "FunctionGeneratedResponse"),
-                entryWithAsnUaUriAndResultType("24940", UA_FIREFOX_LINUX, "/some-post/", "Hit"),
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_APP, "/", "Hit"),
+                // a blocked post page counts too (link-preview of an article)
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_APP, "/some-post/", "FunctionGeneratedResponse"),
+                // demoted: its '/' was blocked but it also fetched a non-page URI (asset, feed)
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_FOLLOWER, "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", UA_FEDI_FOLLOWER, "/feed.xml", "Hit"),
+                // kept: Mozilla-prefixed UA that declares a URL is not a browser lookalike
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (compatible; Foo/1.0; +https://foo.example/bot)", "/", "FunctionGeneratedResponse"),
+                // excluded: stock desktop-browser UAs (hosted apps pretending to be browsers)
+                entryWithAsnUaUriAndResultType("24940", UA_CHROME_WINDOWS, "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.0 (Edition std-2)", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 12.6; rv:129.0) Gecko/20100101 Firefox/129.0", "/", "FunctionGeneratedResponse"),
+                entryWithAsnUaUriAndResultType("24940", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15", "/", "FunctionGeneratedResponse"),
                 // excluded: '/' request from an ASN with no asn_info row — nothing counted, UA absent
                 entryWithAsnUaUriAndResultType("99999", UA_EDGE_WINDOWS, "/", "FunctionGeneratedResponse")
         ));
 
         var result = dashboardService.blockedFediverseApps(from, Instant.now().plusSeconds(5), 10);
 
-        assertEquals(1, result.size());
-        assertEquals(UA_CHROME_WINDOWS, result.getFirst().userAgent());
-        assertEquals(2, result.getFirst().count());
+        assertEquals(2, result.size());
+        assertEquals(UA_FEDI_APP, result.getFirst().userAgent());
+        assertEquals(3, result.getFirst().count());
+        assertEquals("Mozilla/5.0 (compatible; Foo/1.0; +https://foo.example/bot)", result.get(1).userAgent());
     }
 
     @Test
@@ -487,6 +505,8 @@ class DashboardServiceIntegrationTest {
     private static final String UA_GOOGLEBOT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
     // Real UA strings — ua_name is populated by UserAgentClassifier at insert time
+    private static final String UA_FEDI_APP = "Akkoma 3.20.1; https://soc.example.club <a@example.club>";
+    private static final String UA_FEDI_FOLLOWER = "Mastodon/4.3 (http.rb/5.2; +https://example.social/)";
     private static final String UA_CHROME_WINDOWS =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private static final String UA_CHROME_MACOS =

@@ -212,7 +212,7 @@ UA detail page which is keyed by the classified `ua_name`) and its blocked-reque
 | List | Content |
 |------|---------|
 | **Blocked Feed Readers** | User agents that requested *nothing but* `/feed.xml` / `/rss.xml` in the range and were Filtered — a UA that also fetched content paths is a scraper, not a reader, and is dropped. |
-| **Blocked Fediverse** | User agents that requested *nothing but* the home page (`/`) in the range and were Filtered — link-preview bots; a UA that also fetched content paths (following links like a visitor) is dropped. |
+| **Blocked Fediverse** | User agents that requested *nothing but* pages (URIs ending in `/`: the home page or a post) in the range and were Filtered — link-preview bots; a UA that also fetched content paths (following links like a visitor) is dropped. |
 
 Later, add a third list, **Other blocked apps**. Its criteria are not known yet — decide which
 requests and which ASN categories define it before implementing.
