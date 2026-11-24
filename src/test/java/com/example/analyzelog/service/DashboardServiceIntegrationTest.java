@@ -1708,6 +1708,34 @@ class DashboardServiceIntegrationTest {
     }
 
     @Test
+    void humanTopUserAgentsByResultType_countsPageWhenFaviconIsRequested() {
+        Instant base = Instant.now().plus(210, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-favicon-test.gz", List.of(
+                entryAt(base, "19.19.19.19", UA_CHROME_MACOS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "19.19.19.19", UA_CHROME_MACOS, "/favicon.ico")
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertTrue(result.stream().anyMatch(r -> "Chrome / macOS".equals(r.name())));
+    }
+
+    @Test
+    void humanTopUserAgentsByResultType_countsPageWhenAppleTouchIconIsRequested() {
+        Instant base = Instant.now().plus(220, ChronoUnit.DAYS);
+        repository.saveEntries("logs/human-apple-icon-test.gz", List.of(
+                entryAt(base, "20.20.20.20", UA_CHROME_MACOS, "/"),
+                entryAt(base.plus(1, ChronoUnit.MINUTES), "20.20.20.20", UA_CHROME_MACOS, "/apple-touch-icon.png")
+        ));
+
+        var result = dashboardService.humanTopUserAgentsByResultType(
+                base.minusSeconds(10), base.plus(2, ChronoUnit.HOURS), 10);
+
+        assertTrue(result.stream().anyMatch(r -> "Chrome / macOS".equals(r.name())));
+    }
+
+    @Test
     void humanTopUserAgentsByResultType_excludesPageWhenSvgBadgeMissing() {
         Instant base = Instant.now().plus(200, ChronoUnit.DAYS);
         repository.saveEntries("logs/human-svg-missing-test.gz", List.of(

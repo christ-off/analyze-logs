@@ -256,7 +256,7 @@ No credentials are stored by this application. Authentication is delegated to th
 ### "Probable human" traffic can include bots
 
 A `(client_ip, user_agent)` pair counts as **Probable human** if it ever requests a trailing-slash
-path (e.g. `/`) *and* any icon svg (`/assets/svgs/*.svg`), each as a Hit or Miss. The stylesheet is
+path (e.g. `/`) *and* any icon svg (`/assets/svgs/*.svg`) or `/favicon.ico` or `/apple-touch-icon.png`, each as a Hit or Miss. The stylesheet is
 deliberately not required: browsers serve it from cache on return visits, while scrapers do fetch it.
 The Human page applies the same rule, but requires the svg within ±1h of the page request. A bot that
 fetches an svg can still qualify. Known limitation, not currently fixed.
