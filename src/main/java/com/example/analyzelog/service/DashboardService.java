@@ -331,14 +331,14 @@ public class DashboardService {
     }
 
     // Blocked Hosted Applications page: "Blocked Feed Readers" (UAs that only ever requested feeds)
-    // and "Blocked Fediverse" (UAs that only ever requested the home page — the pings Fediverse
-    // link-preview bots send).
+    // and "Blocked Fediverse" (UAs that only ever requested pages — the home page or a post, URIs
+    // ending in "/" — the pings Fediverse link-preview bots send; noisy by design).
     public List<BlockedUserAgent> blockedFeedReaders(Instant from, Instant to, int limit) {
-        return blockedUserAgents("c.uri_stem IN (" + FEED_URI_LIST + ")", from, to, limit);
+        return blockedUserAgents("c.uri_stem IN (" + FEED_URI_LIST + ")", "", from, to, limit);
     }
 
     public List<BlockedUserAgent> blockedFediverseApps(Instant from, Instant to, int limit) {
-        return blockedUserAgents("c.uri_stem = '/'", from, to, limit);
+        return blockedUserAgents("c.uri_stem LIKE '%/'", NOT_BROWSER_LOOKALIKE, from, to, limit);
     }
 
     // A raw user agent qualifies when, within the range, every one of its requests matched
@@ -353,7 +353,16 @@ public class DashboardService {
     // only on list/Filtered rows (CASE short-circuits), and MAX(ua_name) keeps a raw UA that was
     // reclassified mid-history in a single group — the grouping key is the raw user_agent, matching
     // the demotion rule.
-    private List<BlockedUserAgent> blockedUserAgents(String listUriPredicate, Instant from, Instant to, int limit) {
+    // Hosted apps (scrapers, proxies) that send a stock browser UA (Chrome, Edge, Firefox, Safari,
+    // desktop or mobile, any version). Real browsers never put a URL in their UA, while Fediverse
+    // software and declared bots do ("+https://..."), so "Mozilla/5.0 (" without "http" is a
+    // browser lookalike. Excluded from "Blocked Fediverse", where they bury the real software.
+    private static final String NOT_BROWSER_LOOKALIKE = """
+            AND NOT (COALESCE(user_agent, '') GLOB 'Mozilla/5.0 (*'
+                     AND COALESCE(user_agent, '') NOT LIKE '%http%')
+            """;
+
+    private List<BlockedUserAgent> blockedUserAgents(String listUriPredicate, String extraHaving, Instant from, Instant to, int limit) {
         String sql = """
                 SELECT COALESCE(user_agent, MAX(ua_name)) AS user_agent, SUM(blocked) AS count
                 FROM (
@@ -367,9 +376,9 @@ public class DashboardService {
                     WHERE c.timestamp BETWEEN ? AND ?
                 )
                 GROUP BY user_agent
-                HAVING SUM(other_uri) = 0 AND SUM(blocked) > 0
+                HAVING SUM(other_uri) = 0 AND SUM(blocked) > 0 %3$s
                 ORDER BY count DESC
-                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST, listUriPredicate) + LIMIT_PARAM;
+                """.formatted(ResultTypeSql.FUNCTION_TYPE_LIST, listUriPredicate, extraHaving) + LIMIT_PARAM;
         return jdbc.query(sql,
                 (rs, _) -> new BlockedUserAgent(rs.getString(COL_USER_AGENT), rs.getLong(COUNT_FIELD)),
                 TimestampFormat.sqlValue(from), TimestampFormat.sqlValue(to), limit);
