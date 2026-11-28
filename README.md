@@ -162,7 +162,7 @@ Seven charts, all scoped to the selected date range:
 | Platforms | Pie — request share by OS/platform detected from the user agent (iOS, Android, Windows, Mac, Linux, Other). |
 | Requests per Day | Stacked bar — daily breakdown by edge result type: Hit, Miss, Function, Redirect, Error. |
 
-Date range presets: **Today / 7 days / 30 days / 3 months** or a custom date picker.
+Date range presets: **Last 24h / 7 days / 30 days / 3 months** or a custom date picker.
 
 **Refresh from S3** button triggers an incremental fetch (skips already-imported files).
 

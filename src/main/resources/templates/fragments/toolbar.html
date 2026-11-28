@@ -31,7 +31,7 @@
     <div class="card mb-4 cf-toolbar">
         <div class="card-body d-flex flex-wrap align-items-center gap-2">
             <span class="fw-semibold me-2">Range:</span>
-            <a th:href="@{${base}(range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Today</a>
+            <a th:href="@{${base}(range='1d')}"  th:classappend="${activeRange == '1d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">Last 24h</a>
             <a th:href="@{${base}(range='7d')}"  th:classappend="${activeRange == '7d'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">7 days</a>
             <a th:href="@{${base}(range='30d')}" th:classappend="${activeRange == '30d'} ? ' active' : ''" class="btn btn-sm btn-outline-secondary">30 days</a>
             <a th:href="@{${base}(range='3m')}"  th:classappend="${activeRange == '3m'}  ? ' active' : ''" class="btn btn-sm btn-outline-secondary">3 months</a>

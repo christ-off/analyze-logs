@@ -11,7 +11,7 @@ test.describe('Dashboard', () => {
 
   test('shows date range toolbar', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Today' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Last 24h' })).toBeVisible();
     await expect(page.getByRole('link', { name: '7 days' })).toBeVisible();
     await expect(page.getByRole('link', { name: '30 days' })).toBeVisible();
     await expect(page.getByRole('link', { name: '3 months' })).toBeVisible();

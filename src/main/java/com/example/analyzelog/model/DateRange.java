@@ -1,5 +1,6 @@
 package com.example.analyzelog.model;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -10,6 +11,11 @@ public record DateRange(Instant from, Instant to) {
         Instant to = Instant.now();
         Instant from = LocalDate.now(ZoneOffset.UTC).minusDays(n - 1L).atStartOfDay(ZoneOffset.UTC).toInstant();
         return new DateRange(from, to);
+    }
+
+    public static DateRange last24Hours() {
+        Instant to = Instant.now();
+        return new DateRange(to.minus(Duration.ofHours(24)), to);
     }
 
     public static DateRange lastMonths(int n) {
